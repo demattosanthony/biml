@@ -1,59 +1,36 @@
+"use client";
+
 import { MessageRole, useChat } from "@/hooks/useChat";
+import { Bot, User } from "lucide-react";
 import MarkdownViewer from "../MarkdownViewer";
 
 export default function ChatMessagesList() {
   const { messages } = useChat();
 
   return (
-    <div className="flex-1 w-full flex overflow-y-auto pt-20">
-      <div className="max-w-[1200px] mx-auto p-4 w-full">
-        {messages.length === 0 && (
-          <div className="flex-1 w-full h-full flex items-center justify-center">
-            <div
-              className={`w-32 h-32 bg-black rounded-full dark:bg-white`}
-            ></div>
+    <div className="flex-1 w-full overflow-y-auto pt-10">
+      <div className="max-w-[900px] mx-auto p-4 w-full">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-gray-500">No messages yet</div>
           </div>
-        )}
-
-        {messages.length > 0 && (
-          <>
+        ) : (
+          <div className="space-y-6">
             {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex flex-col
-                  ${
-                    message.role === MessageRole.user
-                      ? "justify-end"
-                      : "justify-start"
-                  } 
-                  mb-4`}
-              >
-                {/* <>
-                  {message.tool_calls?.map((toolCall, id) => (
-                    <ToolCallResultComponent toolCall={toolCall} key={id} />
-                  ))}
-                </> */}
-
-                <div
-                  className={`max-w-full md:max-w-[70%] rounded-xl p-3 ${
-                    message.role === MessageRole.user
-                      ? "bg-primary text-white self-end dark:text-black"
-                      : "bg-secondary self-start"
-                  }`}
-                  style={{
-                    whiteSpace:
-                      message.role === MessageRole.user ? "pre-wrap" : "normal",
-                  }}
-                >
-                  {message.role === MessageRole.assistant ? (
-                    <MarkdownViewer content={message.content || ""} />
-                  ) : (
-                    message.content
-                  )}
+              <div key={index} className="flex items-start space-x-4">
+                {message.role === MessageRole.user ? <User /> : <Bot />}
+                <div className="flex-1">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    {message.role === MessageRole.user ? (
+                      <> {message.content}</>
+                    ) : (
+                      <MarkdownViewer content={message.content || ""} />
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
-          </>
+          </div>
         )}
       </div>
     </div>

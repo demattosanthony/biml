@@ -9,23 +9,5 @@ services:
     ports:
       - 5432:5432
 
-  # express-app:
-  #   build:
-  #     context: ./express-app
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - 3001:3001
-  #     - 8080:8080
-  #   env_file:
-  #     - ./express-app/.env
-  #   volumes:
-  #     - ./express-app:/src
-  #   environment:
-  #     - NODE_ENV=development
-  #     - POSTGRES_CONNECTION_STRING=postgres://postgres:postgres@pg:5432/postgres
-  #   depends_on:
-  #     - pg
-  #   platform: linux/amd64
-
 volumes:
   postgres_data:

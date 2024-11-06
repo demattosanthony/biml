@@ -62,7 +62,7 @@ export default function MainInputForm() {
 
   useEffect(() => {
     if (textAreaRef.current) {
-      textAreaRef.current.style.height = "115px";
+      textAreaRef.current.style.height = "96px";
       textAreaRef.current.style.height =
         textAreaRef.current.scrollHeight + "px";
     }
@@ -76,7 +76,7 @@ export default function MainInputForm() {
     <form className="relative h-auto z-50 " onSubmit={handleSubmit}>
       <Textarea
         placeholder="Ask anything..."
-        className="shadow-sm ring-0 focus:ring-0 focus:border-2 focus-visible:ring-0 resize-none min-h-[115px] max-h-[450px] w-[734px] p-4 pb-14 text-sm"
+        className="shadow-sm ring-0 focus:ring-0 focus:border-2 focus-visible:ring-0 resize-none min-h-[96px] max-h-[450px] w-[734px] p-4 pb-14 text-sm rounded-3xl"
         onChange={(e) => setInput(e.target.value)}
         ref={textAreaRef}
         onKeyDown={handleKeyDown}
@@ -94,7 +94,7 @@ export default function MainInputForm() {
 
       <Button
         ref={buttonRef}
-        className="absolute bottom-2 right-4 rounded-full h-[35px] w-[35px]"
+        className="absolute bottom-2 right-2 rounded-full h-[30px] w-[30px]"
         size={"icon"}
         variant={"default"}
         type="submit"

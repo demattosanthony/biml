@@ -14,9 +14,9 @@ import { streamText } from "ai";
 import myModels from "./config/ai";
 
 async function main() {
-  await migrate(db, {
-    migrationsFolder: path.join(__dirname, "../drizzle"),
-  });
+  // await migrate(db, {
+  //   migrationsFolder: path.join(__dirname, "../drizzle"),
+  // });
 
   const app: Express = express();
   const port = process.env.PORT || 3000;
@@ -103,7 +103,6 @@ async function main() {
         return;
       }
       let { messages } = req.body;
-      console.log(messages);
 
       const result = await streamText({
         model: myModels["gpt-4o"],
