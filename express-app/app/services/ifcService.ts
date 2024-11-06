@@ -2,8 +2,8 @@ import * as OBC from "@thatopen/components";
 import path from "path";
 import fs from "fs/promises";
 import supabase from "../config/supabase";
-import { db } from "../db";
 import { ifcModelTable } from "../schema";
+import db from "../db";
 
 export const ifcService = {
   createIfcModel: async (facilityId: string, name: string) => {

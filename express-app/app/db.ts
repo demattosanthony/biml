@@ -1,19 +1,18 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { facilityTable, ifcModelTable } from "./schema";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Client } from "pg";
+import * as schema from "./schema";
 import { __prod__ } from "./constants";
 
 // export type DbUser = typeof usersTable.$inferSelect;
 
-const queryClient = postgres(
-  __prod__
+const pgClient = new Client({
+  connectionString: __prod__
     ? process.env.DATABASE_URL!
-    : "postgresql://postgres:postgres@localhost:5432/postgres"
-);
-
-export const db = drizzle(queryClient, {
-  schema: {
-    facilities: facilityTable,
-    ifc_model: ifcModelTable,
-  },
+    : "postgresql://postgres:postgres@localhost:5432/postgres",
 });
+
+await pgClient.connect();
+
+const db = drizzle(pgClient, { schema });
+
+export default db;
