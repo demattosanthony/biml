@@ -1,7 +1,7 @@
 "use client";
 
-import { TypographyH1, TypographyP } from "@/components/Typography";
-import MainInputForm from "./MainInputForm";
+import { TypographyH1, TypographyP } from "@/components/typography";
+import MainInputForm from "./main-input-form";
 import { ModeToggle } from "@/components/mode-toggle";
 
 export default function Home() {

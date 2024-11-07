@@ -1,7 +1,7 @@
 "use client";
 import { MessageRole, useChat } from "@/hooks/useChat";
 import { Bot, FileBox, User } from "lucide-react";
-import MarkdownViewer from "../MarkdownViewer";
+import MarkdownViewer from "../markdown-viewer";
 import { Button } from "../ui/button";
 import { useEffect } from "react";
 
@@ -64,7 +64,7 @@ const IFCButton = ({
   index: number;
   isPartial?: boolean;
 }) => {
-  const { setSelectedIfcFile, selectedIfcFile } = useChat();
+  const { setSelectedIfcFile, selectedIfcFile, setArtifactMode } = useChat();
   const isSelected = selectedIfcFile?.index === index;
 
   const handleSelect = () => {
@@ -74,6 +74,10 @@ const IFCButton = ({
   useEffect(() => {
     setSelectedIfcFile({ index, content });
   }, [content]);
+
+  useEffect(() => {
+    setArtifactMode("file");
+  }, []);
 
   return (
     <Button

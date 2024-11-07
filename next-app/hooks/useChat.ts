@@ -26,7 +26,7 @@ export const messagesAtom = atom<ChatMessage[]>([
   //   {
   //     role: MessageRole.assistant,
   //     content: `<thinking> I'll create a simple IFC model representing a cube with dimensions of 1x1x1 meter. The model will include: 1. Basic IFC header information 2. Project context and units 3. Spatial structure (Project -> Site -> Building -> Building Storey) 4. A cube geometry using IfcExtrudedAreaSolid 5. Necessary relationships and placements </thinking>
-  // I'll generate an IFC file representing a simple cube for you. This model contains a basic spatial hierarchy and a cube represented as an IfcBuildingElementProxy.
+  //   I'll generate an IFC file representing a simple cube for you. This model contains a basic spatial hierarchy and a cube represented as an IfcBuildingElementProxy.
   // <ifc>
   // ISO-10303-21;
   // HEADER;
@@ -93,13 +93,13 @@ export const messagesAtom = atom<ChatMessage[]>([
   // ENDSEC;
   // END-ISO-10303-21;
   // </ifc>
-  // This IFC file defines:
-  // A cube with dimensions of 1x1x1 meter
-  // The cube is created using an extruded rectangular profile
-  // The spatial hierarchy (Project -> Site -> Building -> Building Storey)
-  // All necessary relationships and placements
-  // Standard units (meters, square meters, cubic meters)
-  // You can open this file in any IFC-compatible viewer (like BIMvision, FZKViewer, or Solibri) to see the cube visualization. The cube is represented as an IfcBuildingElementProxy since it's a generic geometric shape rather than a specific building element type.`,
+  //   This IFC file defines:
+  //   A cube with dimensions of 1x1x1 meter
+  //   The cube is created using an extruded rectangular profile
+  //   The spatial hierarchy (Project -> Site -> Building -> Building Storey)
+  //   All necessary relationships and placements
+  //   Standard units (meters, square meters, cubic meters)
+  //   You can open this file in any IFC-compatible viewer (like BIMvision, FZKViewer, or Solibri) to see the cube visualization. The cube is represented as an IfcBuildingElementProxy since it's a generic geometric shape rather than a specific building element type.`,
   //   },
 ]);
 const generatingAtom = atom(false);
@@ -109,12 +109,14 @@ const selectedIfcFileAtom = atom<{
   index: number;
   content: string;
 } | null>(null);
+const artifactModeAtom = atom<"preview" | "file">("file");
 
 export function useChat() {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [generating, setGenerating] = useAtom(generatingAtom);
   const [abortController, setAbortController] = useAtom(abortControllerAtom);
   const [buffer, setBuffer] = useAtom(bufferAtom);
+  const [artifcatMode, setArtifactMode] = useAtom(artifactModeAtom);
 
   const [selectedIfcFile, setSelectedIfcFile] = useAtom(selectedIfcFileAtom);
 
@@ -194,5 +196,7 @@ export function useChat() {
     updateLatestAssistantMessage,
     resetChat,
     generateText,
+    artifcatMode,
+    setArtifactMode,
   };
 }

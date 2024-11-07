@@ -28,10 +28,10 @@ export default function ViewerPage({
             <IFCModelCard />
           </div>
 
-          <IFCViewer
+          {/* <IFCViewer
             fragPath={facility.ifcModels[0].modelFragmentUrl}
             modelName={facility.ifcModels[0].name}
-          />
+          /> */}
         </div>
       )}
     </div>

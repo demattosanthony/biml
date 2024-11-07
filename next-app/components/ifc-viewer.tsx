@@ -10,10 +10,10 @@ import { Loader2 } from "lucide-react";
 import useIfcStore from "@/stores/useIfcStore";
 
 export default function IFCViewer({
-  fragPath,
+  blob,
   modelName,
 }: {
-  fragPath: string;
+  blob: Blob;
   modelName: string;
 }) {
   const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
@@ -136,39 +136,48 @@ export default function IFCViewer({
     //   "https://syystorage.blob.core.windows.net/test/Dunbar_High_School_Plumbing.ifc"
     // );
     try {
-      // const data = await file.arrayBuffer();
-      // const buffer = new Uint8Array(data);
-      // const model = await fragmentIfcLoader.load(buffer);
-      // model.name = "example";
-      // world.scene.three.add(model);
-      // addModel({ fragmentsGroup: model, file: file });
-      // // End loading ifc
-      // for (const child of model.children) {
-      //   if (child instanceof THREE.InstancedMesh) {
-      //     culler.add(child);
-      //   }
-      // }
-      // culler.needsUpdate = true;
-      // const fragmentBbox = components.get(OBC.BoundingBoxer);
-      // fragmentBbox.add(model);
-      // const bbox = fragmentBbox.getMesh();
-      // fragmentBbox.reset();
-      // world.camera.controls?.fitToSphere(bbox, true);
-      // const indexer = components.get(OBC.IfcRelationsIndexer);
-      // await indexer.process(model);
-      // setIndexer(indexer);
-      // setModel(model);
-      // setLoadingModel(false);
-      // console.log("Loading plans");
-      // const plans = components.get(OBCF.Plans);
-      // plans.world = world;
-      // await plans.generate(model);
-      // setPlans(plans);
-      // console.log("Plans loaded");
     } catch (err) {
       console.error(err);
       setLoadingModel(false);
     }
+  }
+
+  async function loadPlainIfcModel(
+    fragmentIfcLoader: OBC.IfcLoader,
+    world: OBC.World,
+    components: OBC.Components,
+    file: Blob,
+    culler: OBC.MeshCullerRenderer
+  ) {
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = await fragmentIfcLoader.load(buffer);
+    model.name = "example";
+    world.scene.three.add(model);
+    addModel({ fragmentsGroup: model, name: "test.ifc" });
+    // End loading ifc
+    for (const child of model.children) {
+      if (child instanceof THREE.InstancedMesh) {
+        culler.add(child);
+      }
+    }
+    culler.needsUpdate = true;
+    const fragmentBbox = components.get(OBC.BoundingBoxer);
+    fragmentBbox.add(model);
+    const bbox = fragmentBbox.getMesh();
+    fragmentBbox.reset();
+    world.camera.controls?.fitToSphere(bbox, true);
+    // const indexer = components.get(OBC.IfcRelationsIndexer);
+    // await indexer.process(model);
+    // // setIndexer(indexer);
+    // setModel(model);
+    // setLoadingModel(false);
+    // console.log("Loading plans");
+    // const plans = components.get(OBCF.Plans);
+    // plans.world = world;
+    // await plans.generate(model);
+    // setPlans(plans);
+    // console.log("Plans loaded");
   }
 
   // async function loadModel(
@@ -192,7 +201,7 @@ export default function IFCViewer({
   // }
 
   async function setup() {
-    const container = containerRef.current;
+    const container = document.getElementById("container")!;
 
     if (!container) {
       return;
@@ -205,21 +214,21 @@ export default function IFCViewer({
 
     const world = worlds.create<
       OBC.SimpleScene,
-      OBC.OrthoPerspectiveCamera,
-      OBCF.PostproductionRenderer
+      OBC.SimpleCamera,
+      OBC.SimpleRenderer
     >();
 
     world.scene = new OBC.SimpleScene(components);
-    world.renderer = new OBCF.PostproductionRenderer(components, container);
-    world.camera = new OBC.OrthoPerspectiveCamera(components);
+    world.renderer = new OBC.SimpleRenderer(components, container);
+    world.camera = new OBC.SimpleCamera(components);
     setWorld(world);
 
-    world.renderer.postproduction.enabled = true;
-    world.renderer.postproduction.customEffects.outlineEnabled = true;
+    // world.renderer.postproduction.enabled = true;
+    // world.renderer.postproduction.customEffects.outlineEnabled = true;
 
     components.init();
 
-    world.camera.controls.setLookAt(30, 6, 8, 0, 0, -10);
+    world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
     world.scene.setup();
 
@@ -238,16 +247,16 @@ export default function IFCViewer({
 
     await fragmentIfcLoader.setup();
 
-    const excludedCats = [
-      WEBIFC.IFCTENDONANCHOR,
-      WEBIFC.IFCREINFORCINGBAR,
-      WEBIFC.IFCREINFORCINGELEMENT,
-      WEBIFC.IFCSPACE,
-    ];
+    // const excludedCats = [
+    //   WEBIFC.IFCTENDONANCHOR,
+    //   WEBIFC.IFCREINFORCINGBAR,
+    //   WEBIFC.IFCREINFORCINGELEMENT,
+    //   WEBIFC.IFCSPACE,
+    // ];
 
-    for (const cat of excludedCats) {
-      fragmentIfcLoader.settings.excludedCategories.add(cat);
-    }
+    // for (const cat of excludedCats) {
+    //   fragmentIfcLoader.settings.excludedCategories.add(cat);
+    // }
 
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
@@ -277,7 +286,7 @@ export default function IFCViewer({
     // Create the culler
     const cullers = components.get(OBC.Cullers);
     const culler = cullers.create(world);
-    culler.threshold = 2;
+    // culler.config.threshold = 2;
     setCuller(culler);
     world.camera.controls?.addEventListener("sleep", () => {
       culler.needsUpdate = true;
@@ -305,7 +314,9 @@ export default function IFCViewer({
 
     // Hide all excluded categories
 
-    await loadIfc(world, components, fragments, fragmentIfcLoader, culler);
+    // await loadIfc(world, components, fragments, fragmentIfcLoader, culler);
+    await loadPlainIfcModel(fragmentIfcLoader, world, components, blob, culler);
+    world.camera.updateAspect();
   }
 
   useEffect(() => {
@@ -315,7 +326,7 @@ export default function IFCViewer({
       fragments?.dispose();
       clearModels();
     };
-  }, []);
+  }, [blob]);
 
   const onSelection = useCallback(
     async (fragmentIdMap: { [fragmentId: string]: Set<number> }) => {
@@ -355,9 +366,9 @@ export default function IFCViewer({
 
   return (
     <div
-      className="h-full w-full cursor-grab relative"
+      className="flex flex-1 cursor-grab relative"
       id="container"
-      ref={containerRef}
+      // ref={containerRef}
     >
       {/** Plans List */}
       {/* <div className="absolute top-0 left-0 z-50">
