@@ -4,19 +4,9 @@ import ChatInputForm from "@/components/chat/ChatInputForm";
 import ChatMessagesList from "@/components/chat/MessagesList";
 import CodeViewer from "@/components/code-viewer";
 import { useChat } from "@/hooks/useChat";
-import { useMemo } from "react";
 
 export default function ChatPage() {
-  const { messages } = useChat();
-
-  const latestIfcFileContent = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].ifcFileContent) {
-        return messages[i].ifcFileContent;
-      }
-    }
-    return null;
-  }, [messages]);
+  const { selectedIfcFile } = useChat();
 
   return (
     <div className="h-screen w-screen flex">
@@ -28,9 +18,12 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {latestIfcFileContent && (
+      {selectedIfcFile && (
         <div className="flex flex-1 max-w-[50%] transition-all ease-in-out">
-          <CodeViewer code={latestIfcFileContent || ""} fileName="test.ifc" />
+          <CodeViewer
+            code={selectedIfcFile.content || ""}
+            fileName="test.ifc"
+          />
         </div>
       )}
     </div>

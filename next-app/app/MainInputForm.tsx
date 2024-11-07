@@ -82,7 +82,7 @@ export default function MainInputForm() {
         onKeyDown={handleKeyDown}
         value={input}
         autoFocus
-        className="resize-none h-11 min-h-[45px] w-full rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 mt-2 text-base"
+        className="resize-none h-11 min-h-[45px] max-h-[400px] w-full rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 mt-2 text-base"
       />
 
       <div className="w-full flex justify-end p-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -56,6 +56,19 @@ export default function CodeViewer({ code, fileName }: CodeViewerProps) {
     ));
   };
 
+  const handleDownload = () => {
+    const formattedContent = code.replace(/\\n/g, "\n");
+    const blob = new Blob([formattedContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName || "download.txt"; // Default filename if none provided
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full w-full flex flex-col rounded-lg overflow-hidden shadow-lg bg-white text-gray-800 border border-gray-200">
       {fileName && (
@@ -63,18 +76,30 @@ export default function CodeViewer({ code, fileName }: CodeViewerProps) {
           <span className="text-sm font-semibold text-gray-600">
             {fileName}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => copyToClipboard(code)}
-            aria-label={isCopied ? "Copied to clipboard" : "Copy to clipboard"}
-          >
-            {isCopied ? (
-              <Check className="h-4 w-4 text-green-600" />
-            ) : (
-              <Copy className="h-4 w-4 text-gray-600" />
-            )}
-          </Button>
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDownload}
+              aria-label="Download file"
+            >
+              <Download className="h-4 w-4 text-gray-600" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyToClipboard(code)}
+              aria-label={
+                isCopied ? "Copied to clipboard" : "Copy to clipboard"
+              }
+            >
+              {isCopied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-gray-600" />
+              )}
+            </Button>
+          </div>
         </div>
       )}
       <div className="flex-grow relative overflow-auto">

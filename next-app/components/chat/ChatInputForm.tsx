@@ -110,7 +110,6 @@ export default function ChatInputForm() {
         onClick={(e) => {
           e.preventDefault();
           if (generating) {
-            // If currently generating, abort the ongoing request
             handleAbort();
           } else {
             handleSubmit(e);
@@ -118,9 +117,9 @@ export default function ChatInputForm() {
         }}
       >
         {generating ? (
-          <StopCircle className="w-8 h-8" />
+          <StopCircle className="w-5" />
         ) : (
-          <CheckIcon className="w-8 h-8" />
+          <CheckIcon className="w-5" />
         )}
       </Button>
     </form>
