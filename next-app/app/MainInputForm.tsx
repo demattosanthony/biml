@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 export default function MainInputForm() {
   const {
     generateText,
-    initializeChat,
+    // initializeChat,
     addMessage,
     updateLatestAssistantMessage,
   } = useChat();
@@ -68,15 +68,15 @@ export default function MainInputForm() {
     }
   }, [input]);
 
-  useEffect(() => {
-    initializeChat();
-  }, []);
+  // useEffect(() => {
+  //   initializeChat();
+  // }, []);
 
   return (
     <form className="relative h-auto z-50 " onSubmit={handleSubmit}>
       <Textarea
         placeholder="Ask anything..."
-        className="shadow-sm ring-0 focus:ring-0 focus:border-2 focus-visible:ring-0 resize-none min-h-[96px] max-h-[450px] w-[734px] p-4 pb-14 text-sm rounded-3xl"
+        className="shadow-sm ring-0 focus:ring-0 focus:border-2 focus-visible:ring-0 resize-none h-[96px] min-h-[96px] max-h-[450px] w-[734px] p-4 pb-14 text-sm rounded-3xl"
         onChange={(e) => setInput(e.target.value)}
         ref={textAreaRef}
         onKeyDown={handleKeyDown}

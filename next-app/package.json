@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 4001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -32,8 +32,8 @@
     "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.167.1",
-    "web-ifc": "^0.0.56",
+    "three": "^0.170.0",
+    "web-ifc": "^0.0.61",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

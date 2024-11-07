@@ -8,97 +8,160 @@ export enum MessageRole {
   assistant = "assistant",
 }
 
-// Type definition for a function call
-// export type FunctionCall = {
-//   name: string;
-//   arguments: string;
-//   executing: boolean;
-// };
-
 // Type definition for a chat message
 export type ChatMessage = {
   role: MessageRole;
   content: string | null;
-  // function_call?: FunctionCall;
   id?: string;
-  // performedWebSearch?: boolean;
-  // sources?: {
-  //   content: string;
-  //   metadata: {
-  //     document_url: string;
-  //     page_number: number;
-  //     filename: string;
-  //   };
-  // }[];
+  ifcFileContent?: string;
+  isStreamingIfc?: boolean;
 };
 
-export const messagesAtom = atom<ChatMessage[]>([
-  // {
-  //   role: MessageRole.user,
-  //   content: "Hello",
-  // },
-  // {
-  //   role: MessageRole.assistant,
-  //   content: "Hello, how can I help you?",
-  // },
-]);
+export const messagesAtom = atom<ChatMessage[]>([]);
 const generatingAtom = atom(false);
+const abortControllerAtom = atom<AbortController>(new AbortController());
+const bufferAtom = atom("");
 
 export function useChat() {
   const [messages, setMessages] = useAtom(messagesAtom);
-
   const [generating, setGenerating] = useAtom(generatingAtom);
-
-  // useEffect(() => {
-  //   if (
-  //     messages.length === 0
-  //   ) {
-  //     setMessages(initialMessages.reverse());
-  //   }
-  // }, [threadId, initialMessages, messages.length, setMessages]);
-
-  const initializeChat = async () => {
-    // const thread = await apiClient.createAIThread();
-    // setThreadId(thread.id as string);
-  };
+  const [abortController, setAbortController] = useAtom(abortControllerAtom);
+  const [buffer, setBuffer] = useAtom(bufferAtom);
 
   const addMessage = (newMessage: ChatMessage) => {
     setMessages((prevMessages) => [...prevMessages, newMessage]);
   };
 
-  const updateLatestAssistantMessage = (updatedContent: string) => {
-    setMessages((prevMessages) => {
-      let updatedMessages = [...prevMessages];
-      let lastMessage = updatedMessages[updatedMessages.length - 1];
-      lastMessage.content += updatedContent;
+  const handleAbort = () => {
+    if (abortController) {
+      console.log("Aborting generation...");
+      abortController.abort();
+      setGenerating(false);
+      setAbortController(new AbortController());
+      setBuffer("");
+    }
+  };
 
-      return updatedMessages;
+  const updateLatestAssistantMessage = (updatedContent: string) => {
+    setBuffer((prevBuffer) => {
+      const newBuffer = prevBuffer + updatedContent;
+
+      // Handle streaming IFC content
+      if (newBuffer.includes("<ifc>")) {
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages];
+          const lastMessage = {
+            ...updatedMessages[updatedMessages.length - 1],
+          };
+
+          const ifcStartIndex = newBuffer.indexOf("<ifc>");
+          const ifcEndIndex = newBuffer.includes("</ifc>")
+            ? newBuffer.indexOf("</ifc>")
+            : newBuffer.length;
+
+          // If we're not already streaming IFC, preserve existing content and start streaming
+          if (!lastMessage.isStreamingIfc) {
+            lastMessage.isStreamingIfc = true;
+            // Keep any existing content and add content before the IFC tag
+            const existingContent = lastMessage.content || "";
+            const contentBeforeIfc = newBuffer.slice(0, ifcStartIndex);
+            lastMessage.content = existingContent + contentBeforeIfc;
+            lastMessage.ifcFileContent = "";
+          }
+
+          // Extract and update IFC content - only up to the closing tag if it exists
+          const ifcContent = newBuffer.slice(
+            ifcStartIndex + "<ifc>".length,
+            ifcEndIndex
+          );
+          lastMessage.ifcFileContent = ifcContent;
+
+          // If we have the closing tag, finalize the IFC block
+          if (newBuffer.includes("</ifc>")) {
+            lastMessage.isStreamingIfc = false;
+            const afterIfcIndex = newBuffer.indexOf("</ifc>") + "</ifc>".length;
+            const remainingContent = newBuffer.slice(afterIfcIndex);
+            if (remainingContent) {
+              lastMessage.content = lastMessage.content + remainingContent;
+            }
+          }
+
+          updatedMessages[updatedMessages.length - 1] = lastMessage;
+          return updatedMessages;
+        });
+
+        // Keep buffering if we're still in IFC block
+        if (!newBuffer.includes("</ifc>")) {
+          return newBuffer;
+        }
+        // Clear buffer after IFC block is complete
+        return newBuffer.slice(newBuffer.indexOf("</ifc>") + "</ifc>".length);
+      }
+
+      // Handle non-IFC content normally
+      if (!newBuffer.includes("<ifc>")) {
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages];
+          const lastMessage = {
+            ...updatedMessages[updatedMessages.length - 1],
+          };
+          lastMessage.content = (lastMessage.content || "") + updatedContent;
+          updatedMessages[updatedMessages.length - 1] = lastMessage;
+          return updatedMessages;
+        });
+        return "";
+      }
+
+      return newBuffer;
     });
   };
 
   const generateText = async (messagesToSend: ChatMessage[]) => {
     setGenerating(true);
+    setBuffer("");
 
     const messageHandler = (message: string) => {
-      console.log(message);
       updateLatestAssistantMessage(message);
     };
-    const gen = await api.generateText(messagesToSend as any);
-    gen(messageHandler, () => {
+
+    try {
+      const gen = await api.generateText(messagesToSend);
+      await gen(
+        messageHandler,
+        () => {
+          if (buffer) {
+            setMessages((prevMessages) => {
+              const updatedMessages = [...prevMessages];
+              const lastMessage = {
+                ...updatedMessages[updatedMessages.length - 1],
+              };
+              lastMessage.content = (lastMessage.content || "") + buffer;
+              updatedMessages[updatedMessages.length - 1] = lastMessage;
+              return updatedMessages;
+            });
+            setBuffer("");
+          }
+          setGenerating(false);
+        },
+        abortController.signal
+      );
+    } catch (error) {
+      console.log("Generation aborted or failed", error);
+    } finally {
       setGenerating(false);
-    });
+      setBuffer("");
+    }
   };
 
   const resetChat = () => {
     setMessages([]);
+    setBuffer("");
   };
 
   return {
     messages,
-    setGenerating,
+    handleAbort,
     generating,
-    setMessages,
-    initializeChat,
     addMessage,
     updateLatestAssistantMessage,
     resetChat,

@@ -1,3 +1,4 @@
+import { ChatMessage } from "@/hooks/useChat";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 class ApiClient {
   private baseUrl: string;
@@ -7,29 +8,25 @@ class ApiClient {
   }
 
   async generateText(
-    messages: {
-      role: string;
-      content: string;
-    }[]
+    messages: ChatMessage[]
   ): Promise<
     (
       onMessage: (message: string) => void,
-      onDone: () => void
-    ) => Promise<() => void>
+      onDone: () => void,
+      signal: AbortSignal
+    ) => Promise<void>
   > {
-    const url = `${this.baseUrl}/api/inference`;
+    const url = `${this.baseUrl}/ai/inference`;
 
     console.log("Running thread");
     console.log(url);
     console.log(messages);
 
-    return async (onMessage: (message: string) => void, onDone: () => void) => {
-      const controller = new AbortController();
-
-      const abortFunction = () => {
-        controller.abort();
-      };
-
+    return async (
+      onMessage: (message: string) => void,
+      onDone: () => void,
+      signal: AbortSignal
+    ) => {
       try {
         await fetchEventSource(url, {
           method: "POST",
@@ -37,7 +34,7 @@ class ApiClient {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ messages }),
-          signal: controller.signal,
+          signal,
           onmessage: (event) => {
             if (event.event === "message") {
               const parsedData = JSON.parse(event.data);
@@ -46,7 +43,6 @@ class ApiClient {
             }
 
             if (event.event === "DONE") {
-              controller.abort();
               onDone();
             }
           },
@@ -62,12 +58,10 @@ class ApiClient {
         console.error("Error in runThread:", error);
         throw error;
       }
-
-      return abortFunction;
     };
   }
 }
 
-const api = new ApiClient("http://localhost:3000");
+const api = new ApiClient(process.env.NEXT_PUBLIC_API_URL!);
 
 export default api;

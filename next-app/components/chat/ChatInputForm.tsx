@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, Loader2, Paperclip, SendIcon } from "lucide-react";
+import { CheckIcon, Paperclip, StopCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -14,13 +14,12 @@ export default function ChatInputForm() {
   const {
     addMessage,
     messages,
-    updateLatestAssistantMessage,
     resetChat,
-    setGenerating,
     generateText,
+    handleAbort,
+    generating,
   } = useChat();
 
-  // const { input, setInput, handleSubmit, generating, resetChat } = useChat();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -48,7 +47,7 @@ export default function ChatInputForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setGenerating(true);
+    // setGenerating(true);
 
     addMessage({
       role: MessageRole.user,
@@ -107,13 +106,21 @@ export default function ChatInputForm() {
         className="p-1 absolute right-2 bottom-[12px] h-9 w-9 rounded-full"
         type="submit"
         ref={buttonRef}
+        onClick={(e) => {
+          e.preventDefault();
+          if (generating) {
+            // If currently generating, abort the ongoing request
+            handleAbort();
+          } else {
+            handleSubmit(e);
+          }
+        }}
       >
-        <CheckIcon className="w-8 h-8" />
-        {/* {generating ? (
-          <StopIcon className="w-8 h-8" />
+        {generating ? (
+          <StopCircle className="w-8 h-8" />
         ) : (
           <CheckIcon className="w-8 h-8" />
-        )} */}
+        )}
       </Button>
     </form>
   );
