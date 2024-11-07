@@ -12,7 +12,6 @@ export default function MainInputForm() {
     generateText,
     // initializeChat,
     addMessage,
-    updateLatestAssistantMessage,
   } = useChat();
 
   const [input, setInput] = useState("");
@@ -37,7 +36,6 @@ export default function MainInputForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // await apiClient.sendMessage(threadId as string, input);
     router.push(`/chat`);
 
     addMessage({
@@ -62,7 +60,7 @@ export default function MainInputForm() {
 
   useEffect(() => {
     if (textAreaRef.current) {
-      textAreaRef.current.style.height = "96px";
+      textAreaRef.current.style.height = "40px";
       textAreaRef.current.style.height =
         textAreaRef.current.scrollHeight + "px";
     }
@@ -73,35 +71,32 @@ export default function MainInputForm() {
   // }, []);
 
   return (
-    <form className="relative h-auto z-50 " onSubmit={handleSubmit}>
+    <form
+      className="relative h-auto min-h-[96px] max-h-[450px] w-[734px] max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border-2 border-gray-100"
+      onSubmit={handleSubmit}
+    >
       <Textarea
         placeholder="Ask anything..."
-        className="shadow-sm ring-0 focus:ring-0 focus:border-2 focus-visible:ring-0 resize-none h-[96px] min-h-[96px] max-h-[450px] w-[734px] p-4 pb-14 text-sm rounded-3xl"
         onChange={(e) => setInput(e.target.value)}
         ref={textAreaRef}
         onKeyDown={handleKeyDown}
         value={input}
         autoFocus
+        className="resize-none h-11 min-h-[45px] w-full rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 mt-2 text-base"
       />
 
-      <div className="absolute bottom-2 left-4">
-        <div className="flex items-center gap-1">
-          {/* <Button variant={"outline"} size={"icon"}>
-            <Paperclip className="w-5 h-5" />
-          </Button> */}
-        </div>
+      <div className="w-full flex justify-end p-2">
+        <Button
+          ref={buttonRef}
+          className=" rounded-full h-[30px] w-[30px]"
+          size="icon"
+          variant="default"
+          type="submit"
+          disabled={!input}
+        >
+          <ArrowRight className="w-5 h-5" />
+        </Button>
       </div>
-
-      <Button
-        ref={buttonRef}
-        className="absolute bottom-2 right-2 rounded-full h-[30px] w-[30px]"
-        size={"icon"}
-        variant={"default"}
-        type="submit"
-        disabled={!input}
-      >
-        <ArrowRight className="w-5 h-5" />
-      </Button>
     </form>
   );
 }

@@ -59,6 +59,8 @@ export default function ChatInputForm() {
       content: "",
     });
 
+    setInput("");
+
     await generateText([
       ...messages,
       {
@@ -66,7 +68,6 @@ export default function ChatInputForm() {
         content: input,
       },
     ]);
-    setInput("");
   };
 
   useEffect(() => {

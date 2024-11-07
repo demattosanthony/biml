@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { FileDown } from "lucide-react";
 import {
   TypographyH1,
   TypographyH2,
@@ -19,11 +20,55 @@ import {
   TypographyInlineCode,
 } from "./Typography";
 
-// CodeBlock component for rendering code with copy functionality
+// IFC Button component
+const IFCButton = ({ content }: { content: string }) => {
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "model.ifc";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="flex justify-center my-4">
+      <button
+        onClick={handleDownload}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      >
+        <FileDown size={20} />
+        Download IFC Model
+      </button>
+    </div>
+  );
+};
+
+// Custom component to handle text content with IFC tags
+const TextContent = ({ content }: { content: string }) => {
+  const parts = content.split(/(<ifc>.*?<\/ifc>)/gs);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith("<ifc>") && part.endsWith("</ifc>")) {
+          const ifcContent = part.replace(/<ifc>|<\/ifc>/g, "");
+          return <IFCButton key={index} content={ifcContent} />;
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+};
+
+// CodeBlock component remains the same
 const CodeBlock: React.FC<{
   className?: string;
   children: React.ReactNode;
-}> = ({ className = "", children }) => {
+}> = ({ children, className = "" }) => {
   const match = /language-(\w+)/.exec(className || "");
   const codeString = String(children).trim();
   const [buttonText, setButtonText] = useState("Copy");
@@ -32,7 +77,6 @@ const CodeBlock: React.FC<{
     navigator.clipboard
       .writeText(codeString)
       .then(() => {
-        console.log("Code copied to clipboard");
         setButtonText("Copied!");
         setTimeout(() => setButtonText("Copy"), 2000);
       })
@@ -68,7 +112,6 @@ const CodeBlock: React.FC<{
   );
 };
 
-// MarkdownViewer component for rendering markdown content
 const MarkdownViewer: React.FC<{ content: string }> = ({ content }) => (
   <ReactMarkdown
     components={{
@@ -76,7 +119,11 @@ const MarkdownViewer: React.FC<{ content: string }> = ({ content }) => (
       h2: ({ children }) => <TypographyH2>{children}</TypographyH2>,
       h3: ({ children }) => <TypographyH3>{children}</TypographyH3>,
       h4: ({ children }) => <TypographyH4>{children}</TypographyH4>,
-      p: ({ children }) => <TypographyP>{children}</TypographyP>,
+      p: ({ children }) => (
+        <TypographyP>
+          <TextContent content={String(children)} />
+        </TypographyP>
+      ),
       blockquote: ({ children }) => (
         <TypographyBlockquote>{children}</TypographyBlockquote>
       ),
