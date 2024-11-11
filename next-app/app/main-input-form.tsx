@@ -8,11 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function MainInputForm() {
-  const {
-    generateText,
-    // initializeChat,
-    addMessage,
-  } = useChat();
+  const { generateText, resetChat, addMessage } = useChat();
 
   const [input, setInput] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -36,6 +32,7 @@ export default function MainInputForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (input.trim() === "") return;
     router.push(`/chat`);
 
     addMessage({
@@ -66,13 +63,13 @@ export default function MainInputForm() {
     }
   }, [input]);
 
-  // useEffect(() => {
-  //   initializeChat();
-  // }, []);
+  useEffect(() => {
+    resetChat();
+  }, []);
 
   return (
     <form
-      className="relative h-auto min-h-[96px] max-h-[450px] w-[734px] max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border-2 border-gray-100"
+      className="relative h-auto min-h-[96px] max-h-[450px] w-[734px] max-w-4xl mx-auto rounded-3xl shadow-sm border-2 border-secondary"
       onSubmit={handleSubmit}
     >
       <Textarea

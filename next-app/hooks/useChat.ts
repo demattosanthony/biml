@@ -1,6 +1,5 @@
 import api from "@/lib/api";
 import { atom, useAtom } from "jotai";
-import { useState } from "react";
 
 // Enum to define the roles in the chat
 export enum MessageRole {
@@ -104,7 +103,6 @@ export const messagesAtom = atom<ChatMessage[]>([
 ]);
 const generatingAtom = atom(false);
 const abortControllerAtom = atom<AbortController>(new AbortController());
-const bufferAtom = atom("");
 const selectedIfcFileAtom = atom<{
   index: number;
   content: string;
@@ -115,7 +113,6 @@ export function useChat() {
   const [messages, setMessages] = useAtom(messagesAtom);
   const [generating, setGenerating] = useAtom(generatingAtom);
   const [abortController, setAbortController] = useAtom(abortControllerAtom);
-  const [buffer, setBuffer] = useAtom(bufferAtom);
   const [artifcatMode, setArtifactMode] = useAtom(artifactModeAtom);
 
   const [selectedIfcFile, setSelectedIfcFile] = useAtom(selectedIfcFileAtom);
@@ -130,7 +127,6 @@ export function useChat() {
       abortController.abort();
       setGenerating(false);
       setAbortController(new AbortController());
-      setBuffer("");
     }
   };
 
@@ -146,7 +142,6 @@ export function useChat() {
 
   const generateText = async (messagesToSend: ChatMessage[]) => {
     setGenerating(true);
-    setBuffer("");
 
     const messageHandler = (message: string) => {
       updateLatestAssistantMessage(message);
@@ -157,18 +152,6 @@ export function useChat() {
       await gen(
         messageHandler,
         () => {
-          if (buffer) {
-            setMessages((prevMessages) => {
-              const updatedMessages = [...prevMessages];
-              const lastMessage = {
-                ...updatedMessages[updatedMessages.length - 1],
-              };
-              lastMessage.content = (lastMessage.content || "") + buffer;
-              updatedMessages[updatedMessages.length - 1] = lastMessage;
-              return updatedMessages;
-            });
-            setBuffer("");
-          }
           setGenerating(false);
         },
         abortController.signal
@@ -177,13 +160,12 @@ export function useChat() {
       console.log("Generation aborted or failed", error);
     } finally {
       setGenerating(false);
-      setBuffer("");
     }
   };
 
   const resetChat = () => {
     setMessages([]);
-    setBuffer("");
+    setSelectedIfcFile(null);
   };
 
   return {

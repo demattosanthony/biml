@@ -18,10 +18,6 @@ class ApiClient {
   > {
     const url = `${this.baseUrl}/ai/inference`;
 
-    console.log("Running thread");
-    console.log(url);
-    console.log(messages);
-
     return async (
       onMessage: (message: string) => void,
       onDone: () => void,
