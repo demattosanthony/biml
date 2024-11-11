@@ -20,7 +20,7 @@ export default function ModelViewerUploadPage() {
         <div className="flex flex-1 h-full w-full">
           <IFCModelCard />
 
-          <IFCViewer files={models} modelName="test.ifc" />
+          <IFCViewer files={models} />
         </div>
       )}
     </div>

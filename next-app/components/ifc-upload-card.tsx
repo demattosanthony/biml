@@ -5,8 +5,6 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import useIfcStore from "@/stores/useIfcStore";
-import { useMutation } from "@tanstack/react-query";
 import { File, FileBox, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -19,7 +17,7 @@ export default function IFCFileUploadCard({
 }) {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
-  const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
+  // const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
 
   // const uploadIfcModelMutation = useMutation({
   //   mutationFn: async (file: File) => {
@@ -61,18 +59,7 @@ export default function IFCFileUploadCard({
   });
 
   function uploadIFCFiles() {
-    setIfcFiles(files);
-
     onUpload(files);
-
-    // uploadIfcModelMutation.mutate(files[0], {
-    //   onSuccess: (data) => {
-    //     const facilityId = data.ifcModel.facilityId;
-
-    //     router.push(`viewer/${facilityId}`);
-    //   },
-    // });
-
     setFiles([]); // Clear the files
   }
 

@@ -3,12 +3,13 @@
 import { FileBox } from "lucide-react";
 import * as FRAGS from "@thatopen/fragments";
 import { useState } from "react";
-import useIfcStore from "@/stores/useIfcStore";
 import { Switch } from "./ui/switch";
+import { TypographyH3 } from "./typography";
+import useIfcViewerStore from "@/stores/useIfcViewerStore";
 
 export default function IFCModelCard() {
-  const models = useIfcStore((state) => state.models);
-  const hider = useIfcStore((state) => state.hider);
+  const models = useIfcViewerStore((state) => state.models);
+  const hider = useIfcViewerStore((state) => state.hider);
   const [visibility, setVisibility] = useState<{ [key: number]: boolean }>({});
 
   const toggleVisibility = (model: any, index: number) => {
@@ -29,7 +30,8 @@ export default function IFCModelCard() {
   };
 
   return (
-    <div className="w-[280px] max-w-[280px] h-full border-r-2 flex flex-col p-2">
+    <div className="min-w-[280px] w-auto max-w-[375px] h-full border-r-2 flex flex-col p-2">
+      <TypographyH3>Models</TypographyH3>
       <div className="flex flex-1 flex-col space-y-2">
         {models?.map((model, index) => (
           <div

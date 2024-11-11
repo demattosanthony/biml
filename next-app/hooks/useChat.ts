@@ -116,7 +116,7 @@ export function useChat() {
   const [generating, setGenerating] = useAtom(generatingAtom);
   const [abortController, setAbortController] = useAtom(abortControllerAtom);
   const [buffer, setBuffer] = useAtom(bufferAtom);
-  const [artifcatMode, setArtifactMode] = useAtom(artifactModeAtom);
+  const [artifactMode, setArtifactMode] = useAtom(artifactModeAtom);
 
   const [selectedIfcFile, setSelectedIfcFile] = useAtom(selectedIfcFileAtom);
 
@@ -196,7 +196,7 @@ export function useChat() {
     updateLatestAssistantMessage,
     resetChat,
     generateText,
-    artifcatMode,
+    artifactMode,
     setArtifactMode,
   };
 }

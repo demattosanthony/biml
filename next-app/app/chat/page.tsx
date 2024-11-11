@@ -10,7 +10,7 @@ import useClipboard from "@/hooks/useClipboard";
 import { Eye, Download, Check, Copy } from "lucide-react";
 
 export default function ChatPage() {
-  const { selectedIfcFile, artifcatMode, setArtifactMode } = useChat();
+  const { selectedIfcFile, artifactMode, setArtifactMode } = useChat();
   const fileName = "test.ifc";
 
   const handleDownload = () => {
@@ -53,14 +53,14 @@ export default function ChatPage() {
               <div className="flex justify-between items-center px-4 py-2 bg-gray-100 border-b border-gray-200">
                 <div className="gap-1 items-center">
                   <Button
-                    variant={artifcatMode === "preview" ? "default" : "ghost"}
+                    variant={artifactMode === "preview" ? "default" : "ghost"}
                     onClick={() => setArtifactMode("preview")}
                   >
                     <Eye className="h-4 w-4 text-white mr-1" />
                     Preview
                   </Button>
                   <Button
-                    variant={artifcatMode === "file" ? "default" : "ghost"}
+                    variant={artifactMode === "file" ? "default" : "ghost"}
                     onClick={() => setArtifactMode("file")}
                   >
                     test.ifc
@@ -95,14 +95,13 @@ export default function ChatPage() {
               </div>
             )}
 
-            {artifcatMode === "preview" ? (
+            {artifactMode === "preview" ? (
               <IFCViewer
-                blobs={[
-                  new Blob([selectedIfcFile?.content || ""], {
+                files={[
+                  new File([selectedIfcFile?.content || ""], "test.ifc", {
                     type: "text/plain",
                   }),
                 ]}
-                modelName="test.ifc"
               />
             ) : (
               <CodeViewer
