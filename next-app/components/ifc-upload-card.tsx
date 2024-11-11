@@ -12,39 +12,43 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-export default function IFCFileUploadCard() {
+export default function IFCFileUploadCard({
+  onUpload,
+}: {
+  onUpload: (file: File[]) => void;
+}) {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
 
-  const uploadIfcModelMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const facility = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/facilities/create`,
-        {
-          method: "POST",
-        }
-      );
+  // const uploadIfcModelMutation = useMutation({
+  //   mutationFn: async (file: File) => {
+  //     const facility = await fetch(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/facilities/create`,
+  //       {
+  //         method: "POST",
+  //       }
+  //     );
 
-      const data = await facility.json();
+  //     const data = await facility.json();
 
-      const id = data.id;
+  //     const id = data.id;
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("facilityId", id);
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     formData.append("facilityId", id);
 
-      const ifc_model = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ifc/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+  //     const ifc_model = await fetch(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/ifc/upload`,
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //       }
+  //     );
 
-      return await ifc_model.json();
-    },
-  });
+  //     return await ifc_model.json();
+  //   },
+  // });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Add to the existing files
@@ -59,13 +63,15 @@ export default function IFCFileUploadCard() {
   function uploadIFCFiles() {
     setIfcFiles(files);
 
-    uploadIfcModelMutation.mutate(files[0], {
-      onSuccess: (data) => {
-        const facilityId = data.ifcModel.facilityId;
+    onUpload(files);
 
-        router.push(`viewer/${facilityId}`);
-      },
-    });
+    // uploadIfcModelMutation.mutate(files[0], {
+    //   onSuccess: (data) => {
+    //     const facilityId = data.ifcModel.facilityId;
+
+    //     router.push(`viewer/${facilityId}`);
+    //   },
+    // });
 
     setFiles([]); // Clear the files
   }

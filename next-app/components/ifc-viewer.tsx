@@ -10,10 +10,10 @@ import { Loader2 } from "lucide-react";
 import useIfcStore from "@/stores/useIfcStore";
 
 export default function IFCViewer({
-  blob,
+  blobs,
   modelName,
 }: {
-  blob: Blob;
+  blobs: Blob[];
   modelName: string;
 }) {
   const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
@@ -286,7 +286,7 @@ export default function IFCViewer({
     // Create the culler
     const cullers = components.get(OBC.Cullers);
     const culler = cullers.create(world);
-    // culler.config.threshold = 2;
+    culler.config.threshold = 200;
     setCuller(culler);
     world.camera.controls?.addEventListener("sleep", () => {
       culler.needsUpdate = true;
@@ -315,7 +315,16 @@ export default function IFCViewer({
     // Hide all excluded categories
 
     // await loadIfc(world, components, fragments, fragmentIfcLoader, culler);
-    await loadPlainIfcModel(fragmentIfcLoader, world, components, blob, culler);
+    for (const blob of blobs) {
+      await loadPlainIfcModel(
+        fragmentIfcLoader,
+        world,
+        components,
+        blob,
+        culler
+      );
+    }
+
     world.camera.updateAspect();
   }
 
@@ -326,7 +335,7 @@ export default function IFCViewer({
       fragments?.dispose();
       clearModels();
     };
-  }, [blob]);
+  }, [blobs]);
 
   const onSelection = useCallback(
     async (fragmentIdMap: { [fragmentId: string]: Set<number> }) => {

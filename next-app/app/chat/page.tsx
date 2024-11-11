@@ -97,11 +97,11 @@ export default function ChatPage() {
 
             {artifcatMode === "preview" ? (
               <IFCViewer
-                blob={
+                blobs={[
                   new Blob([selectedIfcFile?.content || ""], {
                     type: "text/plain",
-                  })
-                }
+                  }),
+                ]}
                 modelName="test.ifc"
               />
             ) : (
