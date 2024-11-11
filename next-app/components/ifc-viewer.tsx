@@ -10,10 +10,10 @@ import { Loader2 } from "lucide-react";
 import useIfcStore from "@/stores/useIfcStore";
 
 export default function IFCViewer({
-  blobs,
+  files,
   modelName,
 }: {
-  blobs: Blob[];
+  files: File[];
   modelName: string;
 }) {
   const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
@@ -146,22 +146,22 @@ export default function IFCViewer({
     fragmentIfcLoader: OBC.IfcLoader,
     world: OBC.World,
     components: OBC.Components,
-    file: Blob,
-    culler: OBC.MeshCullerRenderer
+    file: File,
+    culler?: OBC.MeshCullerRenderer
   ) {
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = await fragmentIfcLoader.load(buffer);
     model.name = "example";
     world.scene.three.add(model);
-    addModel({ fragmentsGroup: model, name: "test.ifc" });
+    addModel({ fragmentsGroup: model, name: file.name });
     // End loading ifc
-    for (const child of model.children) {
-      if (child instanceof THREE.InstancedMesh) {
-        culler.add(child);
-      }
-    }
-    culler.needsUpdate = true;
+    // for (const child of model.children) {
+    //   if (child instanceof THREE.InstancedMesh) {
+    //     culler.add(child);
+    //   }
+    // }
+    // culler.needsUpdate = true;
     const fragmentBbox = components.get(OBC.BoundingBoxer);
     fragmentBbox.add(model);
     const bbox = fragmentBbox.getMesh();
@@ -247,16 +247,16 @@ export default function IFCViewer({
 
     await fragmentIfcLoader.setup();
 
-    // const excludedCats = [
-    //   WEBIFC.IFCTENDONANCHOR,
-    //   WEBIFC.IFCREINFORCINGBAR,
-    //   WEBIFC.IFCREINFORCINGELEMENT,
-    //   WEBIFC.IFCSPACE,
-    // ];
+    const excludedCats = [
+      WEBIFC.IFCTENDONANCHOR,
+      WEBIFC.IFCREINFORCINGBAR,
+      WEBIFC.IFCREINFORCINGELEMENT,
+      WEBIFC.IFCSPACE,
+    ];
 
-    // for (const cat of excludedCats) {
-    //   fragmentIfcLoader.settings.excludedCategories.add(cat);
-    // }
+    for (const cat of excludedCats) {
+      fragmentIfcLoader.settings.excludedCategories.add(cat);
+    }
 
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
@@ -284,19 +284,19 @@ export default function IFCViewer({
     // });
 
     // Create the culler
-    const cullers = components.get(OBC.Cullers);
-    const culler = cullers.create(world);
-    culler.config.threshold = 200;
-    setCuller(culler);
-    world.camera.controls?.addEventListener("sleep", () => {
-      culler.needsUpdate = true;
-    });
-    world.camera.controls?.addEventListener("controlend", () => {
-      culler.needsUpdate = true;
-    });
-    world.camera.controls?.addEventListener("transitionstart", () => {
-      culler.needsUpdate = true;
-    });
+    // const cullers = components.get(OBC.Cullers);
+    // const culler = cullers.create(world);
+    // culler.config.threshold = 200;
+    // setCuller(culler);
+    // world.camera.controls?.addEventListener("sleep", () => {
+    //   culler.needsUpdate = true;
+    // });
+    // world.camera.controls?.addEventListener("controlend", () => {
+    //   culler.needsUpdate = true;
+    // });
+    // world.camera.controls?.addEventListener("transitionstart", () => {
+    //   culler.needsUpdate = true;
+    // });
 
     // Highligher
     const highlighter = components.get(OBCF.Highlighter);
@@ -315,13 +315,13 @@ export default function IFCViewer({
     // Hide all excluded categories
 
     // await loadIfc(world, components, fragments, fragmentIfcLoader, culler);
-    for (const blob of blobs) {
+    for (const file of files) {
       await loadPlainIfcModel(
         fragmentIfcLoader,
         world,
         components,
-        blob,
-        culler
+        file
+        // culler
       );
     }
 
@@ -335,7 +335,7 @@ export default function IFCViewer({
       fragments?.dispose();
       clearModels();
     };
-  }, [blobs]);
+  }, [files]);
 
   const onSelection = useCallback(
     async (fragmentIdMap: { [fragmentId: string]: Set<number> }) => {
@@ -361,17 +361,17 @@ export default function IFCViewer({
     };
   }, [onSelection]);
 
-  // useEffect(() => {
-  //   window.addEventListener("mousedown", handleMouseDown);
-  //   window.addEventListener("mouseup", handleMouseUp);
-  //   window.addEventListener("mousemove", handleMouseMove);
+  useEffect(() => {
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
 
-  //   return () => {
-  //     window.removeEventListener("mousedown", handleMouseDown);
-  //     window.removeEventListener("mouseup", handleMouseUp);
-  //     window.removeEventListener("mousemove", handleMouseMove);
-  //   };
-  // }, [handleMouseDown, handleMouseUp, handleMouseMove]);
+    return () => {
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [handleMouseDown, handleMouseUp, handleMouseMove]);
 
   return (
     <div
