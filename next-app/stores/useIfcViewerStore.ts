@@ -14,6 +14,7 @@ interface IFCViewerState {
   fragments: OBC.FragmentsManager | null;
   culler: OBC.MeshCullerRenderer | null;
   highlighter: OBCF.Highlighter | null;
+  plans: OBCF.Plans | null;
   models: IFCModel[];
   hider: OBC.Hider | null;
   actions: {
@@ -21,6 +22,7 @@ interface IFCViewerState {
     setFragments: (fragments: OBC.FragmentsManager) => void;
     setCuller: (culler: OBC.MeshCullerRenderer) => void;
     setHighlighter: (highlighter: OBCF.Highlighter) => void;
+    setPlans: (plans: OBCF.Plans) => void;
     addModel: (model: IFCModel) => void;
     clearModels: () => void;
     setHider: (hider: OBC.Hider) => void;
@@ -32,6 +34,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   fragments: null,
   culler: null,
   highlighter: null,
+  plans: null,
   ifcFiles: [],
   models: [],
   hider: null,
@@ -40,6 +43,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
     setFragments: (fragments) => set({ fragments }),
     setCuller: (culler) => set({ culler }),
     setHighlighter: (highlighter) => set({ highlighter }),
+    setPlans: (plans) => set({ plans }),
     addModel: (model) => {
       set((state) => {
         return {

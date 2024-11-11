@@ -6,10 +6,14 @@ import { useState } from "react";
 import { Switch } from "./ui/switch";
 import { TypographyH3 } from "./typography";
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
+import { Button } from "./ui/button";
 
 export default function IFCModelCard() {
   const models = useIfcViewerStore((state) => state.models);
   const hider = useIfcViewerStore((state) => state.hider);
+  const plans = useIfcViewerStore((state) => state.plans);
+  const culler = useIfcViewerStore((state) => state.culler);
+
   const [visibility, setVisibility] = useState<{ [key: number]: boolean }>({});
 
   const toggleVisibility = (model: any, index: number) => {
@@ -52,6 +56,35 @@ export default function IFCModelCard() {
           </div>
         ))}
       </div>
+
+      {/** Plans List */}
+      {plans && (
+        <div className="flex flex-col ">
+          {plans?.list.map((plan) => (
+            <div
+              key={plan.id}
+              className="p-4 cursor-pointer hover:bg-secondary rounded-lg"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                plans?.goTo(plan.id);
+                if (culler) culler.needsUpdate = true;
+              }}
+            >
+              {plan.name}
+            </div>
+          ))}
+
+          <Button
+            onClick={() => {
+              plans?.exitPlanView();
+              if (culler) culler.needsUpdate = true;
+            }}
+          >
+            Exit Plan View
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

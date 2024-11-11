@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as WEBIFC from "web-ifc";
+import * as THREE from "three";
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
 import { useIfcLoader } from "./useIfcLoader";
 import { useElementSelected } from "./useElementSelected";
@@ -33,14 +34,14 @@ export function useSetup(files: File[]) {
     const worlds = components.get(OBC.Worlds);
     const world = worlds.create<
       OBC.SimpleScene,
-      OBC.SimpleCamera,
+      OBC.OrthoPerspectiveCamera,
       OBC.SimpleRenderer
     >();
 
     // Configure the world and add it to Zustand state
     world.scene = new OBC.SimpleScene(components);
     world.renderer = new OBC.SimpleRenderer(components, container);
-    world.camera = new OBC.SimpleCamera(components);
+    world.camera = new OBC.OrthoPerspectiveCamera(components);
     setWorld(world);
 
     // world.renderer.postproduction.enabled = true;
@@ -80,8 +81,8 @@ export function useSetup(files: File[]) {
     const highlighter = components.get(OBCF.Highlighter);
     highlighter.setup({
       world,
-      // hoverColor: new THREE.Color(0xffffff),
-      // selectionColor: new THREE.Color(0xffffff),
+      hoverColor: new THREE.Color(0xffffff),
+      selectionColor: new THREE.Color(0x000000),
     });
     highlighter.zoomToSelection = true;
     setHighlighter(highlighter);

@@ -58,17 +58,17 @@ export function useMouseControls() {
     [isMouseDown, world]
   );
 
-  useEffect(() => {
-    window.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("mousemove", handleMouseMove);
+  // useEffect(() => {
+  //   window.addEventListener("mousedown", handleMouseDown);
+  //   window.addEventListener("mouseup", handleMouseUp);
+  //   window.addEventListener("mousemove", handleMouseMove);
 
-    return () => {
-      window.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, [handleMouseDown, handleMouseUp, handleMouseMove]);
+  //   return () => {
+  //     window.removeEventListener("mousedown", handleMouseDown);
+  //     window.removeEventListener("mouseup", handleMouseUp);
+  //     window.removeEventListener("mousemove", handleMouseMove);
+  //   };
+  // }, [handleMouseDown, handleMouseUp, handleMouseMove]);
 
   return { handleMouseDown, handleMouseUp, handleMouseMove };
 }

@@ -68,15 +68,17 @@ export default function IFCFileUploadCard({
       <Card className="w-[450px]">
         <CardHeader>
           <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-            Import IFC Models
+            Upload IFC Models
           </h3>
         </CardHeader>
         <CardContent>
           <div
             {...getRootProps()}
             className={`flex justify-center items-center w-full h-32 border-dashed border-2 border-gray-200 rounded-lg hover:bg-accent hover:text-accent-foreground transition-all select-none cursor-pointer gap-1 ${
-              isDragActive && "bg-accemt text-accent-foreground"
-            }`}
+              isDragActive && "bg-accent text-accent-foreground"
+            }
+              hover:bg-accent 
+            `}
           >
             <input {...getInputProps()} />
 
