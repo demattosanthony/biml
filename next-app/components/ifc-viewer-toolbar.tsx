@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
 
 type CameraMode = {
@@ -35,11 +35,10 @@ export default function Component() {
       id: "FirstPerson",
       label: "First Person",
       icon: <ScanEye className="h-4 w-4" />,
-      shortcut: "P",
+      shortcut: "F",
     },
   ];
   const world = useIfcViewerStore((state) => state.world);
-
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
 
   const handleCameraModeChange = (mode: CameraMode) => {
@@ -63,6 +62,20 @@ export default function Component() {
       viewerElement.style.cursor = mode.id === "Plan" ? "grab" : "default";
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const mode = cameraModes.find(
+        (m) => m.shortcut.toLowerCase() === event.key.toLowerCase()
+      );
+      if (mode) {
+        handleCameraModeChange(mode);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cameraModes]);
 
   return (
     <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
