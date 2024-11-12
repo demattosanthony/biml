@@ -13,7 +13,7 @@ export default function ModelViewerUploadPage() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden">
       {models.length === 0 ? (
         <IFCFileUploadCard onUpload={handleUpload} />
       ) : (

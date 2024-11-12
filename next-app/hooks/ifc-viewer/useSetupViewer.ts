@@ -18,6 +18,9 @@ export function useSetup(files: File[]) {
   const setHighlighter = useIfcViewerStore(
     (state) => state.actions.setHighlighter
   );
+  const setLoadingModels = useIfcViewerStore(
+    (state) => state.actions.setLoadingModels
+  );
   const highlighter = useIfcViewerStore((state) => state.highlighter);
   const { onSelection } = useElementSelected();
 
@@ -29,6 +32,8 @@ export function useSetup(files: File[]) {
     if (!container) {
       return;
     }
+
+    setLoadingModels(true);
 
     const components = new OBC.Components();
     const worlds = components.get(OBC.Worlds);
@@ -51,10 +56,10 @@ export function useSetup(files: File[]) {
     world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
     world.scene.setup();
 
-    const grids = components.get(OBC.Grids);
-    // grids.config.color.setHex(0x666666);
-    const grid = grids.create(world);
-    grid.three.position.y -= 5;
+    // const grids = components.get(OBC.Grids);
+    // // grids.config.color.setHex(0x666666);
+    // const grid = grids.create(world);
+    // grid.three.position.y -= 5;
     // world.renderer.postproduction.customEffects.excludedMeshes.push(grid.three);
 
     world.scene.three.background = null;
@@ -93,6 +98,7 @@ export function useSetup(files: File[]) {
     }
 
     world.camera.updateAspect();
+    setLoadingModels(false);
   }, [files, loadIfcFile, setWorld, setFragments]);
 
   // Highlighter and on select element event

@@ -1,12 +1,102 @@
 import { useCallback, useState } from "react";
 import * as OBC from "@thatopen/components";
+import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
+import { FragmentsGroup } from "@thatopen/fragments";
+
+interface EntityNode {
+  expressID: number;
+  ifcClass: string; // Updated to store the IFC class
+  name: string;
+  children: EntityNode[];
+}
 
 export function useIfcLoader() {
   const [loadingModel, setLoadingModel] = useState(false);
   const addModel = useIfcViewerStore((state) => state.actions.addModel);
   const setPlans = useIfcViewerStore((state) => state.actions.setPlans);
+
+  // Helper function to recursively build the decomposition tree
+  const getDecompositionTree = useCallback(
+    async (
+      components: OBC.Components,
+      model: FragmentsGroup,
+      expressID: number,
+      inverseAttributes: OBC.InverseAttribute[]
+    ): Promise<EntityNode | null> => {
+      const indexer = components.get(OBC.IfcRelationsIndexer);
+
+      const entityAttrs = await model.getProperties(expressID);
+
+      if (!entityAttrs) return null;
+
+      const { type, Name } = entityAttrs;
+      const entityNode: EntityNode = {
+        expressID,
+        ifcClass: OBC.IfcCategoryMap[type], // Store the IFC class here
+        name: Name?.value || "",
+        children: [],
+      };
+
+      for (const attrName of inverseAttributes) {
+        const relations = indexer.getEntityRelations(
+          model,
+          expressID,
+          attrName
+        );
+        if (!relations) continue;
+
+        for (const id of relations) {
+          const childNode = await getDecompositionTree(
+            components,
+            model,
+            id,
+            inverseAttributes
+          );
+          if (childNode) {
+            entityNode.children.push(childNode);
+          }
+        }
+      }
+
+      return entityNode;
+    },
+    []
+  );
+
+  // Function to compute the model tree starting from the root element
+  const computeModelTree = useCallback(
+    async (
+      components: OBC.Components,
+      model: FragmentsGroup,
+      inverseAttributes: OBC.InverseAttribute[],
+      expressID?: number
+    ): Promise<EntityNode | null> => {
+      let rootExpressID = expressID;
+
+      if (rootExpressID === undefined) {
+        // Get the root element, usually IFCPROJECT
+        const projectAttrs = await model.getAllPropertiesOfType(
+          WEBIFC.IFCPROJECT
+        );
+        if (!projectAttrs) return null;
+        const projectValues = Object.values(projectAttrs);
+        if (projectValues.length === 0) return null;
+        rootExpressID = projectValues[0].expressID;
+      }
+
+      const tree = await getDecompositionTree(
+        components,
+        model,
+        rootExpressID!,
+        inverseAttributes
+      );
+
+      return tree;
+    },
+    [getDecompositionTree]
+  );
 
   const loadIfcFile = useCallback(
     async (
@@ -36,6 +126,21 @@ export function useIfcLoader() {
 
         const indexer = components.get(OBC.IfcRelationsIndexer);
         await indexer.process(model);
+
+        // Define the inverse attributes to traverse
+        const inverseAttributes: OBC.InverseAttribute[] = [
+          "IsDecomposedBy",
+          "ContainsElements",
+        ];
+
+        // Compute the model tree
+        const modelTree = await computeModelTree(
+          components,
+          model,
+          inverseAttributes
+        );
+
+        console.log("Model tree:", modelTree);
 
         const plans = components.get(OBCF.Plans);
         plans.world = world;
