@@ -3,10 +3,18 @@ import { create } from "zustand";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 
+export interface EntityNode {
+  expressID: number;
+  ifcClass: string; // Updated to store the IFC class
+  name: string;
+  children: EntityNode[];
+}
+
 interface IFCModel {
   name: string;
   content: File;
   fragmentsGroup: FragmentsGroup;
+  tree: EntityNode | null;
 }
 
 interface IFCViewerState {

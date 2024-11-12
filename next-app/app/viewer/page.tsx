@@ -18,7 +18,7 @@ export default function ModelViewerUploadPage() {
         <IFCFileUploadCard onUpload={handleUpload} />
       ) : (
         <div className="flex flex-1 h-full w-full">
-          <IFCModelCard />
+          {/* <IFCModelCard /> */}
 
           <IFCViewer files={models} />
         </div>

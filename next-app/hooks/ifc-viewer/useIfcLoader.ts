@@ -2,15 +2,8 @@ import { useCallback, useState } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
-import useIfcViewerStore from "@/stores/useIfcViewerStore";
+import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
-
-interface EntityNode {
-  expressID: number;
-  ifcClass: string; // Updated to store the IFC class
-  name: string;
-  children: EntityNode[];
-}
 
 export function useIfcLoader() {
   const [loadingModel, setLoadingModel] = useState(false);
@@ -116,7 +109,6 @@ export function useIfcLoader() {
         model.name = file.name;
 
         world.scene.three.add(model);
-        addModel({ fragmentsGroup: model, name: file.name, content: file });
 
         const fragmentBbox = components.get(OBC.BoundingBoxer);
         fragmentBbox.add(model);
@@ -141,6 +133,12 @@ export function useIfcLoader() {
         );
 
         console.log("Model tree:", modelTree);
+        addModel({
+          fragmentsGroup: model,
+          name: file.name,
+          content: file,
+          tree: modelTree,
+        });
 
         const plans = components.get(OBCF.Plans);
         plans.world = world;

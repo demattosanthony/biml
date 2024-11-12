@@ -18,6 +18,7 @@ export function useSetup(files: File[]) {
   const setHighlighter = useIfcViewerStore(
     (state) => state.actions.setHighlighter
   );
+  const setHider = useIfcViewerStore((state) => state.actions.setHider);
   const setLoadingModels = useIfcViewerStore(
     (state) => state.actions.setLoadingModels
   );
@@ -91,6 +92,9 @@ export function useSetup(files: File[]) {
     });
     highlighter.zoomToSelection = true;
     setHighlighter(highlighter);
+
+    const hider = components.get(OBC.Hider);
+    setHider(hider);
 
     // Load each IFC file
     for (const file of files) {

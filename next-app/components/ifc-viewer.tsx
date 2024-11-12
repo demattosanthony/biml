@@ -10,10 +10,7 @@ export default function IFCViewer({ files }: { files: File[] }) {
   useSetup(files);
 
   return (
-    <div
-      className="flex flex-1 cursor-default relative bg-secondary"
-      id="ifc-viewer"
-    >
+    <div className="flex flex-1 cursor-default relative" id="ifc-viewer">
       <IFCViewerToolbar />
       {loadingModels && (
         <div className="absolute inset-0 flex items-center justify-center bg-opacity-90 z-50">
