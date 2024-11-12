@@ -25,6 +25,9 @@ import { FragmentsGroup } from "@thatopen/fragments";
 
 export function IFCViewerSidebar() {
   const models = useIfcViewerStore((state) => state.models);
+  const plans = useIfcViewerStore((state) => state.plans);
+
+  console.log(plans?.list);
 
   return (
     <Sidebar side="left" className="w-auto">
@@ -47,7 +50,40 @@ export function IFCViewerSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup />
+        {plans && plans?.list.length > 0 && (
+          <SidebarGroup key={"plans"}>
+            <SidebarGroupLabel>Plans</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {plans?.list.map((plan) => (
+                  <SidebarMenuItem
+                    key={plan.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      plans?.goTo(plan.id);
+                      // if (culler) culler.needsUpdate = true;
+                    }}
+                  >
+                    <SidebarMenuButton asChild>
+                      <div>{plan.name}</div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+                <SidebarMenuItem
+                  onClick={(e) => {
+                    plans?.exitPlanView();
+                    // if (culler) culler.needsUpdate = true;
+                  }}
+                >
+                  <SidebarMenuButton asChild>
+                    <div>Exit plan view</div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter />
       <SidebarRail />

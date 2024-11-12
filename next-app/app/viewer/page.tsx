@@ -1,8 +1,9 @@
 "use client";
 
-import IFCModelCard from "@/components/ifc-model-card";
 import IFCFileUploadCard from "@/components/ifc-upload-card";
 import IFCViewer from "@/components/ifc-viewer";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { IFCViewerSidebar } from "@/components/viewer-sidebar";
 import { useState } from "react";
 
 export default function ModelViewerUploadPage() {
@@ -13,15 +14,18 @@ export default function ModelViewerUploadPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="h-screen w-screen flex flex-1 flex-col overflow-hidden">
       {models.length === 0 ? (
         <IFCFileUploadCard onUpload={handleUpload} />
       ) : (
-        <div className="flex flex-1 h-full w-full">
-          {/* <IFCModelCard /> */}
-
-          <IFCViewer files={models} />
-        </div>
+        <SidebarProvider>
+          <IFCViewerSidebar />
+          <SidebarInset>
+            <div className="flex flex-1 h-full w-full">
+              <IFCViewer files={models} />
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
       )}
     </div>
   );
