@@ -122,14 +122,6 @@ export function useSetup(files: File[]) {
     world.camera.updateAspect();
     setLoadingModels(false);
 
-    // After world setup and before loading IFC files:
-    const orientationGizmo = new OrientationGizmo(components);
-    await orientationGizmo.setup({
-      camera: world.camera,
-      renderer: world.renderer,
-      scene: world.scene,
-    });
-
     const stats = new Stats();
     stats.showPanel(2);
     if (container) {
@@ -141,6 +133,14 @@ export function useSetup(files: File[]) {
     }
     world.renderer.onBeforeUpdate.add(() => stats.begin());
     world.renderer.onAfterUpdate.add(() => stats.end());
+
+    // After world setup and before loading IFC files:
+    const orientationGizmo = new OrientationGizmo(components);
+    await orientationGizmo.setup({
+      camera: world.camera,
+      renderer: world.renderer,
+      scene: world.scene,
+    });
   }, [files, loadIfcFile, setWorld, setFragments]);
 
   // Highlighter and on select element event

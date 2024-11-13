@@ -26,6 +26,8 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
   private gizmoScene: THREE.Scene | null = null;
   private rotationSpeed = 5;
   private directionDots: THREE.Sprite[] = [];
+  private isInitialized = false;
+  private animationFrameId: number | null = null;
 
   constructor(components: OBC.Components) {
     super(components);
@@ -38,6 +40,13 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     camera: OBC.OrthoPerspectiveCamera;
     renderer: OBC.SimpleRenderer;
   }) {
+    // Cancel any existing animation frame
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+
+    console.log("Setting up orientation gizmo");
+
     this.scene = world.scene;
     this.camera = world.camera;
 
@@ -58,24 +67,63 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     const container = world.renderer.container.parentElement;
     if (!container) return;
 
-    this.gizmoRenderer = new THREE.WebGLRenderer({ alpha: true });
+    // Clean up existing renderer if any
+    if (this.gizmoRenderer) {
+      this.gizmoRenderer.dispose();
+    }
+
+    this.gizmoRenderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true, // Add antialiasing
+    });
     this.gizmoRenderer.setSize(
       this.size + this.padding * 2,
       this.size + this.padding * 2
     );
     this.gizmoRenderer.setPixelRatio(window.devicePixelRatio);
 
+    // Remove existing container if any
+    if (this.gizmoContainer && this.gizmoContainer.parentElement) {
+      this.gizmoContainer.remove();
+    }
+
     this.gizmoContainer = document.createElement("div");
     this.gizmoContainer.style.position = "absolute";
     this.gizmoContainer.style.top = "10px";
     this.gizmoContainer.style.right = "10px";
-    this.gizmoContainer.style.zIndex = "1000";
+    this.gizmoContainer.style.zIndex = "9";
     this.gizmoContainer.style.cursor = "grab";
+
+    // Hide container initially
+    this.gizmoContainer.style.opacity = "0";
+
     this.gizmoContainer.appendChild(this.gizmoRenderer.domElement);
     container.appendChild(this.gizmoContainer);
 
-    this.setupInteraction();
+    // Create direction dots before starting animation
     this.createDirectionDots();
+
+    // Set up interaction after dots are created
+    this.setupInteraction();
+    this.setupAxisClickHandlers();
+
+    // Ensure initial state is correct
+    this.gizmoMesh.quaternion.copy(this.camera.controls.camera.quaternion);
+    this.updateDotsOpacity();
+
+    // Wait for next frame to ensure everything is initialized
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    this.isInitialized = true;
+
+    // Show container with a fade
+    requestAnimationFrame(() => {
+      if (this.gizmoContainer) {
+        console.log("Showing gizmo container");
+        this.gizmoContainer.style.transition = "opacity 0.3s ease-in";
+        this.gizmoContainer.style.opacity = "1";
+      }
+    });
 
     const animate = () => {
       if (
@@ -83,21 +131,48 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
         !this.gizmoRenderer ||
         !this.gizmoScene ||
         !this.gizmoCamera
-      )
+      ) {
+        this.animationFrameId = null;
         return;
+      }
 
-      if (!this.isDragging) {
+      if (!this.isDragging && this.isInitialized) {
+        // Synchronize gizmo rotation with camera before updating dots
         this.gizmoMesh.quaternion.copy(this.camera.controls.camera.quaternion);
-        this.updateDotsOpacity();
+
+        // Only update dots when camera or gizmo has actually moved
+        if (this.hasOrientationChanged()) {
+          this.updateDotsOpacity();
+          this.lastCameraQuaternion?.copy(
+            this.camera.controls.camera.quaternion
+          );
+        }
       }
 
       this.gizmoRenderer.render(this.gizmoScene, this.gizmoCamera);
-      requestAnimationFrame(animate);
+      this.animationFrameId = requestAnimationFrame(animate);
     };
 
     animate();
+  }
 
-    this.setupAxisClickHandlers();
+  private lastCameraQuaternion = new THREE.Quaternion();
+
+  private hasOrientationChanged(): boolean {
+    const threshold = 0.0001; // Small enough to catch real changes, large enough to ignore floating point errors
+
+    if (!this.lastCameraQuaternion) {
+      this.lastCameraQuaternion =
+        this.camera.controls.camera.quaternion.clone();
+      return true;
+    }
+
+    // Compare current camera quaternion with last stored quaternion
+    const quatDifference = this.lastCameraQuaternion.angleTo(
+      this.camera.controls.camera.quaternion
+    );
+
+    return quatDifference > threshold;
   }
 
   private createDirectionDots() {
@@ -173,44 +248,46 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     const material = new THREE.SpriteMaterial({
       map: texture,
       transparent: true,
+      sizeAttenuation: false, // Add this to prevent size scaling issues
+      depthTest: false, // Add this to ensure consistent rendering
+      depthWrite: false, // Add this to prevent z-fighting
     });
 
     return new THREE.Sprite(material);
   }
 
+  private readonly staticDirections = [
+    new THREE.Vector3(1, 0, 0), // +X
+    new THREE.Vector3(0, 1, 0), // +Y
+    new THREE.Vector3(0, 0, 1), // +Z
+    new THREE.Vector3(-1, 0, 0), // -X
+    new THREE.Vector3(0, -1, 0), // -Y
+    new THREE.Vector3(0, 0, -1), // -Z
+  ];
+
   private updateDotsOpacity() {
     if (!this.camera || this.directionDots.length !== 6) return;
 
-    const cameraDirection = new THREE.Vector3(0, 0, 1);
-    cameraDirection.applyQuaternion(this.camera.controls.camera.quaternion);
+    // Get camera direction in world space
+    const cameraDirection = new THREE.Vector3(0, 0, -1) // Camera looks down -Z
+      .applyQuaternion(this.camera.controls.camera.quaternion)
+      .normalize();
 
-    // Transform dots to world space and check their position relative to camera
-    const worldPos = new THREE.Vector3();
-    const gizmoQuaternion = this.gizmoMesh.quaternion;
-
-    // For each pair of opposite dots
-    for (let i = 0; i < 3; i++) {
-      const posIdx = i;
-      const negIdx = i + 3;
-
-      // Get dot direction in world space
-      const direction = new THREE.Vector3();
-      direction
-        .setFromMatrixPosition(this.directionDots[posIdx].matrixWorld)
+    // Calculate all dot visibilities at once using static directions
+    for (let i = 0; i < 6; i++) {
+      const direction = this.staticDirections[i]
+        .clone()
+        .applyQuaternion(this.gizmoMesh.quaternion)
         .normalize();
 
-      // Compare with camera direction
+      // Dot product tells us if this direction is facing camera
       const dotProduct = direction.dot(cameraDirection);
 
-      // Update opacities
-      this.directionDots[posIdx].material.opacity = dotProduct >= 0 ? 1 : 0.5;
-      this.directionDots[negIdx].material.opacity = dotProduct >= 0 ? 0.5 : 1;
+      // Set exact opacity values - no interpolation
+      this.directionDots[i].material.opacity = dotProduct >= 0 ? 1 : 0.3;
 
-      // Update sprite rotation to always face camera
-      this.directionDots[posIdx].quaternion.copy(
-        this.camera.controls.camera.quaternion
-      );
-      this.directionDots[negIdx].quaternion.copy(
+      // Keep sprite aligned with camera
+      this.directionDots[i].quaternion.copy(
         this.camera.controls.camera.quaternion
       );
     }
@@ -494,10 +571,32 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
   }
 
   dispose() {
+    console.log("Disposing orientation gizmo");
     this.enabled = false;
-    if (this.gizmoContainer) {
-      this.gizmoContainer.remove();
+
+    // Cancel animation frame if active
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
+
+    // Remove container with fade out
+    if (this.gizmoContainer) {
+      this.gizmoContainer.style.transition = "opacity 0.3s ease-out";
+      this.gizmoContainer.style.opacity = "0";
+      setTimeout(() => {
+        if (this.gizmoContainer) {
+          this.gizmoContainer.remove();
+        }
+      }, 300);
+    }
+
+    // Clean up renderer
+    if (this.gizmoRenderer) {
+      this.gizmoRenderer.dispose();
+      this.gizmoRenderer = null;
+    }
+
     const disposer = this.components.get(OBC.Disposer);
     disposer.destroy(this.gizmoMesh);
 
@@ -508,6 +607,9 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
       }
       dot.material.dispose();
     });
+    this.directionDots = [];
+
+    this.isInitialized = false;
 
     this.onDisposed.trigger();
     this.onDisposed.reset();
