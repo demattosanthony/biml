@@ -18,7 +18,12 @@ export default function ModelViewerUploadPage() {
       {models.length === 0 ? (
         <IFCFileUploadCard onUpload={handleUpload} />
       ) : (
-        <SidebarProvider>
+        <SidebarProvider
+          style={{
+            // @ts-ignore
+            "--sidebar-width": "20rem",
+          }}
+        >
           <IFCViewerSidebar />
           <SidebarInset>
             <div className="flex flex-1 h-full w-full">

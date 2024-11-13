@@ -16,7 +16,7 @@ export function useElementSelected() {
       for (const model of models) {
         console.log("Checking model", model.name);
         const element = await model?.fragmentsGroup.getProperties(fragmentId!);
-        const name = element?.Name.value;
+        const name = element?.Name?.value || "Unknown";
         console.log("Selected element", name);
       }
     },

@@ -87,8 +87,8 @@ export function useSetup(files: File[]) {
     const highlighter = components.get(OBCF.Highlighter);
     highlighter.setup({
       world,
-      hoverColor: new THREE.Color(0xffffff),
-      selectionColor: new THREE.Color(0x000000),
+      hoverColor: new THREE.Color(0xff0000), // Red for hover
+      selectionColor: new THREE.Color(0x00ff00), // Green for selection
     });
     highlighter.zoomToSelection = true;
     setHighlighter(highlighter);

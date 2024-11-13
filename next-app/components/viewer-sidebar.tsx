@@ -27,10 +27,8 @@ export function IFCViewerSidebar() {
   const models = useIfcViewerStore((state) => state.models);
   const plans = useIfcViewerStore((state) => state.plans);
 
-  console.log(plans?.list);
-
   return (
-    <Sidebar side="left" className="w-auto">
+    <Sidebar side="left">
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
@@ -107,9 +105,9 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 
   return (
     <SidebarMenuButton
-      className={`text-xs pl-2 relative flex items-center justify-between ${
+      className={`text-xs pl-4 relative flex items-center justify-between h-auto ${
         isHidden ? "opacity-50" : ""
-      } hover:bg-gray-100`}
+      } hover:bg-secondary`}
       onClick={async () => {
         if (!isHidden) {
           const fragMap = model.getFragmentMap([node.expressID]);
@@ -132,8 +130,16 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
         highlighter?.clear("hover");
       }}
     >
-      <File className="mr-2 flex-shrink-0" />
-      <span className="leading-tight flex flex-1">{`${ifcClass} - ${name}`}</span>
+      {/* <File className="mr-2 flex-shrink-0" /> */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="text-md font-semibold truncate max-w-[calc(100%-2rem)]">
+          {ifcClass}
+        </div>
+        <p className="text-sm text-muted-foreground truncate max-w-[calc(100%-2rem)]">
+          {name}
+        </p>
+      </div>
+
       {hovered && (
         <button className="opacity-100" onClick={handleToggleVisibility}>
           {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -146,6 +152,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name, children } = node;
   const hider = useIfcViewerStore((state) => state.hider);
+  const highlighter = useIfcViewerStore((state) => state.highlighter);
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -161,6 +168,7 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 
   const handleToggleVisibility = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsHidden(!isHidden);
     const ids = getAllExpressIDs(node);
     const fragMap = model.getFragmentMap(ids);
@@ -174,26 +182,38 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 
   // For nodes with children (folders)
   return (
-    <SidebarMenuItem className={`pl-2 ${isHidden ? "opacity-50" : ""}`}>
+    <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>
       <Collapsible
         defaultOpen={false}
         className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
       >
         <CollapsibleTrigger asChild>
           <SidebarMenuButton
-            className="text-xs relative flex items-center justify-between hover:bg-gray-100"
+            className="text-xs relative flex items-center justify-between hover:bg-secondary h-auto"
             onMouseEnter={(e) => {
               e.stopPropagation(); // Prevent event bubble up
               setHovered(true);
+              const ids = getAllExpressIDs(node);
+              highlighter?.highlightByID(
+                "hover",
+                model.getFragmentMap(ids),
+                true,
+                false
+              );
             }}
             onMouseLeave={(e) => {
               e.stopPropagation(); // Prevent event bubble up
               setHovered(false);
+              highlighter?.clear("hover");
             }}
           >
             <ChevronRight className="transition-transform mr-1 flex-shrink-0" />
-            <Folder className="mr-2 flex-shrink-0" />
-            <span className="leading-tight flex-1 flex">{`${ifcClass} - ${name}`}</span>
+            {/* <Folder className="mr-2 flex-shrink-0" /> */}
+            <div className="flex flex-col flex-1">
+              <div className="text-md font-semibold">{ifcClass}</div>
+              <p className="text-sm text-muted-foreground truncate">{name}</p>
+            </div>
+
             {hovered && (
               <button className="opacity-100" onClick={handleToggleVisibility}>
                 {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -203,7 +223,7 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
         </CollapsibleTrigger>
         {!isHidden && (
           <CollapsibleContent>
-            <div className="pl-4">
+            <div className="pl-3">
               {children.map((childNode, index) => (
                 <Tree key={index} node={childNode} model={model} />
               ))}
