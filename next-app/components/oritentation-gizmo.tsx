@@ -7,10 +7,16 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
   readonly onDisposed = new OBC.Event();
   enabled = true;
 
+  private readonly axesColors = [
+    new THREE.Color(0xff3653), // x-axis
+    new THREE.Color(0x8adb00), // y-axis
+    new THREE.Color(0x2c8fff), // z-axis
+  ];
+
   private gizmoMesh: THREE.Object3D;
   private camera!: OBC.OrthoPerspectiveCamera;
   private scene!: OBC.SimpleScene;
-  private size = 100;
+  private size = 150;
   private padding = 10;
   private isDragging = false;
   private previousMousePosition = { x: 0, y: 0 };
@@ -19,6 +25,7 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
   private gizmoCamera: THREE.OrthographicCamera | null = null;
   private gizmoScene: THREE.Scene | null = null;
   private rotationSpeed = 5;
+  private directionDots: THREE.Sprite[] = [];
 
   constructor(components: OBC.Components) {
     super(components);
@@ -34,11 +41,9 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     this.scene = world.scene;
     this.camera = world.camera;
 
-    // Create a separate scene for the gizmo
     this.gizmoScene = new THREE.Scene();
     this.gizmoScene.add(this.gizmoMesh);
 
-    // Create an orthographic camera for the gizmo
     this.gizmoCamera = new THREE.OrthographicCamera(
       -this.size / 2,
       this.size / 2,
@@ -50,7 +55,6 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     this.gizmoCamera.position.set(0, 0, 200);
     this.gizmoCamera.lookAt(0, 0, 0);
 
-    // Setup renderer for the gizmo
     const container = world.renderer.container.parentElement;
     if (!container) return;
 
@@ -61,20 +65,18 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     );
     this.gizmoRenderer.setPixelRatio(window.devicePixelRatio);
 
-    // Style and position the gizmo container
     this.gizmoContainer = document.createElement("div");
     this.gizmoContainer.style.position = "absolute";
-    this.gizmoContainer.style.bottom = "20px";
-    this.gizmoContainer.style.right = "20px";
+    this.gizmoContainer.style.top = "10px";
+    this.gizmoContainer.style.right = "10px";
     this.gizmoContainer.style.zIndex = "1000";
     this.gizmoContainer.style.cursor = "grab";
     this.gizmoContainer.appendChild(this.gizmoRenderer.domElement);
     container.appendChild(this.gizmoContainer);
 
-    // Add event listeners for interaction
     this.setupInteraction();
+    this.createDirectionDots();
 
-    // Animation loop
     const animate = () => {
       if (
         !this.enabled ||
@@ -85,21 +87,236 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
         return;
 
       if (!this.isDragging) {
-        // Only update gizmo rotation when not being dragged
         this.gizmoMesh.quaternion.copy(this.camera.controls.camera.quaternion);
+        this.updateDotsOpacity();
       }
 
-      // Render gizmo
       this.gizmoRenderer.render(this.gizmoScene, this.gizmoCamera);
       requestAnimationFrame(animate);
     };
 
     animate();
 
-    // Add click handlers for axis alignment
     this.setupAxisClickHandlers();
   }
 
+  private createDirectionDots() {
+    if (!this.gizmoScene) return;
+
+    const axes = ["x", "y", "z"];
+
+    // Create a container for all dots
+    const dotsContainer = new THREE.Object3D();
+    this.gizmoScene.add(dotsContainer);
+
+    const positions = [
+      [1.2, 0, 0],
+      [0, 1.2, 0],
+      [0, 0, 1.2],
+      [-1.2, 0, 0],
+      [0, -1.2, 0],
+      [0, 0, -1.2],
+    ];
+
+    this.directionDots = positions.map((pos, i) => {
+      const isPositive = i < 3;
+      const color = this.axesColors[i % 3];
+      const sprite = this.createDirectionSprite(
+        color,
+        isPositive ? axes[i % 3] : null
+      );
+      sprite.position.set(pos[0] * 50, pos[1] * 50, pos[2] * 50);
+      sprite.scale.setScalar(isPositive ? 30 : 20);
+      sprite.center.set(0.5, 0.5); // Ensure sprite rotates around its center
+      dotsContainer.add(sprite);
+      return sprite;
+    });
+
+    // Store reference to dots container
+    this.gizmoMesh.add(dotsContainer);
+  }
+
+  private createDirectionSprite(
+    color: THREE.Color,
+    text: string | null = null
+  ): THREE.Sprite {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 64;
+
+    const context = canvas.getContext("2d")!;
+
+    // Draw colored circle
+    context.beginPath();
+    context.arc(32, 32, 32, 0, 2 * Math.PI);
+    context.fillStyle = color.getStyle();
+    context.fill();
+
+    // Draw white circle
+    context.beginPath();
+    context.arc(96, 32, 32, 0, 2 * Math.PI);
+    context.fillStyle = "#FFFFFF";
+    context.fill();
+
+    if (text !== null) {
+      context.font = "bold 48px Arial";
+      context.textAlign = "center";
+      context.fillStyle = "#000000";
+      context.fillText(text.toUpperCase(), 32, 48);
+      context.fillText(text.toUpperCase(), 96, 48);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.x = 0.5;
+
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+    });
+
+    return new THREE.Sprite(material);
+  }
+
+  private updateDotsOpacity() {
+    if (!this.camera || this.directionDots.length !== 6) return;
+
+    const cameraDirection = new THREE.Vector3(0, 0, 1);
+    cameraDirection.applyQuaternion(this.camera.controls.camera.quaternion);
+
+    // Transform dots to world space and check their position relative to camera
+    const worldPos = new THREE.Vector3();
+    const gizmoQuaternion = this.gizmoMesh.quaternion;
+
+    // For each pair of opposite dots
+    for (let i = 0; i < 3; i++) {
+      const posIdx = i;
+      const negIdx = i + 3;
+
+      // Get dot direction in world space
+      const direction = new THREE.Vector3();
+      direction
+        .setFromMatrixPosition(this.directionDots[posIdx].matrixWorld)
+        .normalize();
+
+      // Compare with camera direction
+      const dotProduct = direction.dot(cameraDirection);
+
+      // Update opacities
+      this.directionDots[posIdx].material.opacity = dotProduct >= 0 ? 1 : 0.5;
+      this.directionDots[negIdx].material.opacity = dotProduct >= 0 ? 0.5 : 1;
+
+      // Update sprite rotation to always face camera
+      this.directionDots[posIdx].quaternion.copy(
+        this.camera.controls.camera.quaternion
+      );
+      this.directionDots[negIdx].quaternion.copy(
+        this.camera.controls.camera.quaternion
+      );
+    }
+  }
+
+  private createGizmo(): THREE.Object3D {
+    const gizmo = new THREE.Object3D();
+    const axisLength = 50;
+    const axisWidth = 4;
+
+    // Create axes as lines instead of boxes for better visibility
+    const createAxis = (color: THREE.Color, direction: THREE.Vector3) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(
+          [
+            0,
+            0,
+            0,
+            direction.x * axisLength,
+            direction.y * axisLength,
+            direction.z * axisLength,
+          ],
+          3
+        )
+      );
+
+      const material = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 3,
+      });
+
+      return new THREE.Line(geometry, material);
+    };
+
+    // Create the three axes
+    const xAxis = createAxis(this.axesColors[0], new THREE.Vector3(1, 0, 0));
+    const yAxis = createAxis(this.axesColors[1], new THREE.Vector3(0, 1, 0));
+    const zAxis = createAxis(this.axesColors[2], new THREE.Vector3(0, 0, 1));
+
+    gizmo.add(xAxis, yAxis, zAxis);
+
+    return gizmo;
+  }
+
+  private alignToAxis(axis: "x" | "y" | "z", positive: boolean = true) {
+    const distance = this.camera.controls.camera.position.length();
+    const position = new THREE.Vector3();
+    const target = new THREE.Vector3(0, 0, 0);
+
+    switch (axis) {
+      case "x":
+        position.set(positive ? distance : -distance, 0, 0);
+        break;
+      case "y":
+        position.set(0, positive ? distance : -distance, 0);
+        break;
+      case "z":
+        position.set(0, 0, positive ? distance : -distance);
+        break;
+    }
+
+    this.camera.controls.setLookAt(
+      position.x,
+      position.y,
+      position.z,
+      target.x,
+      target.y,
+      target.z,
+      true
+    );
+
+    this.gizmoMesh.quaternion.copy(this.camera.controls.camera.quaternion);
+  }
+
+  private setupAxisClickHandlers() {
+    if (!this.gizmoContainer) return;
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    this.gizmoContainer.addEventListener("click", (event) => {
+      if (!this.gizmoCamera || !this.gizmoScene || this.isDragging) return;
+
+      const rect = this.gizmoContainer!.getBoundingClientRect();
+      mouse.x =
+        ((event.clientX - rect.left) / (rect.right - rect.left)) * 2 - 1;
+      mouse.y =
+        -((event.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, this.gizmoCamera);
+      const intersects = raycaster.intersectObjects(this.directionDots, true);
+
+      if (intersects.length > 0) {
+        const dotIndex = this.directionDots.indexOf(
+          intersects[0].object as THREE.Sprite
+        );
+        const axis = ["x", "y", "z"][dotIndex % 3] as "x" | "y" | "z";
+        const positive = dotIndex < 3;
+        this.alignToAxis(axis, positive);
+      }
+    });
+  }
+
+  // Rest of the component remains the same (setupInteraction and dispose methods)...
   private setupInteraction() {
     if (!this.gizmoContainer) return;
 
@@ -120,34 +337,47 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
         y: event.clientY - this.previousMousePosition.y,
       };
 
-      // Convert mouse movement to rotation angles
-      const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(
-          THREE.MathUtils.degToRad(deltaMove.y * this.rotationSpeed),
-          THREE.MathUtils.degToRad(deltaMove.x * this.rotationSpeed),
-          0,
-          "XYZ"
-        )
+      const rotationX = THREE.MathUtils.degToRad(
+        deltaMove.y * this.rotationSpeed
+      );
+      const rotationY = THREE.MathUtils.degToRad(
+        deltaMove.x * this.rotationSpeed
       );
 
-      // Apply rotation to both gizmo and main camera
-      this.gizmoMesh.quaternion.multiplyQuaternions(
-        deltaRotationQuaternion,
-        this.gizmoMesh.quaternion
+      const camera = this.camera.controls.camera;
+      const target = new THREE.Vector3(0, 0, 0);
+
+      const quaternionX = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(1, 0, 0),
+        rotationX
+      );
+      const quaternionY = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        rotationY
       );
 
-      // Update main camera position
-      const distance = this.camera.controls.camera.position.length();
-      const currentPosition = new THREE.Vector3();
-      currentPosition.copy(this.camera.controls.camera.position);
+      const combinedQuaternion = new THREE.Quaternion().multiplyQuaternions(
+        quaternionY,
+        quaternionX
+      );
 
-      // Apply the same rotation to the camera position
-      currentPosition.applyQuaternion(deltaRotationQuaternion);
-      currentPosition.normalize().multiplyScalar(distance);
+      const cameraPosition = camera.position
+        .clone()
+        .sub(target)
+        .applyQuaternion(combinedQuaternion)
+        .add(target);
 
-      // Update camera position and maintain look at center
-      this.camera.controls.camera.position.copy(currentPosition);
-      this.camera.controls.camera.lookAt(new THREE.Vector3(0, 0, 0));
+      this.camera.controls.setLookAt(
+        cameraPosition.x,
+        cameraPosition.y,
+        cameraPosition.z,
+        target.x,
+        target.y,
+        target.z,
+        true
+      );
+
+      this.gizmoMesh.quaternion.copy(camera.quaternion);
 
       this.previousMousePosition = {
         x: event.clientX,
@@ -165,167 +395,6 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     document.addEventListener("mouseup", onMouseUp);
   }
 
-  private setupAxisClickHandlers() {
-    if (!this.gizmoContainer) return;
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    this.gizmoContainer.addEventListener("click", (event) => {
-      if (!this.gizmoCamera || !this.gizmoScene) return;
-
-      // Calculate mouse position in normalized device coordinates (-1 to +1)
-      const rect = this.gizmoContainer!.getBoundingClientRect();
-      mouse.x =
-        ((event.clientX - rect.left) / (rect.right - rect.left)) * 2 - 1;
-      mouse.y =
-        -((event.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, this.gizmoCamera);
-      const intersects = raycaster.intersectObjects(
-        this.gizmoScene.children,
-        true
-      );
-
-      // Update just the axis click detection part in setupAxisClickHandlers():
-
-      if (intersects.length > 0) {
-        const clickedObject = intersects[0].object;
-
-        // Type guard to ensure we have a mesh with a single basic material
-        if (
-          clickedObject instanceof THREE.Mesh &&
-          clickedObject.material instanceof THREE.MeshBasicMaterial
-        ) {
-          const color = clickedObject.material.color.getHex();
-
-          switch (color) {
-            case 0xff0000: // X-axis
-              this.alignToAxis("x");
-              break;
-            case 0x00ff00: // Y-axis
-              this.alignToAxis("y");
-              break;
-            case 0x0000ff: // Z-axis
-              this.alignToAxis("z");
-              break;
-          }
-        }
-      }
-    });
-  }
-
-  private alignToAxis(axis: "x" | "y" | "z") {
-    const distance = this.camera.controls.camera.position.length();
-    const position = new THREE.Vector3();
-
-    switch (axis) {
-      case "x":
-        position.set(distance, 0, 0);
-        break;
-      case "y":
-        position.set(0, distance, 0);
-        break;
-      case "z":
-        position.set(0, 0, distance);
-        break;
-    }
-
-    // Smoothly animate to new position
-    const currentPos = this.camera.controls.camera.position.clone();
-    const targetPos = position;
-
-    const animate = () => {
-      const step = 0.05;
-      currentPos.lerp(targetPos, step);
-      this.camera.controls.camera.position.copy(currentPos);
-      this.camera.controls.camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-      if (currentPos.distanceTo(targetPos) > 0.1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    animate();
-  }
-
-  private createGizmo(): THREE.Object3D {
-    const gizmo = new THREE.Object3D();
-
-    // Create axes
-    const axisLength = 50;
-    const axisWidth = 4;
-
-    // X-axis (red)
-    const xGeometry = new THREE.BoxGeometry(axisLength, axisWidth, axisWidth);
-    const xMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const xAxis = new THREE.Mesh(xGeometry, xMaterial);
-    xAxis.position.x = axisLength / 2;
-
-    // Y-axis (green)
-    const yGeometry = new THREE.BoxGeometry(axisWidth, axisLength, axisWidth);
-    const yMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const yAxis = new THREE.Mesh(yGeometry, yMaterial);
-    yAxis.position.y = axisLength / 2;
-
-    // Z-axis (blue)
-    const zGeometry = new THREE.BoxGeometry(axisWidth, axisWidth, axisLength);
-    const zMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const zAxis = new THREE.Mesh(zGeometry, zMaterial);
-    zAxis.position.z = axisLength / 2;
-
-    // Add labels
-    const createLabel = (
-      text: string,
-      position: THREE.Vector3,
-      color: number
-    ) => {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      if (!context) return;
-
-      canvas.width = 64;
-      canvas.height = 64;
-
-      context.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
-      context.font = "bold 48px Arial";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.fillText(text, 32, 32);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-      const sprite = new THREE.Sprite(spriteMaterial);
-      sprite.position.copy(position);
-      sprite.scale.set(20, 20, 1);
-      return sprite;
-    };
-
-    const xLabel = createLabel(
-      "X",
-      new THREE.Vector3(axisLength + 10, 0, 0),
-      0xff0000
-    );
-    const yLabel = createLabel(
-      "Y",
-      new THREE.Vector3(0, axisLength + 10, 0),
-      0x00ff00
-    );
-    const zLabel = createLabel(
-      "Z",
-      new THREE.Vector3(0, 0, axisLength + 10),
-      0x0000ff
-    );
-
-    // Add all elements to gizmo
-    gizmo.add(xAxis, yAxis, zAxis);
-    if (xLabel) gizmo.add(xLabel);
-    if (yLabel) gizmo.add(yLabel);
-    if (zLabel) gizmo.add(zLabel);
-
-    return gizmo;
-  }
-
   dispose() {
     this.enabled = false;
     if (this.gizmoContainer) {
@@ -333,6 +402,15 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     }
     const disposer = this.components.get(OBC.Disposer);
     disposer.destroy(this.gizmoMesh);
+
+    // Clean up direction dots
+    this.directionDots.forEach((dot) => {
+      if (dot.material.map) {
+        dot.material.map.dispose();
+      }
+      dot.material.dispose();
+    });
+
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }
