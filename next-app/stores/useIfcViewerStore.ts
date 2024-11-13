@@ -3,7 +3,20 @@ import { create } from "zustand";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 
-export interface PropertyValue {
+export interface MaterialLayer {
+  thickness: number;
+  materialName: string;
+}
+
+export interface MaterialData {
+  type: string;
+  name?: string;
+  layers?: MaterialLayer[];
+  materials?: string[];
+}
+
+export interface Property {
+  name: string;
   value: any;
   type?: number;
   valueType?: string;
@@ -12,9 +25,12 @@ export interface PropertyValue {
 
 export interface PropertySet {
   name: string;
-  properties: {
-    [key: string]: PropertyValue;
-  };
+  properties: Property[];
+}
+
+export interface QuantitySet {
+  name: string;
+  quantities: Property[];
 }
 
 export interface EntityNode {
@@ -23,6 +39,8 @@ export interface EntityNode {
   name: string;
   children: EntityNode[];
   psets?: PropertySet[];
+  qsets?: QuantitySet[];
+  materials?: MaterialData[];
 }
 
 interface IFCModel {
