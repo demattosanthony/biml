@@ -7,6 +7,8 @@ import useIfcViewerStore from "@/stores/useIfcViewerStore";
 import { useIfcLoader } from "./useIfcLoader";
 import { useElementSelected } from "./useElementSelected";
 import { useMouseControls } from "./useMouseControls";
+import Stats from "stats.js";
+import { OrientationGizmo } from "@/components/oritentation-gizmo";
 
 // This hook sets up the IFC viewer with the given files
 // It loads the world, fragments, highlighter, culler, and other components
@@ -26,6 +28,7 @@ export function useSetup(files: File[]) {
   const setComponents = useIfcViewerStore(
     (state) => state.actions.setComponents
   );
+  const setCamera = useIfcViewerStore((state) => state.actions.setCamera);
   const { onSelection, onDeselection } = useElementSelected();
 
   const { handleMouseDown, handleMouseUp, handleMouseMove } =
@@ -62,6 +65,8 @@ export function useSetup(files: File[]) {
     world.renderer = new OBC.SimpleRenderer(components, container);
     world.camera = new OBC.OrthoPerspectiveCamera(components);
     setWorld(world);
+
+    setCamera(world.camera);
 
     // world.renderer.postproduction.enabled = true;
     // world.renderer.postproduction.customEffects.outlineEnabled = true;
@@ -116,6 +121,26 @@ export function useSetup(files: File[]) {
 
     world.camera.updateAspect();
     setLoadingModels(false);
+
+    // After world setup and before loading IFC files:
+    const orientationGizmo = new OrientationGizmo(components);
+    await orientationGizmo.setup({
+      camera: world.camera,
+      renderer: world.renderer,
+      scene: world.scene,
+    });
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    if (container) {
+      container.append(stats.dom);
+      stats.dom.style.position = "absolute"; // Ensure absolute positioning
+      stats.dom.style.top = "0px"; // Adjust top position
+      stats.dom.style.left = "0px"; // Adjust left position
+      stats.dom.style.zIndex = "10"; // Ensure it is above other elements
+    }
+    world.renderer.onBeforeUpdate.add(() => stats.begin());
+    world.renderer.onAfterUpdate.add(() => stats.end());
   }, [files, loadIfcFile, setWorld, setFragments]);
 
   // Highlighter and on select element event

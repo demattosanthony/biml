@@ -38,9 +38,11 @@
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.6.1",
     "remark-gfm": "^4.0.0",
+    "stats.js": "^0.17.0",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.170.0",
+    "three-viewport-gizmo": "^1.0.6",
     "web-ifc": "^0.0.61",
     "zustand": "^4.5.4"
   },
