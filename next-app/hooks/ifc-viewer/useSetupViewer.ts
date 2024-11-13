@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as WEBIFC from "web-ifc";
@@ -23,10 +23,17 @@ export function useSetup(files: File[]) {
     (state) => state.actions.setLoadingModels
   );
   const highlighter = useIfcViewerStore((state) => state.highlighter);
+  const setComponents = useIfcViewerStore(
+    (state) => state.actions.setComponents
+  );
   const { onSelection, onDeselection } = useElementSelected();
 
   const { handleMouseDown, handleMouseUp, handleMouseMove } =
     useMouseControls();
+
+  // Add refs to track component instances
+  const componentsRef = useRef<OBC.Components | null>(null);
+  const worldRef = useRef<any>(null);
 
   const setupWorld = useCallback(async () => {
     const container = document.getElementById("ifc-viewer");
@@ -36,7 +43,13 @@ export function useSetup(files: File[]) {
 
     setLoadingModels(true);
 
-    const components = new OBC.Components();
+    // Create new components instance if it doesn't exist
+    if (!componentsRef.current) {
+      componentsRef.current = new OBC.Components();
+    }
+    const components = componentsRef.current;
+    setComponents(components);
+
     const worlds = components.get(OBC.Worlds);
     const world = worlds.create<
       OBC.SimpleScene,
@@ -110,7 +123,6 @@ export function useSetup(files: File[]) {
     if (!highlighter) return;
 
     highlighter?.events.select.onHighlight.add(onSelection);
-
     highlighter?.events.select.onClear.add(onDeselection);
 
     return () => {
@@ -124,13 +136,27 @@ export function useSetup(files: File[]) {
     setupWorld();
 
     return () => {
-      // Clean up models or other resources if necessary
+      // Proper cleanup
+      if (worldRef.current) {
+        const world = worldRef.current;
+        world.scene?.dispose();
+        world.renderer?.dispose();
+        world.camera?.dispose();
+      }
+
       const fragments = useIfcViewerStore.getState().fragments;
-      fragments?.dispose();
+      if (fragments) {
+        fragments.dispose();
+      }
+
+      const highlighter = useIfcViewerStore.getState().highlighter;
+      if (highlighter) {
+        highlighter.events.select.onHighlight.remove(onSelection);
+        highlighter.events.select.onClear.remove(onDeselection);
+      }
+
+      // Clear the store
       useIfcViewerStore.getState().actions.clearModels();
-      useIfcViewerStore
-        .getState()
-        .highlighter?.events.select.onHighlight.remove(onSelection);
     };
-  }, [files]);
+  }, [files, setupWorld]);
 }

@@ -3,11 +3,26 @@ import { create } from "zustand";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 
+export interface PropertyValue {
+  value: any;
+  type?: number;
+  valueType?: string;
+  unit?: string;
+}
+
+export interface PropertySet {
+  name: string;
+  properties: {
+    [key: string]: PropertyValue;
+  };
+}
+
 export interface EntityNode {
   expressID: number;
   ifcClass: string; // Updated to store the IFC class
   name: string;
   children: EntityNode[];
+  psets?: PropertySet[];
 }
 
 interface IFCModel {
@@ -20,6 +35,7 @@ interface IFCModel {
 interface IFCViewerState {
   loadingModels: boolean;
   world: OBC.World | null;
+  components: OBC.Components | null;
   fragments: OBC.FragmentsManager | null;
   culler: OBC.MeshCullerRenderer | null;
   highlighter: OBCF.Highlighter | null;
@@ -30,6 +46,7 @@ interface IFCViewerState {
   actions: {
     setLoadingModels: (loading: boolean) => void;
     setWorld: (world: OBC.World) => void;
+    setComponents: (components: OBC.Components) => void;
     setFragments: (fragments: OBC.FragmentsManager) => void;
     setCuller: (culler: OBC.MeshCullerRenderer) => void;
     setHighlighter: (highlighter: OBCF.Highlighter) => void;
@@ -45,6 +62,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   loadingModels: false,
   world: null,
   fragments: null,
+  components: null,
   culler: null,
   highlighter: null,
   plans: null,
@@ -55,6 +73,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   actions: {
     setLoadingModels: (loading) => set({ loadingModels: loading }),
     setWorld: (world) => set({ world }),
+    setComponents: (components) => set({ components }),
     setFragments: (fragments) => set({ fragments }),
     setCuller: (culler) => set({ culler }),
     setHighlighter: (highlighter) => set({ highlighter }),
