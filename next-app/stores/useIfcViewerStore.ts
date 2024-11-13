@@ -26,6 +26,7 @@ interface IFCViewerState {
   plans: OBCF.Plans | null;
   models: IFCModel[];
   hider: OBC.Hider | null;
+  selectedElement: EntityNode | null;
   actions: {
     setLoadingModels: (loading: boolean) => void;
     setWorld: (world: OBC.World) => void;
@@ -36,6 +37,7 @@ interface IFCViewerState {
     addModel: (model: IFCModel) => void;
     clearModels: () => void;
     setHider: (hider: OBC.Hider) => void;
+    setSelectedElement: (element: EntityNode | null) => void;
   };
 }
 
@@ -49,6 +51,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   ifcFiles: [],
   models: [],
   hider: null,
+  selectedElement: null,
   actions: {
     setLoadingModels: (loading) => set({ loadingModels: loading }),
     setWorld: (world) => set({ world }),
@@ -66,6 +69,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
     },
     clearModels: () => set({ models: [] }),
     setHider: (hider) => set({ hider }),
+    setSelectedElement: (element) => set({ selectedElement: element }),
   },
 }));
 

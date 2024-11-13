@@ -23,7 +23,7 @@ export function useSetup(files: File[]) {
     (state) => state.actions.setLoadingModels
   );
   const highlighter = useIfcViewerStore((state) => state.highlighter);
-  const { onSelection } = useElementSelected();
+  const { onSelection, onDeselection } = useElementSelected();
 
   const { handleMouseDown, handleMouseUp, handleMouseMove } =
     useMouseControls();
@@ -111,8 +111,11 @@ export function useSetup(files: File[]) {
 
     highlighter?.events.select.onHighlight.add(onSelection);
 
+    highlighter?.events.select.onClear.add(onDeselection);
+
     return () => {
       highlighter?.events.select.onHighlight.remove(onSelection);
+      highlighter?.events.select.onClear.remove(onDeselection);
     };
   }, [onSelection]);
 

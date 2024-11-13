@@ -1,9 +1,13 @@
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
 import { useCallback } from "react";
+import * as OBC from "@thatopen/components";
 
 export function useElementSelected() {
   const highlighter = useIfcViewerStore((state) => state.highlighter);
   const models = useIfcViewerStore((state) => state.models);
+  const setSelectedElement = useIfcViewerStore(
+    (state) => state.actions.setSelectedElement
+  );
 
   const onSelection = useCallback(
     async (fragmentIdMap: { [fragmentId: string]: Set<number> }) => {
@@ -15,13 +19,29 @@ export function useElementSelected() {
       // Check to find the element in all models
       for (const model of models) {
         console.log("Checking model", model.name);
-        const element = await model?.fragmentsGroup.getProperties(fragmentId!);
-        const name = element?.Name?.value || "Unknown";
-        console.log("Selected element", name);
+
+        const entityAttrs = await model.fragmentsGroup.getProperties(
+          fragmentId
+        );
+
+        if (!entityAttrs) return null;
+
+        const { type, Name } = entityAttrs;
+
+        setSelectedElement({
+          expressID: fragmentId!,
+          name: Name?.value || "",
+          ifcClass: OBC.IfcCategoryMap[type],
+          children: [],
+        });
       }
     },
     [models, highlighter]
   );
 
-  return { onSelection };
+  const onDeselection = useCallback(() => {
+    setSelectedElement(null);
+  }, [models, highlighter]);
+
+  return { onSelection, onDeselection };
 }
