@@ -134,13 +134,9 @@ export function useSetup(files: File[]) {
     world.renderer.onBeforeUpdate.add(() => stats.begin());
     world.renderer.onAfterUpdate.add(() => stats.end());
 
-    // After world setup and before loading IFC files:
-    const orientationGizmo = new OrientationGizmo(components);
-    await orientationGizmo.setup({
-      camera: world.camera,
-      renderer: world.renderer,
-      scene: world.scene,
-    });
+    // Add the orientation gizmo component
+    const gizmo = new OrientationGizmo(components, world);
+    // container.appendChild(gizmo._canvas!);
   }, [files, loadIfcFile, setWorld, setFragments]);
 
   // Highlighter and on select element event
