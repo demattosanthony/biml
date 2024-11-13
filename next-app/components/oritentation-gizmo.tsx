@@ -316,83 +316,181 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     });
   }
 
-  // Rest of the component remains the same (setupInteraction and dispose methods)...
+  private rotationStart = new THREE.Euler();
+  private mouseStart = new THREE.Vector2();
+  private mouseAngle = new THREE.Vector2();
+  private q1 = new THREE.Quaternion();
+  private q2 = new THREE.Quaternion();
+  private dummy = new THREE.Object3D();
+  private radius = 0;
+
   private setupInteraction() {
     if (!this.gizmoContainer) return;
 
-    const onMouseDown = (event: MouseEvent) => {
-      this.isDragging = true;
-      this.gizmoContainer!.style.cursor = "grabbing";
-      this.previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY,
-      };
-    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (!this.enabled) return;
+      e.preventDefault();
 
-    const onMouseMove = (event: MouseEvent) => {
-      if (!this.isDragging) return;
-
-      const deltaMove = {
-        x: event.clientX - this.previousMousePosition.x,
-        y: event.clientY - this.previousMousePosition.y,
-      };
-
-      const rotationX = THREE.MathUtils.degToRad(
-        deltaMove.y * this.rotationSpeed
-      );
-      const rotationY = THREE.MathUtils.degToRad(
-        deltaMove.x * this.rotationSpeed
-      );
-
-      const camera = this.camera.controls.camera;
-      const target = new THREE.Vector3(0, 0, 0);
-
-      const quaternionX = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(1, 0, 0),
-        rotationX
-      );
-      const quaternionY = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        rotationY
-      );
-
-      const combinedQuaternion = new THREE.Quaternion().multiplyQuaternions(
-        quaternionY,
-        quaternionX
-      );
-
-      const cameraPosition = camera.position
-        .clone()
-        .sub(target)
-        .applyQuaternion(combinedQuaternion)
-        .add(target);
-
-      this.camera.controls.setLookAt(
-        cameraPosition.x,
-        cameraPosition.y,
-        cameraPosition.z,
-        target.x,
-        target.y,
-        target.z,
-        true
-      );
-
-      this.gizmoMesh.quaternion.copy(camera.quaternion);
-
-      this.previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY,
-      };
-    };
-
-    const onMouseUp = () => {
       this.isDragging = false;
-      this.gizmoContainer!.style.cursor = "grab";
+      this.mouseStart.set(e.clientX, e.clientY);
+      this.rotationStart.copy(this.gizmoMesh.rotation);
+      this.setRadius();
+
+      const drag = (e: PointerEvent) => {
+        // Check if it's a small movement that shouldn't trigger drag
+        if (!this.isDragging && this.isClick(e)) return;
+
+        if (!this.isDragging) {
+          this.resetDirectionDots();
+          this.isDragging = true;
+        }
+
+        // Calculate angle based on mouse movement
+        this.mouseAngle
+          .set(e.clientX, e.clientY)
+          .sub(this.mouseStart)
+          .multiplyScalar((1 / this.size) * Math.PI);
+
+        // Update gizmo rotation
+        this.gizmoMesh.rotation.x = this.clamp(
+          this.rotationStart.x + this.mouseAngle.y,
+          Math.PI / -2 + 0.001,
+          Math.PI / 2 - 0.001
+        );
+        this.gizmoMesh.rotation.y = this.rotationStart.y + this.mouseAngle.x;
+        this.gizmoMesh.updateMatrixWorld();
+
+        // Calculate new camera position
+        this.q1.copy(this.gizmoMesh.quaternion).invert();
+
+        const target = new THREE.Vector3();
+        const position = new THREE.Vector3(0, 0, 1)
+          .applyQuaternion(this.q1)
+          .multiplyScalar(this.radius)
+          .add(target);
+
+        // Update camera position and rotation
+        this.camera.controls.setLookAt(
+          position.x,
+          position.y,
+          position.z,
+          target.x,
+          target.y,
+          target.z,
+          true
+        );
+
+        this.updateDotsOpacity();
+      };
+
+      const endDrag = () => {
+        document.removeEventListener("pointermove", drag);
+        document.removeEventListener("pointerup", endDrag);
+
+        if (!this.isDragging) {
+          this.handleClick(e);
+          return;
+        }
+
+        this.isDragging = false;
+      };
+
+      document.addEventListener("pointermove", drag);
+      document.addEventListener("pointerup", endDrag);
     };
 
-    this.gizmoContainer.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    this.gizmoContainer.addEventListener("pointerdown", onPointerDown);
+
+    // Add hover handling
+    this.gizmoContainer.addEventListener("pointermove", (e: PointerEvent) => {
+      if (this.isDragging) return;
+      this.handleHover(e);
+    });
+
+    this.gizmoContainer.addEventListener("pointerleave", () => {
+      if (this.isDragging) return;
+      this.resetDirectionDots();
+      if (this.gizmoContainer) {
+        this.gizmoContainer.style.cursor = "";
+      }
+    });
+  }
+
+  private setRadius() {
+    const cameraPosition = this.camera.controls.camera.position;
+    const target = new THREE.Vector3();
+    this.radius = cameraPosition.distanceTo(target);
+  }
+
+  private resetDirectionDots() {
+    this.directionDots.forEach((sprite, i) => {
+      const scale = i < 3 ? 30 : 20;
+      sprite.scale.setScalar(scale);
+      if (sprite.material.map) {
+        sprite.material.map.offset.x = 1;
+      }
+    });
+  }
+
+  private handleClick(e: PointerEvent) {
+    if (!this.gizmoCamera || !this.gizmoScene) return;
+
+    const rect = this.gizmoContainer!.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.gizmoCamera);
+    const intersects = raycaster.intersectObjects(this.directionDots, true);
+
+    if (intersects.length > 0) {
+      const dotIndex = this.directionDots.indexOf(
+        intersects[0].object as THREE.Sprite
+      );
+      const axis = ["x", "y", "z"][dotIndex % 3] as "x" | "y" | "z";
+      const positive = dotIndex < 3;
+      this.alignToAxis(axis, positive);
+    }
+  }
+
+  private handleHover(e: PointerEvent) {
+    if (!this.gizmoCamera || !this.gizmoScene || !this.gizmoContainer) return;
+
+    const rect = this.gizmoContainer.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.gizmoCamera);
+    const intersects = raycaster.intersectObjects(this.directionDots, true);
+
+    this.resetDirectionDots();
+
+    if (intersects.length === 0) {
+      this.gizmoContainer.style.cursor = "";
+    } else {
+      const sprite = intersects[0].object as THREE.Sprite;
+      if (sprite.material.map) {
+        sprite.material.map.offset.x = 0.5;
+      }
+      sprite.scale.multiplyScalar(1.2);
+      this.gizmoContainer.style.cursor = "pointer";
+    }
+  }
+
+  private isClick(e: PointerEvent, threshold = 10): boolean {
+    return (
+      Math.abs(e.clientX - this.mouseStart.x) < threshold &&
+      Math.abs(e.clientY - this.mouseStart.y) < threshold
+    );
+  }
+
+  private clamp(num: number, min: number, max: number): number {
+    return Math.min(Math.max(num, min), max);
   }
 
   dispose() {
