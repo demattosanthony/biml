@@ -265,31 +265,55 @@ export class OrientationGizmo extends OBC.Component implements OBC.Disposable {
     new THREE.Vector3(0, 0, -1), // -Z
   ];
 
+  private readonly cameraDirection = new THREE.Vector3();
+  private readonly dotDirection = new THREE.Vector3();
+  private lastUpdateTime = 0;
+  private readonly updateInterval = 1000 / 30; // Limit updates to 30fps
+
   private updateDotsOpacity() {
     if (!this.camera || this.directionDots.length !== 6) return;
 
+    // Throttle updates to prevent flickering
+    const currentTime = performance.now();
+    if (currentTime - this.lastUpdateTime < this.updateInterval) return;
+    this.lastUpdateTime = currentTime;
+
     // Get camera direction in world space
-    const cameraDirection = new THREE.Vector3(0, 0, -1) // Camera looks down -Z
+    this.cameraDirection
+      .set(0, 0, -1)
       .applyQuaternion(this.camera.controls.camera.quaternion)
       .normalize();
 
     // Calculate all dot visibilities at once using static directions
     for (let i = 0; i < 6; i++) {
-      const direction = this.staticDirections[i]
-        .clone()
+      // Reuse vector to prevent garbage collection
+      this.dotDirection
+        .copy(this.staticDirections[i])
         .applyQuaternion(this.gizmoMesh.quaternion)
         .normalize();
 
       // Dot product tells us if this direction is facing camera
-      const dotProduct = direction.dot(cameraDirection);
+      const dotProduct = this.dotDirection.dot(this.cameraDirection);
 
-      // Set exact opacity values - no interpolation
-      this.directionDots[i].material.opacity = dotProduct >= 0 ? 1 : 0.3;
+      // Add hysteresis to prevent flickering at threshold
+      const currentOpacity = this.directionDots[i].material.opacity;
+      const targetOpacity = dotProduct >= -0.1 ? 1 : 0.3; // Added small threshold
 
-      // Keep sprite aligned with camera
-      this.directionDots[i].quaternion.copy(
-        this.camera.controls.camera.quaternion
+      // Smooth transition between opacity values
+      const newOpacity = THREE.MathUtils.lerp(
+        currentOpacity,
+        targetOpacity,
+        0.3 // Adjust this value to control transition speed
       );
+
+      this.directionDots[i].material.opacity = newOpacity;
+
+      // Keep sprite aligned with camera without affecting opacity
+      if (!this.isDragging) {
+        this.directionDots[i].quaternion.copy(
+          this.camera.controls.camera.quaternion
+        );
+      }
     }
   }
 
