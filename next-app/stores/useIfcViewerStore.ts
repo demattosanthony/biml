@@ -43,7 +43,7 @@ export interface EntityNode {
   materials?: MaterialData[];
 }
 
-interface IFCModel {
+export interface IFCModel {
   name: string;
   content: File;
   fragmentsGroup: FragmentsGroup;

@@ -114,10 +114,20 @@ export function useSetup(files: File[]) {
     const hider = components.get(OBC.Hider);
     setHider(hider);
 
+    // Culler
+    const cullers = components.get(OBC.Cullers);
+    const culler = cullers.create(world);
+    culler.config.threshold = 10;
+
     // Load each IFC file
     for (const file of files) {
-      await loadIfcFile(world, file, fragmentIfcLoader, components);
+      await loadIfcFile(world, file, fragmentIfcLoader, components, culler);
     }
+
+    culler.needsUpdate = true;
+    world.camera.controls.addEventListener("controlend", () => {
+      culler.needsUpdate = true;
+    });
 
     world.camera.updateAspect();
     setLoadingModels(false);

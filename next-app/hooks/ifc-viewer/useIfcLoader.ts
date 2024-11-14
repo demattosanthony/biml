@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
+import * as THREE from "three";
 import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
 
@@ -96,7 +97,8 @@ export function useIfcLoader() {
       world: OBC.World | null,
       file: File,
       fragmentIfcLoader: OBC.IfcLoader,
-      components: OBC.Components
+      components: OBC.Components,
+      culler: OBC.MeshCullerRenderer
     ) => {
       if (!world || !fragmentIfcLoader)
         throw new Error("World or loader not set");
@@ -109,6 +111,13 @@ export function useIfcLoader() {
         model.name = file.name;
 
         world.scene.three.add(model);
+
+        // Add instanced meshes to the culler
+        for (const child of model.children) {
+          if (child instanceof THREE.InstancedMesh) {
+            culler.add(child);
+          }
+        }
 
         const fragmentBbox = components.get(OBC.BoundingBoxer);
         fragmentBbox.add(model);

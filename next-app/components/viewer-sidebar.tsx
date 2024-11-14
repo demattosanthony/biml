@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -22,17 +22,21 @@ import {
 } from "./ui/collapsible";
 import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
+import { Button } from "./ui/button";
 
 export function IFCViewerSidebar() {
   const models = useIfcViewerStore((state) => state.models);
-  const plans = useIfcViewerStore((state) => state.plans);
 
   return (
     <Sidebar side="left">
-      <SidebarHeader />
+      <SidebarHeader>
+        <h2 className="text-lg font-semibold tracking-tight">DaVinci Viewer</h2>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Model Browser</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-semibold">
+            Model Browser
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {models.map(
@@ -48,44 +52,48 @@ export function IFCViewerSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {plans && plans?.list.length > 0 && (
-          <SidebarGroup key={"plans"}>
-            <SidebarGroupLabel>Plans</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {plans?.list.map((plan) => (
-                  <SidebarMenuItem
-                    key={plan.id}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      plans?.goTo(plan.id);
-                      // if (culler) culler.needsUpdate = true;
-                    }}
-                  >
-                    <SidebarMenuButton asChild>
-                      <div>{plan.name}</div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-                <SidebarMenuItem
-                  onClick={(e) => {
-                    plans?.exitPlanView();
-                    // if (culler) culler.needsUpdate = true;
-                  }}
-                >
-                  <SidebarMenuButton asChild>
-                    <div>Exit plan view</div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+
+        <FloorPlans />
       </SidebarContent>
       <SidebarFooter />
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+function FloorPlans() {
+  const plans = useIfcViewerStore((state) => state.plans);
+  const [activeFloor, setActiveFloor] = useState<string | null>(null);
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="font-semibold">2D Plans</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {plans?.list.map((floor) => (
+            <SidebarMenuItem key={floor.id}>
+              <Button
+                variant={activeFloor === floor.id ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => {
+                  if (activeFloor === floor.id) {
+                    setActiveFloor(null);
+                    plans?.exitPlanView();
+                    return;
+                  }
+
+                  setActiveFloor(activeFloor === floor.id ? null : floor.id);
+                  plans?.goTo(floor.id);
+                }}
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                {floor.name}
+              </Button>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 }
 
