@@ -135,8 +135,16 @@ export function useSetup(files: File[]) {
     world.renderer.onAfterUpdate.add(() => stats.end());
 
     // Add the orientation gizmo component
-    const gizmo = new OrientationGizmo(components, world);
-    // container.appendChild(gizmo._canvas!);
+    new OrientationGizmo(components, world);
+
+    // Handlw window resize
+    const handleResize = () => {
+      console.log("Resizing");
+      world?.renderer?.resize();
+      world?.camera?.updateAspect();
+    };
+
+    window.addEventListener("resize", handleResize);
   }, [files, loadIfcFile, setWorld, setFragments]);
 
   // Highlighter and on select element event

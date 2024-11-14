@@ -24,18 +24,20 @@ export default function ModelViewerUploadPage() {
         <>
           <SidebarProvider
             name="ifc-viewer-sidebar"
+            className="flex-1 h-full overflow-hidden"
             style={{
               // @ts-ignore
               "--sidebar-width": "20rem",
             }}
           >
             <IFCViewerSidebar />
-            <SidebarInset>
-              <div className="flex flex-1 h-full w-full">
+            <SidebarInset className="flex overflow-hidden">
+              <div className="flex-1 relative w-full h-full">
                 <IFCViewer files={models} />
               </div>
             </SidebarInset>
           </SidebarProvider>
+
           <SidebarProvider
             name="ifc-element-details-sidebar-right"
             open={!!selectedElement}

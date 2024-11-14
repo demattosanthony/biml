@@ -27,8 +27,9 @@ export function useElementSelected() {
   const components = useIfcViewerStore((state) => state.components);
 
   const onSelection = useCallback(
-    async (fragmentIdMap: { [fragmentId: string]: Set<number> }) => {
+    async (fragmentIdMap: FRAGS.FragmentIdMap) => {
       console.log("Element selected");
+      console.log("Fragment ID Map", fragmentIdMap);
       // Get the selected fragment id
       const fragmentId = Object.values(fragmentIdMap)[0]?.values().next().value;
       console.log("Selected fragment id", fragmentId);
