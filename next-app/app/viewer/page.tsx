@@ -17,39 +17,49 @@ export default function ModelViewerUploadPage() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-1 flex-col overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden">
       {models.length === 0 ? (
         <IFCFileUploadCard onUpload={handleUpload} />
       ) : (
-        <>
-          <SidebarProvider
-            name="ifc-viewer-sidebar"
-            className="flex-1 h-full overflow-hidden"
-            style={{
-              // @ts-ignore
-              "--sidebar-width": "20rem",
-            }}
-          >
-            <IFCViewerSidebar />
-            <SidebarInset className="flex overflow-hidden">
-              <div className="flex-1 relative w-full h-full">
-                <IFCViewer files={models} />
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
+        <div className="flex h-full w-full">
+          <div className="flex-1 flex min-w-0">
+            <SidebarProvider
+              name="ifc-viewer-sidebar"
+              className="flex-1 h-full overflow-hidden"
+              style={{
+                // @ts-ignore
+                "--sidebar-width": "20rem",
+              }}
+            >
+              <IFCViewerSidebar />
+              <SidebarInset className="flex overflow-hidden">
+                <div className="flex-1 relative w-full h-full">
+                  <IFCViewer files={models} />
+                </div>
+              </SidebarInset>
+            </SidebarProvider>
+          </div>
 
-          <SidebarProvider
-            name="ifc-element-details-sidebar-right"
-            open={!!selectedElement}
-            defaultOpen={false}
-            style={{
-              // @ts-ignore
-              "--sidebar-width": "20rem",
-            }}
+          <div
+            className="transition-[width] duration-300 ease-in-out overflow-hidden"
+            style={{ width: selectedElement ? "20rem" : "0" }}
           >
-            <ElementDetailsSidebarRight />
-          </SidebarProvider>
-        </>
+            <div className="h-full w-[20rem]">
+              <SidebarProvider
+                name="ifc-element-details-sidebar-right"
+                className="h-full overflow-hidden"
+                open={!!selectedElement}
+                defaultOpen={false}
+                style={{
+                  // @ts-ignore
+                  "--sidebar-width": "20rem",
+                }}
+              >
+                <ElementDetailsSidebarRight />
+              </SidebarProvider>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
