@@ -98,7 +98,7 @@ export function useIfcLoader() {
       file: File,
       fragmentIfcLoader: OBC.IfcLoader,
       components: OBC.Components,
-      culler: OBC.MeshCullerRenderer
+      culler?: OBC.MeshCullerRenderer
     ) => {
       if (!world || !fragmentIfcLoader)
         throw new Error("World or loader not set");
@@ -113,9 +113,13 @@ export function useIfcLoader() {
         world.scene.three.add(model);
 
         // Add instanced meshes to the culler
-        for (const child of model.children) {
-          if (child instanceof THREE.InstancedMesh) {
-            culler.add(child);
+        const FILE_SIZE_THRESHOLD_FOR_CULLING = 100 * 1024 * 1024; // 100MB
+        const fileSizeInBytes = file.size;
+        if (culler && fileSizeInBytes > FILE_SIZE_THRESHOLD_FOR_CULLING) {
+          for (const child of model.children) {
+            if (child instanceof THREE.InstancedMesh) {
+              culler.add(child);
+            }
           }
         }
 

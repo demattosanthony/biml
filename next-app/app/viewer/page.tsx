@@ -7,20 +7,28 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { IFCViewerSidebar } from "@/components/viewer-sidebar";
 import useIfcViewerStore from "@/stores/useIfcViewerStore";
 import { useState } from "react";
+import { ClimbingBoxLoader } from "react-spinners";
 
 export default function ModelViewerUploadPage() {
   const [models, setModels] = useState<File[]>([]);
   const selectedElement = useIfcViewerStore((state) => state.selectedElement);
+  const loading = useIfcViewerStore((state) => state.loadingModels);
 
   const handleUpload = (files: File[]) => {
     setModels(files);
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
-      {models.length === 0 ? (
-        <IFCFileUploadCard onUpload={handleUpload} />
-      ) : (
+    <div className="h-screen w-screen overflow-hidden relative">
+      {loading && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-opacity-90 z-[1000] bg-secondary">
+          <ClimbingBoxLoader size={20} loading />
+        </div>
+      )}
+
+      {models.length === 0 && <IFCFileUploadCard onUpload={handleUpload} />}
+
+      {models.length > 0 && (
         <div className="flex h-full w-full">
           <div className="flex-1 flex min-w-0">
             <SidebarProvider
