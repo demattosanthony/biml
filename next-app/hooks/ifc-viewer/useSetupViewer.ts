@@ -39,6 +39,7 @@ export function useSetup(files: File[]) {
   const worldRef = useRef<any>(null);
 
   const setupWorld = useCallback(async () => {
+    console.log("Setting up world");
     const container = document.getElementById("ifc-viewer");
     if (!container) {
       return;
@@ -175,6 +176,7 @@ export function useSetup(files: File[]) {
     setupWorld();
 
     return () => {
+      console.log("Cleanup");
       // Proper cleanup
       if (worldRef.current) {
         const world = worldRef.current;

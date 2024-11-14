@@ -1,6 +1,5 @@
 "use client";
-
-import { Hand, Rotate3D, ScanEye } from "lucide-react";
+import { Camera, Hand, Rotate3D, ScanEye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -38,28 +37,69 @@ export default function Component() {
       shortcut: "F",
     },
   ];
+
   const world = useIfcViewerStore((state) => state.world);
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   const handleCameraModeChange = (mode: CameraMode) => {
     setSelectedMode(mode);
-
     let thisWorld: any = world;
     const { current } = thisWorld.camera.projection;
     const isOrtho = current === "Orthographic";
     const isFirstPerson = mode.id === "FirstPerson";
 
-    // Change camera projection to Perspective if First Person mode is selected
     if (isOrtho && isFirstPerson) {
       thisWorld.camera.projection.set("Perspective");
     }
-
     thisWorld.camera.set(mode.id);
 
-    // Change cursor to grab if Hand Tool is selected
     const viewerElement = document.getElementById("ifc-viewer");
     if (viewerElement) {
       viewerElement.style.cursor = mode.id === "Plan" ? "grab" : "default";
+    }
+  };
+
+  const captureScreen = async () => {
+    try {
+      setIsCapturing(true);
+      const thisWorld: any = world;
+      if (!thisWorld?.renderer) {
+        throw new Error("Renderer not found");
+      }
+
+      // Get the Three.js renderer
+      const renderer = thisWorld.renderer.three;
+      const scene = thisWorld.scene.three;
+      const camera = thisWorld.camera.three;
+
+      // Force a render of the scene
+      renderer.render(scene, camera);
+
+      // Make sure to preserve the renderer's original settings
+      const originalPreserveDrawingBuffer = renderer.preserveDrawingBuffer;
+      renderer.preserveDrawingBuffer = true;
+
+      // Render again with preserveDrawingBuffer enabled
+      renderer.render(scene, camera);
+
+      // Capture the image data
+      const imgData = renderer.domElement.toDataURL("image/png");
+
+      // Restore original preserveDrawingBuffer setting
+      renderer.preserveDrawingBuffer = originalPreserveDrawingBuffer;
+
+      // Create a link element and trigger download
+      const link = document.createElement("a");
+      link.href = imgData;
+      link.download = `screenshot-${new Date().toISOString()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to capture screen:", error);
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -71,8 +111,12 @@ export default function Component() {
       if (mode) {
         handleCameraModeChange(mode);
       }
+      // Add screenshot shortcut (Ctrl/Cmd + S)
+      if (event.key.toLowerCase() === "s" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        captureScreen();
+      }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cameraModes]);
@@ -108,6 +152,17 @@ export default function Component() {
             </div>
           </PopoverContent>
         </Popover>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={captureScreen}
+          disabled={isCapturing}
+        >
+          <Camera className="h-4 w-4" />
+          <span className="sr-only">Take screenshot</span>
+        </Button>
       </div>
     </div>
   );
