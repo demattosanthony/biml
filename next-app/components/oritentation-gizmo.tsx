@@ -32,7 +32,7 @@ export class OrientationGizmo
 
   private domElement: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
-  private rect?: ClientRect;
+  private rect?: DOMRect;
   private world: {
     renderer: OBC.SimpleRenderer;
     camera: OBC.OrthoPerspectiveCamera;
@@ -47,7 +47,6 @@ export class OrientationGizmo
   private mouse = new THREE.Vector3();
   private center: THREE.Vector3;
   private axes: any[];
-  private tempVector = new THREE.Vector3();
 
   constructor(components: OBC.Components, world: any) {
     super(components);
@@ -55,7 +54,12 @@ export class OrientationGizmo
     this.center = new THREE.Vector3(this.size / 2, this.size / 2, 0);
     this.axes = this.createAxes();
     this.domElement = this.createCanvas();
+    // Get device pixel ratio
+    const dpr = window.devicePixelRatio || 1;
     this.context = this.domElement.getContext("2d")!;
+
+    // Scale the context to account for device pixel ratio
+    this.context.scale(dpr, dpr);
 
     components.add(OrientationGizmo.uuid, this);
 
@@ -123,8 +127,16 @@ export class OrientationGizmo
 
   private createCanvas() {
     const canvas = document.createElement("canvas");
-    canvas.width = this.size;
-    canvas.height = this.size;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Adjust canvas size for device pixel ratio
+    canvas.width = this.size * dpr;
+    canvas.height = this.size * dpr;
+
+    // Set CSS size
+    canvas.style.width = `${this.size}px`;
+    canvas.style.height = `${this.size}px`;
+
     canvas.style.position = "absolute";
     canvas.style.right = "10px";
     canvas.style.top = "10px";
@@ -200,47 +212,63 @@ export class OrientationGizmo
   private onClick = () => {
     if (this.isDragging || !this.selectedAxis) return;
 
-    const vec = this.selectedAxis.direction.clone();
-    const camera = this.world.camera;
-    const distance = camera.controls.distance;
-    vec.multiplyScalar(distance);
+    const direction = this.selectedAxis.direction.clone().normalize();
+    const controls = this.world.camera.controls;
+    const camera = this.world.camera.three;
 
-    // Animate camera position
-    const duration = 400;
-    const start = performance.now();
-    const startPos = new THREE.Vector3();
-    camera.controls.getPosition(startPos);
-    const targetPos = vec;
+    // Get the current camera position and target
+    const cameraPosition = new THREE.Vector3();
+    controls.getPosition(cameraPosition);
 
-    const animate = () => {
-      const now = performance.now();
-      const delta = now - start;
-      const alpha = Math.min(delta / duration, 1);
+    const target = new THREE.Vector3();
+    controls.getTarget(target);
 
-      const newPos = new THREE.Vector3().lerpVectors(
-        startPos,
-        targetPos,
-        alpha
-      );
-      camera.controls.setPosition(newPos.x, newPos.y, newPos.z, true);
+    // Compute the distance between the camera and the target
+    const distance = cameraPosition.distanceTo(target);
 
-      if (alpha < 1) {
-        requestAnimationFrame(animate);
-      } else {
+    // Compute the target position along the selected axis
+    const targetPosition = direction.multiplyScalar(distance).add(target);
+
+    // Adjust camera's up vector if necessary
+    if (Math.abs(direction.y) === 1) {
+      camera.up.set(0, 0, 1); // Use Z-up when looking along Y-axis
+    } else {
+      camera.up.set(0, 1, 0); // Default up vector
+    }
+
+    // Use controls.setLookAt to move the camera smoothly
+    controls
+      .setLookAt(
+        targetPosition.x,
+        targetPosition.y,
+        targetPosition.z,
+        target.x,
+        target.y,
+        target.z,
+        true // enable transition
+      )
+      .then(() => {
+        // After the animation completes, trigger any necessary updates
         this.onPointerMove(new PointerEvent("pointermove"));
-      }
-    };
+      });
 
-    animate();
     this.selectedAxis = null;
   };
 
-  private drawCircle(p: THREE.Vector3, radius = 10, color = "#FF0000") {
+  private drawCircle(
+    p: THREE.Vector3,
+    radius = 10,
+    color = "#FF0000",
+    opacity = 1.0
+  ) {
+    this.context.save(); // Save the current context state
+    this.context.globalAlpha = opacity; // Set the desired opacity
     this.context.beginPath();
     this.context.arc(p.x, p.y, radius, 0, 2 * Math.PI, false);
     this.context.fillStyle = color;
     this.context.fill();
     this.context.closePath();
+    this.context.restore(); // Restore the context to its original state
   }
 
   private drawLine(
@@ -276,7 +304,9 @@ export class OrientationGizmo
         this.drawLine(this.center, axis.position, axis.line, color);
       }
 
-      this.drawCircle(axis.position, axis.size, highlight ? "#FFFFFF" : color);
+      // Set opacity when highlighted
+      const opacity = highlight ? 0.6 : 1.0; // Adjust the opacity value as desired
+      this.drawCircle(axis.position, axis.size, color, opacity);
 
       if (axis.label) {
         this.context.font = `${this.fontWeight} ${this.fontSize} ${this.fontFamily}`;
