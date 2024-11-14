@@ -110,7 +110,7 @@ export function useSetup(files: File[]) {
       hoverColor: new THREE.Color(0x0b99ff),
       selectionColor: new THREE.Color(0x0b99ff),
     });
-    highlighter.zoomToSelection = true;
+    highlighter.zoomToSelection = false;
     setHighlighter(highlighter);
 
     const hider = components.get(OBC.Hider);
@@ -196,6 +196,7 @@ export function useSetup(files: File[]) {
       if (highlighter) {
         highlighter.events.select.onHighlight.remove(onSelection);
         highlighter.events.select.onClear.remove(onDeselection);
+        highlighter.dispose();
       }
 
       // Clear the store

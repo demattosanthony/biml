@@ -30,7 +30,9 @@ export function IFCViewerSidebar() {
   return (
     <Sidebar side="left">
       <SidebarHeader>
-        <h2 className="text-lg font-semibold tracking-tight">DaVinci Viewer</h2>
+        <h2 className="text-lg font-semibold tracking-tight px-2">
+          DaVinci Viewer
+        </h2>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
