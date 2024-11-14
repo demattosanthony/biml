@@ -1,5 +1,12 @@
 "use client";
-import { Camera, Hand, Rotate3D, ScanEye } from "lucide-react";
+import {
+  Camera,
+  Hand,
+  Rotate3D,
+  Box,
+  Square,
+  PersonStanding,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -33,7 +40,7 @@ export default function Component() {
     {
       id: "FirstPerson",
       label: "First Person",
-      icon: <ScanEye className="h-4 w-4" />,
+      icon: <PersonStanding className="h-4 w-4" />,
       shortcut: "F",
     },
   ];
@@ -41,6 +48,7 @@ export default function Component() {
   const world = useIfcViewerStore((state) => state.world);
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isOrthographic, setIsOrthographic] = useState(false);
 
   const handleCameraModeChange = (mode: CameraMode) => {
     setSelectedMode(mode);
@@ -51,6 +59,7 @@ export default function Component() {
 
     if (isOrtho && isFirstPerson) {
       thisWorld.camera.projection.set("Perspective");
+      setIsOrthographic(false);
     }
     thisWorld.camera.set(mode.id);
 
@@ -58,6 +67,20 @@ export default function Component() {
     if (viewerElement) {
       viewerElement.style.cursor = mode.id === "Plan" ? "grab" : "default";
     }
+  };
+
+  const toggleProjection = () => {
+    let thisWorld: any = world;
+    const newProjection = isOrthographic ? "Perspective" : "Orthographic";
+
+    // Automatically switch to perspective mode if in first person
+    if (selectedMode.id === "FirstPerson" && newProjection === "Orthographic") {
+      thisWorld.camera.projection.set("Perspective");
+      setIsOrthographic(false);
+    }
+
+    thisWorld.camera.projection.set(newProjection);
+    setIsOrthographic(!isOrthographic);
   };
 
   const captureScreen = async () => {
@@ -116,10 +139,15 @@ export default function Component() {
         event.preventDefault();
         captureScreen();
       }
+      // Add projection toggle shortcut (P)
+      if (event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        toggleProjection();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cameraModes]);
+  }, [cameraModes, selectedMode.id, isOrthographic]);
 
   return (
     <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
@@ -152,6 +180,23 @@ export default function Component() {
             </div>
           </PopoverContent>
         </Popover>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={toggleProjection}
+          title={`Switch to ${
+            isOrthographic ? "Perspective" : "Orthographic"
+          } view (P)`}
+        >
+          {isOrthographic ? (
+            <Box className="h-4 w-4" />
+          ) : (
+            <Square className="h-4 w-4" />
+          )}
+          <span className="sr-only">Toggle projection</span>
+        </Button>
 
         <Button
           variant="ghost"
