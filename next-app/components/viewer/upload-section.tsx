@@ -38,7 +38,6 @@ export const FileItem = ({ name, size, onRemove }: FileItemProps) => {
   );
 };
 
-// components/upload/DropZone.tsx
 interface DropZoneProps {
   isDragging: boolean;
   onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -76,8 +75,9 @@ export const DropZone = ({
 // components/upload/UploadSection.tsx
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CuboidIcon } from "lucide-react";
 import { useState, useCallback } from "react";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 
 interface UploadSectionProps {
   onUpload: (files: File[]) => void;
@@ -86,6 +86,8 @@ interface UploadSectionProps {
 export const UploadSection = ({ onUpload }: UploadSectionProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const { theme, systemTheme } = useTheme();
+  const realTheme = theme === "system" ? systemTheme : theme;
 
   const handleFileUpload = useCallback((newFiles: FileList | null) => {
     if (newFiles) {
@@ -137,7 +139,17 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
           </Badge>
 
           <div className="flex items-center justify-center gap-2 mb-4">
-            <CuboidIcon className="w-12 h-12 text-primary" />
+            <Image
+              height={75}
+              width={75}
+              src={
+                realTheme === "dark"
+                  ? "/rhombicuboctahedron-white.svg"
+                  : "/rhombicuboctahedron.svg"
+              }
+              alt="Logo"
+              className="h-[75px]"
+            />
             <h1 className="text-6xl font-bold tracking-tighter">
               DaVinci Viewer
             </h1>

@@ -14,7 +14,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { ChevronRight, Eye, EyeOff, LayoutDashboard } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  LayoutDashboard,
+  Plus,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,17 +30,69 @@ import {
 import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 
 export function IFCViewerSidebar() {
   const models = useIfcViewerStore((state) => state.models);
+  const setModels = useIfcViewerStore(
+    (state) => state.actions.setUploadedFiles
+  );
   const categories = useIfcViewerStore((state) => state.categories);
+  const { theme, systemTheme } = useTheme();
+  const realTheme = theme === "system" ? systemTheme : theme;
 
   return (
     <Sidebar side="left">
       <SidebarHeader>
-        <h2 className="text-lg font-semibold tracking-tight px-2">
-          DaVinci Viewer
-        </h2>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="w-fit px-1.5">
+                  <div className="flex aspect-square items-center justify-center rounded-md ">
+                    <Image
+                      height={30}
+                      width={30}
+                      src={
+                        realTheme === "dark"
+                          ? "/rhombicuboctahedron-white.svg"
+                          : "/rhombicuboctahedron.svg"
+                      }
+                      alt="Logo"
+                      className="h-[75px]"
+                    />
+                  </div>
+                  <span className="truncate font-bold">DaVinci Viewer</span>
+                  <ChevronDown className="opacity-50" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-64 rounded-lg"
+                align="start"
+                side="bottom"
+                sideOffset={4}
+              >
+                <DropdownMenuItem
+                  className="gap-2 p-2"
+                  onClick={() => {
+                    setModels([]);
+                  }}
+                >
+                  <div className="font-medium text-muted-foreground">
+                    Back to Home
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

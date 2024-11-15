@@ -13,6 +13,9 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "Davinci",
   description: "A modern design system for your new project.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

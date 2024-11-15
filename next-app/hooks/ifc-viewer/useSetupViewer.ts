@@ -187,12 +187,12 @@ export function useSetup(files: File[]) {
   useEffect(() => {
     if (!highlighter) return;
 
-    highlighter?.events.select.onHighlight.add(onSelection);
-    highlighter?.events.select.onClear.add(onDeselection);
+    highlighter?.events.select?.onHighlight.add(onSelection);
+    highlighter?.events.select?.onClear.add(onDeselection);
 
     return () => {
-      highlighter?.events.select.onHighlight.remove(onSelection);
-      highlighter?.events.select.onClear.remove(onDeselection);
+      highlighter?.events.select?.onHighlight.remove(onSelection);
+      highlighter?.events.select?.onClear.remove(onDeselection);
     };
   }, [onSelection]);
 
@@ -217,8 +217,8 @@ export function useSetup(files: File[]) {
 
       const highlighter = useIfcViewerStore.getState().highlighter;
       if (highlighter) {
-        highlighter.events.select.onHighlight.remove(onSelection);
-        highlighter.events.select.onClear.remove(onDeselection);
+        highlighter.events.select?.onHighlight.remove(onSelection);
+        highlighter.events.select?.onClear.remove(onDeselection);
         highlighter.dispose();
       }
 

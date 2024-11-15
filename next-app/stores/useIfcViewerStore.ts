@@ -56,6 +56,7 @@ export interface IFCCategory {
 }
 
 interface IFCViewerState {
+  uploadedFiles: File[];
   loadingModels: boolean;
   world: OBC.World | null;
   camera: OBC.OrthoPerspectiveCamera | null;
@@ -82,10 +83,12 @@ interface IFCViewerState {
     setHider: (hider: OBC.Hider) => void;
     setSelectedElement: (element: EntityNode | null) => void;
     setCategories: (categories: IFCCategory[]) => void;
+    setUploadedFiles: (files: File[]) => void;
   };
 }
 
 const useIfcViewerStore = create<IFCViewerState>((set) => ({
+  uploadedFiles: [],
   loadingModels: false,
   world: null,
   camera: null,
@@ -120,6 +123,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
     setHider: (hider) => set({ hider }),
     setSelectedElement: (element) => set({ selectedElement: element }),
     setCategories: (categories) => set({ categories }),
+    setUploadedFiles: (files) => set({ uploadedFiles: files }),
   },
 }));
 

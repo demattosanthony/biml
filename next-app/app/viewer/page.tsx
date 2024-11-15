@@ -9,7 +9,10 @@ import { UploadSection } from "@/components/viewer/upload-section";
 import { useState } from "react";
 
 export default function ModelViewerUploadPage() {
-  const [models, setModels] = useState<File[]>([]);
+  const models = useIfcViewerStore((state) => state.uploadedFiles);
+  const setModels = useIfcViewerStore(
+    (state) => state.actions.setUploadedFiles
+  );
   const selectedElement = useIfcViewerStore((state) => state.selectedElement);
   const loading = useIfcViewerStore((state) => state.loadingModels);
 
