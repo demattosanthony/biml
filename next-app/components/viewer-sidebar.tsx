@@ -26,6 +26,7 @@ import { Button } from "./ui/button";
 
 export function IFCViewerSidebar() {
   const models = useIfcViewerStore((state) => state.models);
+  const categories = useIfcViewerStore((state) => state.categories);
 
   return (
     <Sidebar side="left">
@@ -56,6 +57,21 @@ export function IFCViewerSidebar() {
         </SidebarGroup>
 
         <FloorPlans />
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-semibold">
+            Categories
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {categories.map((category, index) => (
+                <SidebarMenuItem key={index}>
+                  <SidebarMenuButton>{category.name}</SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter />
       <SidebarRail />

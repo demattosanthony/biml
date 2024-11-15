@@ -58,6 +58,7 @@ export function useMouseControls() {
     [isMouseDown, world]
   );
 
+  // TODO: If this is on then it messed up the 2d plan view. Need to fix.
   // useEffect(() => {
   //   window.addEventListener("mousedown", handleMouseDown);
   //   window.addEventListener("mouseup", handleMouseUp);

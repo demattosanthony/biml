@@ -42,7 +42,7 @@ export function useElementSelected() {
           fragmentId
         );
 
-        if (!entityAttrs) return null;
+        if (!entityAttrs) continue;
 
         const { type, Name } = entityAttrs;
         const processedAttributes = processAttributes(entityAttrs);

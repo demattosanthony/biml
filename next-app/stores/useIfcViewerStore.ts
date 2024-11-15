@@ -1,4 +1,4 @@
-import { FragmentsGroup } from "@thatopen/fragments";
+import { FragmentIdMap, FragmentsGroup } from "@thatopen/fragments";
 import { create } from "zustand";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
@@ -50,6 +50,11 @@ export interface IFCModel {
   tree: EntityNode | null;
 }
 
+export interface IFCCategory {
+  name: string;
+  fragIds: FragmentIdMap;
+}
+
 interface IFCViewerState {
   loadingModels: boolean;
   world: OBC.World | null;
@@ -60,6 +65,7 @@ interface IFCViewerState {
   highlighter: OBCF.Highlighter | null;
   plans: OBCF.Plans | null;
   models: IFCModel[];
+  categories: IFCCategory[];
   hider: OBC.Hider | null;
   selectedElement: EntityNode | null;
   actions: {
@@ -75,6 +81,7 @@ interface IFCViewerState {
     clearModels: () => void;
     setHider: (hider: OBC.Hider) => void;
     setSelectedElement: (element: EntityNode | null) => void;
+    setCategories: (categories: IFCCategory[]) => void;
   };
 }
 
@@ -90,6 +97,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   ifcFiles: [],
   models: [],
   hider: null,
+  categories: [],
   selectedElement: null,
   actions: {
     setLoadingModels: (loading) => set({ loadingModels: loading }),
@@ -111,6 +119,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
     clearModels: () => set({ models: [] }),
     setHider: (hider) => set({ hider }),
     setSelectedElement: (element) => set({ selectedElement: element }),
+    setCategories: (categories) => set({ categories }),
   },
 }));
 

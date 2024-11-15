@@ -99,7 +99,7 @@ export function useIfcLoader() {
       fragmentIfcLoader: OBC.IfcLoader,
       components: OBC.Components,
       culler?: OBC.MeshCullerRenderer
-    ) => {
+    ): Promise<FragmentsGroup> => {
       if (!world || !fragmentIfcLoader)
         throw new Error("World or loader not set");
 
@@ -157,8 +157,11 @@ export function useIfcLoader() {
         plans.world = world;
         await plans.generate(model);
         setPlans(plans);
+
+        return model;
       } catch (error) {
         console.error("Error loading IFC file:", error);
+        throw error;
       } finally {
         setLoadingModel(false);
       }

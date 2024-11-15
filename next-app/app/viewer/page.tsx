@@ -24,7 +24,7 @@ export default function ModelViewerUploadPage() {
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       {loading && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-opacity-90 z-[1000] bg-secondary">
+        <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center z-[1000] bg-background">
           <ClimbingBoxLoader
             size={20}
             loading

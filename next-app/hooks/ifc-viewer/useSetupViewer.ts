@@ -29,6 +29,9 @@ export function useSetup(files: File[]) {
     (state) => state.actions.setComponents
   );
   const setCamera = useIfcViewerStore((state) => state.actions.setCamera);
+  const setCategories = useIfcViewerStore(
+    (state) => state.actions.setCategories
+  );
   const { onSelection, onDeselection } = useElementSelected();
 
   const { handleMouseDown, handleMouseUp, handleMouseMove } =
@@ -121,9 +124,29 @@ export function useSetup(files: File[]) {
     const culler = cullers.create(world);
     culler.config.threshold = 10;
 
+    // Classifier
+    const classifier = components.get(OBC.Classifier);
+
     // Load each IFC file
     for (const file of files) {
-      await loadIfcFile(world, file, fragmentIfcLoader, components, culler);
+      const model = await loadIfcFile(
+        world,
+        file,
+        fragmentIfcLoader,
+        components,
+        culler
+      );
+
+      // Save all ifc categories
+      classifier.byEntity(model);
+      const entities = classifier.list["entities"];
+
+      setCategories(
+        Object.entries(entities).map(([_, entity]) => ({
+          name: entity.name,
+          fragIds: entity.map,
+        }))
+      );
     }
 
     culler.needsUpdate = true;

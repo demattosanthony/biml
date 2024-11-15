@@ -118,7 +118,10 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
         <SidebarGroup>
           <SidebarGroupContent>
             {selectedElement?.psets && selectedElement.psets.length > 0 ? (
-              <Collapsible className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90">
+              <Collapsible
+                className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                defaultOpen
+              >
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton>
                     <ChevronRight className="h-4 w-4 transition-transform duration-200" />
@@ -181,7 +184,10 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
               selectedElement.materials.length > 0 && (
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <Collapsible className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90">
+                    <Collapsible
+                      className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                      defaultOpen
+                    >
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton>
                           <ChevronRight className="h-4 w-4 transition-transform duration-200" />
