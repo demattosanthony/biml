@@ -155,8 +155,12 @@ export function useIfcLoader() {
 
         const plans = components.get(OBCF.Plans);
         plans.world = world;
-        await plans.generate(model);
-        setPlans(plans);
+        try {
+          await plans.generate(model);
+          setPlans(plans);
+        } catch (error) {
+          console.error("Error generating floor plans:", error);
+        }
 
         return model;
       } catch (error) {
