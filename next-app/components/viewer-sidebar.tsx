@@ -20,7 +20,6 @@ import {
   Eye,
   EyeOff,
   LayoutDashboard,
-  Plus,
 } from "lucide-react";
 import {
   Collapsible,
@@ -44,6 +43,7 @@ export function IFCViewerSidebar() {
   const setModels = useIfcViewerStore(
     (state) => state.actions.setUploadedFiles
   );
+  const highlighter = useIfcViewerStore((state) => state.highlighter);
   const categories = useIfcViewerStore((state) => state.categories);
   const { theme, systemTheme } = useTheme();
   const realTheme = theme === "system" ? systemTheme : theme;
@@ -74,7 +74,7 @@ export function IFCViewerSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-64 rounded-lg"
+                className="rounded-lg"
                 align="start"
                 side="bottom"
                 sideOffset={4}
@@ -123,11 +123,34 @@ export function IFCViewerSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {categories.map((category, index) => (
-                <SidebarMenuItem key={index}>
-                  <SidebarMenuButton>{category.name}</SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {categories &&
+                Object.keys(categories).map((category, index) => (
+                  <SidebarMenuItem
+                    key={index}
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+
+                      const thisCat = categories[category];
+
+                      Object.entries(thisCat.fragIds).map(
+                        ([modelId, fragMap]) => {
+                          highlighter?.highlightByID(
+                            "hover",
+                            fragMap,
+                            true,
+                            false
+                          );
+                        }
+                      );
+                    }}
+                    onMouseLeave={(e) => {
+                      e.stopPropagation();
+                      highlighter?.clear("hover");
+                    }}
+                  >
+                    <SidebarMenuButton>{category}</SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

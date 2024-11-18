@@ -91,7 +91,11 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
 
   const handleFileUpload = useCallback((newFiles: FileList | null) => {
     if (newFiles) {
-      setFiles((prev) => [...prev, ...Array.from(newFiles)]);
+      // Only accept IFC files
+      const validFiles = Array.from(newFiles).filter((file) =>
+        file.name.endsWith(".ifc")
+      );
+      setFiles((prev) => [...prev, ...Array.from(validFiles)]);
     }
   }, []);
 

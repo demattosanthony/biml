@@ -6,7 +6,6 @@ import { ElementDetailsSidebarRight } from "@/components/element-details-sidebar
 import IFCViewer from "@/components/ifc-viewer";
 import { LoadingOverlay } from "@/components/viewer/loading-overlay";
 import { UploadSection } from "@/components/viewer/upload-section";
-import { useState } from "react";
 
 export default function ModelViewerUploadPage() {
   const models = useIfcViewerStore((state) => state.uploadedFiles);

@@ -52,7 +52,7 @@ export interface IFCModel {
 
 export interface IFCCategory {
   name: string;
-  fragIds: FragmentIdMap;
+  fragIds: Record<string, FragmentIdMap>; // Fragment Ids for each model
 }
 
 interface IFCViewerState {
@@ -66,7 +66,7 @@ interface IFCViewerState {
   highlighter: OBCF.Highlighter | null;
   plans: OBCF.Plans | null;
   models: IFCModel[];
-  categories: IFCCategory[];
+  categories: Record<string, IFCCategory>;
   hider: OBC.Hider | null;
   selectedElement: EntityNode | null;
   actions: {
@@ -82,7 +82,7 @@ interface IFCViewerState {
     clearModels: () => void;
     setHider: (hider: OBC.Hider) => void;
     setSelectedElement: (element: EntityNode | null) => void;
-    setCategories: (categories: IFCCategory[]) => void;
+    setCategories: (categories: Record<string, IFCCategory>) => void;
     setUploadedFiles: (files: File[]) => void;
   };
 }
@@ -100,7 +100,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   ifcFiles: [],
   models: [],
   hider: null,
-  categories: [],
+  categories: {},
   selectedElement: null,
   actions: {
     setLoadingModels: (loading) => set({ loadingModels: loading }),

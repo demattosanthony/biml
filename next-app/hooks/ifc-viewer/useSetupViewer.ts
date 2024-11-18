@@ -3,7 +3,7 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import useIfcViewerStore from "@/stores/useIfcViewerStore";
+import useIfcViewerStore, { IFCCategory } from "@/stores/useIfcViewerStore";
 import { useIfcLoader } from "./useIfcLoader";
 import { useElementSelected } from "./useElementSelected";
 import { useMouseControls } from "./useMouseControls";
@@ -141,12 +141,29 @@ export function useSetup(files: File[]) {
       classifier.byEntity(model);
       const entities = classifier.list["entities"];
 
-      setCategories(
-        Object.entries(entities).map(([_, entity]) => ({
-          name: entity.name,
-          fragIds: entity.map,
-        }))
-      );
+      const loadedCategories = useIfcViewerStore.getState().categories;
+
+      const newCategories: Record<string, IFCCategory> = {
+        ...loadedCategories,
+      };
+
+      // Iterate through each entity group
+      Object.entries(entities).forEach(([groupName, entityData]) => {
+        const categoryName = entityData.name;
+
+        // If category doesn't exist, create it
+        if (!newCategories[categoryName]) {
+          newCategories[categoryName] = {
+            name: categoryName,
+            fragIds: {},
+          };
+        }
+
+        // Update fragment IDs for this category
+        // The map property from entities contains the fragment IDs for the current model
+        newCategories[categoryName].fragIds[model.id] = entityData.map;
+      });
+      setCategories(newCategories);
     }
 
     culler.needsUpdate = true;
@@ -156,6 +173,7 @@ export function useSetup(files: File[]) {
 
     setLoadingModels(false);
 
+    world.camera.updateAspect();
     focusOnModels();
 
     const stats = new Stats();
