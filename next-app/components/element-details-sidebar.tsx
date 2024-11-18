@@ -157,7 +157,7 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
                                   ([key, prop], propIndex) => (
                                     <TableRow key={`${key}-${propIndex}`}>
                                       <TableCell className="font-medium">
-                                        {key}
+                                        {prop.name}
                                       </TableCell>
                                       <TableCell>
                                         {formatPropertyValue(prop)}
