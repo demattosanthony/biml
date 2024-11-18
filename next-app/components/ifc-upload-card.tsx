@@ -5,46 +5,48 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import useIfcStore from "@/stores/useIfcStore";
-import { useMutation } from "@tanstack/react-query";
 import { File, FileBox, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-export default function IFCFileUploadCard() {
+export default function IFCFileUploadCard({
+  onUpload,
+}: {
+  onUpload: (file: File[]) => void;
+}) {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
-  const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
+  // const setIfcFiles = useIfcStore((state) => state.actions.setIFCFiles);
 
-  const uploadIfcModelMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const facility = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/facilities/create`,
-        {
-          method: "POST",
-        }
-      );
+  // const uploadIfcModelMutation = useMutation({
+  //   mutationFn: async (file: File) => {
+  //     const facility = await fetch(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/facilities/create`,
+  //       {
+  //         method: "POST",
+  //       }
+  //     );
 
-      const data = await facility.json();
+  //     const data = await facility.json();
 
-      const id = data.id;
+  //     const id = data.id;
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("facilityId", id);
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     formData.append("facilityId", id);
 
-      const ifc_model = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ifc/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+  //     const ifc_model = await fetch(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/ifc/upload`,
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //       }
+  //     );
 
-      return await ifc_model.json();
-    },
-  });
+  //     return await ifc_model.json();
+  //   },
+  // });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Add to the existing files
@@ -57,16 +59,7 @@ export default function IFCFileUploadCard() {
   });
 
   function uploadIFCFiles() {
-    setIfcFiles(files);
-
-    uploadIfcModelMutation.mutate(files[0], {
-      onSuccess: (data) => {
-        const facilityId = data.ifcModel.facilityId;
-
-        router.push(`viewer/${facilityId}`);
-      },
-    });
-
+    onUpload(files);
     setFiles([]); // Clear the files
   }
 
@@ -75,15 +68,17 @@ export default function IFCFileUploadCard() {
       <Card className="w-[450px]">
         <CardHeader>
           <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-            Import IFC Models
+            Upload IFC Models
           </h3>
         </CardHeader>
         <CardContent>
           <div
             {...getRootProps()}
             className={`flex justify-center items-center w-full h-32 border-dashed border-2 border-gray-200 rounded-lg hover:bg-accent hover:text-accent-foreground transition-all select-none cursor-pointer gap-1 ${
-              isDragActive && "bg-accemt text-accent-foreground"
-            }`}
+              isDragActive && "bg-accent text-accent-foreground"
+            }
+              hover:bg-accent 
+            `}
           >
             <input {...getInputProps()} />
 
