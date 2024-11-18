@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "saron"
+version = "0.1.0"
+description = ""
+authors = ["Anthony DeMattos <demattosanthony@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "==3.11.*"
+ifcopenshell = "^0.8.0"
+mathutils = "^3.3.0"
+bpy = "^4.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
