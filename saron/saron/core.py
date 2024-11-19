@@ -1,11 +1,13 @@
-import ifcopenshell
-from ifcopenshell.api import aggregate
-import ifcopenshell.guid
 from litellm import completion
 import io
+import ifcopenshell
+from ifcopenshell import guid 
+import math
+import numpy as np
 
 # Inital IFC Model
 model = """import ifcopenshell
+from ifcopenshell import guid
 
 # Setup project
 model = ifcopenshell.file()
@@ -35,6 +37,7 @@ Your task is to analyze the code and identify any issues, gaps, or areas for imp
 <Code>
 - Provide the revised or optimized Python code using IFCOpenShell.
 - Ensure the code is correct, standard-compliant, and ready
+- ALWAYS rewrite the entire code, NEVER say ... previous code here or anything like that. (This is very important because the code provided in this section will be executed)
 </Code>
 
 ---
@@ -122,6 +125,7 @@ Your task is to analyze the code and identify any issues, gaps, or areas for imp
 </Plan>
 
 <Code>
+```python
 import ifcopenshell.api.root
 import ifcopenshell.api.unit
 import ifcopenshell.api.context
@@ -174,67 +178,24 @@ ifcopenshell.api.spatial.assign_container(model, relating_structure=storey, prod
 
 # Write out to a file
 model.write("sample_model.ifc")
+```
 </Code>
 """
 
-goal = """Specification for Building Information Model (BIM): 1-Story Office Building
-General Overview
-Building Type: 1-story office building
-Number of Rooms: 2
-Interconnectivity: The two rooms are connected by a single interior door.
-Building Dimensions
-Total Floor Area: 1,000 sq. ft. (adjustable as needed)
-Building Height: 12 ft. (floor-to-ceiling height)
-Exterior Dimensions: Rectangular footprint, e.g., 50 ft. x 20 ft.
-Room Details
-Room 1 (Office Room A)
-
-Function: General office use
-Dimensions: 20 ft. x 20 ft.
-Features:
-One exterior-facing window (4 ft. x 6 ft.)
-One exterior-facing door (main entrance, 3 ft. x 7 ft.)
-Room 2 (Office Room B)
-
-Function: General office use
-Dimensions: 20 ft. x 20 ft.
-Features:
-One exterior-facing window (4 ft. x 6 ft.)
-Connectivity
-Interior Door:
-Placement: On the shared wall between Room 1 and Room 2
-Dimensions: 3 ft. x 7 ft.
-Swing Direction: Hinged to swing into Room 2
-Materials and Finishes
-Walls:
-Interior: Drywall with a smooth white paint finish
-Exterior: Brick veneer
-Flooring: Vinyl tile throughout
-Ceiling: Drop ceiling with acoustic panels
-Electrical and Lighting
-Lighting:
-Ceiling-mounted LED panels in both rooms
-Power Outlets:
-Room 1: Four duplex outlets
-Room 2: Four duplex outlets
-HVAC
-Heating and Cooling: Centralized HVAC system with vents in both rooms
-Additional Features
-Fire Safety:
-Smoke detectors in each room
-Fire extinguisher in Room 1 near the main entrance"""
 
 import sys
 import traceback
+
+
 def execute_python_code(code, globals_dict=None, locals_dict=None):
     """
     Execute Python code and capture stdout, stderr, and any exceptions.
-    
+
     Args:
         code (str): Python code to execute
         globals_dict (dict, optional): Global namespace dictionary
         locals_dict (dict, optional): Local namespace dictionary
-    
+
     Returns:
         dict: A dictionary containing execution results
     """
@@ -243,93 +204,212 @@ def execute_python_code(code, globals_dict=None, locals_dict=None):
         globals_dict = {}
     if locals_dict is None:
         locals_dict = {}
-    
+
     # Redirect stdout and stderr
     stdout_capture = io.StringIO()
     stderr_capture = io.StringIO()
-    
+
     # Store original stream references
     original_stdout = sys.stdout
     original_stderr = sys.stderr
-    
+
     try:
         # Redirect stdout and stderr to StringIO objects
         sys.stdout = stdout_capture
         sys.stderr = stderr_capture
-        
+
         # Execute the code
         exec(code, globals_dict, locals_dict)
-        
+
         # Compilation and execution successful
-        return {
-            'success': True,
-            'stdout': stdout_capture.getvalue(),
-            'stderr': stderr_capture.getvalue(),
-            'result': None
-        }
-    
+        return {"success": True, "stdout": stdout_capture.getvalue(), "stderr": stderr_capture.getvalue(), "result": None}
+
     except Exception as e:
         # Capture exception details
         return {
-            'success': False,
-            'type': type(e).__name__,
-            'message': str(e),
-            'traceback': traceback.format_exc(),
-            'stdout': stdout_capture.getvalue(),
-            'stderr': stderr_capture.getvalue()
+            "success": False,
+            "type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc(),
+            "stdout": stdout_capture.getvalue(),
+            "stderr": stderr_capture.getvalue(),
         }
-    
+
     finally:
         # Restore original stdout and stderr
         sys.stdout = original_stdout
         sys.stderr = original_stderr
-        
+
         # Close StringIO objects
         stdout_capture.close()
         stderr_capture.close()
 
+
+def extract_code_blocks(content):
+    # Remove the outer <Code> tags
+    code_content = content.split("<Code>")[1].split("</Code>")[0].strip()
+
+    # Split the content by code block markers
+    code_blocks = code_content.split("```")
+
+    # Filter out empty strings and strip whitespace
+    code_blocks = [block.strip() for block in code_blocks if block.strip()]
+
+    # Separate code blocks by their language (first word after ```)
+    parsed_blocks = []
+    for block in code_blocks:
+        # Split the first line to get the language
+        lines = block.split("\n")
+        language = lines[0].strip()
+        # Combine the rest of the lines as the code
+        code = "\n".join(lines[1:])
+        parsed_blocks.append({"language": language, "code": code})
+
+    return parsed_blocks
+
+
+goal = """### Specification for Building Information Model (BIM): 1-Story Office Building
+
+#### General Overview
+- **Building Type**: 1-story office building  
+- **Number of Rooms**: 2  
+- **Interconnectivity**: The two rooms are connected by a single interior door.
+
+---
+
+#### Building Dimensions
+- **Total Floor Area**: 1,000 sq. ft. (adjustable as needed)
+- **Building Height**: 12 ft. (floor-to-ceiling height)
+- **Exterior Dimensions**: Rectangular footprint, e.g., 50 ft. x 20 ft.
+
+---
+
+#### Room Details
+
+1. **Room 1 (Office Room A)**  
+   - **Function**: General office use  
+   - **Dimensions**: 20 ft. x 20 ft.  
+   - **Features**:  
+     - One exterior-facing window (4 ft. x 6 ft.)  
+     - One exterior-facing door (main entrance, 3 ft. x 7 ft.)  
+
+2. **Room 2 (Office Room B)**  
+   - **Function**: General office use  
+   - **Dimensions**: 20 ft. x 20 ft.  
+   - **Features**:  
+     - One exterior-facing window (4 ft. x 6 ft.)  
+
+---
+
+#### Connectivity
+- **Interior Door**:  
+  - Placement: On the shared wall between Room 1 and Room 2  
+  - Dimensions: 3 ft. x 7 ft.  
+  - Swing Direction: Hinged to swing into Room 2  
+
+---
+
+#### Materials and Finishes
+- **Walls**:  
+  - Interior: Drywall with a smooth white paint finish  
+  - Exterior: Brick veneer  
+- **Flooring**: Vinyl tile throughout  
+- **Ceiling**: Drop ceiling with acoustic panels  
+
+---
+
+#### Electrical and Lighting
+- **Lighting**:  
+  - Ceiling-mounted LED panels in both rooms  
+- **Power Outlets**:  
+  - Room 1: Four duplex outlets  
+  - Room 2: Four duplex outlets  
+
+---
+
+#### HVAC
+- **Heating and Cooling**: Centralized HVAC system with vents in both rooms  
+
+---
+
+#### Additional Features
+- **Fire Safety**:  
+  - Smoke detectors in each room  
+  - Fire extinguisher in Room 1 near the main entrance  
+
+---
+
+### BIM File Structure and Metadata
+- **IFC Schema**: IFC4  
+- **Entities**:  
+  - `IfcBuilding`  
+  - `IfcBuildingStorey`  
+  - `IfcSpace` (Room 1 and Room 2)  
+  - `IfcWallStandardCase` (for interior and exterior walls)  
+  - `IfcDoor` (interior connecting door)  
+  - `IfcWindow` (exterior-facing windows)"""
 
 messages = [
     {"role": "system", "content": system_message},
     {"role": "user", "content": f"<Goal>{goal}</Goal>\n\n<Code>{model}</Code>"},
 ]
 
-while True:
-    response = completion(model="claude-3-5-sonnet-20241022", messages=messages, temperature=0)
-    content = response.choices[0].message.content
-    messages.append({"role": "assistant", "content": content})
+claude_sonnet = "claude-3-5-haiku-20241022"
+claude_sonnet = "claude-3-5-sonnet-20241022"
+o1_preview = "o1-preview"
+gpt_4o = "gpt-4o"
 
-    print(content)
-    print("\n\n")
+def main():
+    while True:
+        response = completion(model=claude_sonnet, messages=messages, temperature=0)
+        content = response.choices[0].message.content
+        messages.append({"role": "assistant", "content": content})
 
-    # Parse the response content to extract the code
-    try:
-        code = content.split("<Code>")[1].split("</Code>")[0].strip()
+        print(content)
+        print("\n\n")
 
-    except Exception as e:
-        print("<Code> tags not found in the response content.")
-        # Handle the error, e.g., by setting model to an empty string or taking other appropriate actions
-        code = None
+        # Parse the response content to extract the code
+        try:
+            code_blocks = extract_code_blocks(content)
+        except Exception as e:
+            print("<Code> tags not found in the response content.")
+            # Handle the error, e.g., by setting model to an empty string or taking other appropriate actions
+            code_blocks = None
 
-    # If there is code then lets run it
-    if code is not None:
-        result = execute_python_code(code)
-        if result["success"] == False:
-            print("An error occurred during code execution.")
-            print(f"Error Type: {result['type']}")
-            print(f"Error Message: {result['message']}")
-            print(result["traceback"])
-            messages.append({"role": "user", "content": f"I have reviewed the code and found an error:\n\n{result['traceback']}\n\nGo back and fix these problems so that the code can be executed successfully and the BIM model can be created."})
-            continue # Skip the user input prompt and go back to resolve the error
+        # If there is code then lets run it
+        if len(code_blocks) > 0:
+            code_block = code_blocks[0]
+            code = code_block["code"]
 
-        # Save the code to model.py
-        with open("model.py", "w") as file:
-            file.write(code)
+            # Save the code to model.py
+            with open("model.py", "w") as file:
+                file.write(code)
 
-    # Take in user input in case there is some issues found
-    user_input = input("Enter your response: ")
+            result = execute_python_code(code)
+            if result["success"] == False:
+                print("An error occurred during code execution.")
+                print(f"Error Type: {result['type']}")
+                print(f"Error Message: {result['message']}")
+                print(result["traceback"])
 
-    if user_input == "exit":
-        break
+                # Send the review back to the engineer
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": f"<CodeTracebackErrors>{result['traceback']}</CodeTracebackErrors>\n\nMake the required changes so that the code runs without errors and produces the excpected output."
+                    }
+                )
+                continue  # Skip the user input prompt and go back to resolve the error
 
-    messages.append({"role": "user", "content": user_input})
+            
+        # Take in user input in case there is some issues found
+        user_input = input("Enter your response: ")
+
+        if user_input == "exit":
+            break
+
+        messages.append({"role": "user", "content": user_input})
+
+
+if __name__ == "__main__":
+    main()

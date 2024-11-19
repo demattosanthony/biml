@@ -1,99 +1,201 @@
 import ifcopenshell
 import ifcopenshell.api
 import math
+import numpy as np
+from ifcopenshell.api import run
 
 # Create a new IFC file
-model = ifcopenshell.file()
+model = ifcopenshell.file(schema="IFC4")
 
 # Create project
-project = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcProject", name="Office Building Project")
+project = run("root.create_entity", model, ifc_class="IfcProject", name="Office Building Project")
 
-# Assign basic metric units (we'll handle imperial conversions in the geometry)
-ifcopenshell.api.run("unit.assign_unit", model)
+# Set up units - using default metric units
+run("unit.assign_unit", model)
 
-# Create geometric contexts
-context = ifcopenshell.api.run("context.add_context", model, context_type="Model")
-body = ifcopenshell.api.run("context.add_context", model, context_type="Model", 
-    context_identifier="Body", target_view="MODEL_VIEW", parent=context)
+# Set up geometric contexts
+context = run("context.add_context", model, context_type="Model")
+body = run("context.add_context", model, context_type="Model", context_identifier="Body", target_view="MODEL_VIEW", parent=context)
 
 # Create spatial hierarchy
-site = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSite", name="Office Site")
-building = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuilding", name="Office Building")
-storey = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Ground Floor")
+site = run("root.create_entity", model, ifc_class="IfcSite", name="Office Site")
+building = run("root.create_entity", model, ifc_class="IfcBuilding", name="Office Building")
+storey = run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Ground Floor")
 
-# Assign spatial hierarchy
-ifcopenshell.api.run("aggregate.assign_object", model, relating_object=project, products=[site])
-ifcopenshell.api.run("aggregate.assign_object", model, relating_object=site, products=[building])
-ifcopenshell.api.run("aggregate.assign_object", model, relating_object=building, products=[storey])
+# Set up spatial hierarchy relationships
+run("aggregate.assign_object", model, relating_object=project, products=[site])
+run("aggregate.assign_object", model, relating_object=site, products=[building])
+run("aggregate.assign_object", model, relating_object=building, products=[storey])
 
-# Create rooms (spaces) - converting 20ft x 20ft to meters
-room_dimensions = {"length": 6.096, "width": 6.096, "height": 3.658}  # 20ft x 20ft x 12ft in meters
+# Convert dimensions from feet to meters
+wall_thickness = 0.2  # ~8 inches
+room_height = 3.66    # 12 feet in meters
+length_50ft = 15.24   # 50 feet in meters
+length_20ft = 6.096   # 20 feet in meters
+floor_thickness = 0.3 # 12 inches
+door_width = 0.914    # 3 feet
+door_height = 2.134   # 7 feet
 
-room_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSpace", name="Office Room A")
-room_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSpace", name="Office Room B")
+# Create floor slab
+floor_slab = run("root.create_entity", model, ifc_class="IfcSlab", name="Ground Floor Slab")
+matrix = np.eye(4)
+matrix[0:3, 3] = [0, 0, -floor_thickness]
+run("geometry.edit_object_placement", model, product=floor_slab, matrix=matrix)
 
-# Assign rooms to storey using aggregate relationship
-ifcopenshell.api.run("aggregate.assign_object", model, relating_object=storey, products=[room_a, room_b])
+# Create floor slab representation
+floor_rep = run("geometry.add_wall_representation", model, context=body, 
+                length=length_50ft, height=floor_thickness, thickness=length_20ft)
+run("geometry.assign_representation", model, product=floor_slab, representation=floor_rep)
 
-# Wall thickness in meters
-exterior_wall_thickness = 0.3048  # 1ft in meters
-interior_wall_thickness = 0.1524  # 6inches in meters
+# Create roof slab
+roof_slab = run("root.create_entity", model, ifc_class="IfcSlab", name="Roof Slab")
+matrix = np.eye(4)
+matrix[0:3, 3] = [0, 0, room_height]
+run("geometry.edit_object_placement", model, product=roof_slab, matrix=matrix)
 
-# Create exterior walls for Room A
-wall_north_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall North A")
-wall_east_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall East A")
-wall_south_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall South A")
+# Create roof slab representation
+roof_rep = run("geometry.add_wall_representation", model, context=body, 
+               length=length_50ft, height=floor_thickness, thickness=length_20ft)
+run("geometry.assign_representation", model, product=roof_slab, representation=roof_rep)
 
-# Create exterior walls for Room B
-wall_north_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall North B")
-wall_west_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall West B")
-wall_south_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="External Wall South B")
+# Create walls with specific positions
+# South wall (with main entrance)
+south_wall = run("root.create_entity", model, ifc_class="IfcWallStandardCase", name="South Wall")
+matrix = np.eye(4)
+matrix[0:3, 3] = [0, 0, 0]
+run("geometry.edit_object_placement", model, product=south_wall, matrix=matrix)
 
-# Create shared interior wall
-interior_wall = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall", name="Interior Wall")
+# Create opening for main entrance
+main_door_opening = run("root.create_entity", model, ifc_class="IfcOpeningElement", name="Main Door Opening")
+opening_rep = run("geometry.add_wall_representation", model, context=body,
+                 length=door_width + 0.1, height=door_height + 0.1, thickness=wall_thickness + 0.1)
+run("geometry.assign_representation", model, product=main_door_opening, representation=opening_rep)
 
-# Create openings (converting to meters)
-door_dimensions = {"width": 0.914, "height": 2.134}  # 3ft x 7ft in meters
-window_dimensions = {"width": 1.219, "height": 1.829}  # 4ft x 6ft in meters
+# Position opening in south wall
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft/4, 0, 0]
+run("geometry.edit_object_placement", model, product=main_door_opening, matrix=matrix)
 
-main_door = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDoor", name="Main Entrance")
-interior_door = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDoor", name="Interior Door")
-window_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWindow", name="Window Room A")
-window_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWindow", name="Window Room B")
+# Create void in south wall for door
+run("void.add_opening", model, opening=main_door_opening, element=south_wall)
 
-# Create building services
-hvac_system = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSystem", name="HVAC System")
-electrical_system = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSystem", name="Electrical System")
+# Create other walls
+north_wall = run("root.create_entity", model, ifc_class="IfcWallStandardCase", name="North Wall")
+matrix = np.eye(4)
+matrix[0:3, 3] = [0, length_20ft, 0]
+run("geometry.edit_object_placement", model, product=north_wall, matrix=matrix)
 
-# Create fire safety elements
-smoke_detector_a = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSensor", name="Smoke Detector A")
-smoke_detector_b = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSensor", name="Smoke Detector B")
-fire_extinguisher = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcFireSuppressionTerminal", 
-    name="Fire Extinguisher")
+east_wall = run("root.create_entity", model, ifc_class="IfcWallStandardCase", name="East Wall")
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft, 0, 0]
+matrix = np.dot(matrix, np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+run("geometry.edit_object_placement", model, product=east_wall, matrix=matrix)
 
-# Collect building elements (excluding spaces)
-building_elements = [
-    wall_north_a, wall_east_a, wall_south_a,
-    wall_north_b, wall_west_b, wall_south_b,
-    interior_wall, main_door, interior_door,
-    window_a, window_b, smoke_detector_a,
-    smoke_detector_b, fire_extinguisher
+west_wall = run("root.create_entity", model, ifc_class="IfcWallStandardCase", name="West Wall")
+matrix = np.eye(4)
+matrix = np.dot(matrix, np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+run("geometry.edit_object_placement", model, product=west_wall, matrix=matrix)
+
+# Interior wall with opening
+interior_wall = run("root.create_entity", model, ifc_class="IfcWallStandardCase", name="Interior Wall")
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft/2, 0, 0]
+matrix = np.dot(matrix, np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+run("geometry.edit_object_placement", model, product=interior_wall, matrix=matrix)
+
+# Create opening for interior door
+interior_door_opening = run("root.create_entity", model, ifc_class="IfcOpeningElement", name="Interior Door Opening")
+opening_rep = run("geometry.add_wall_representation", model, context=body,
+                 length=door_width + 0.1, height=door_height + 0.1, thickness=wall_thickness + 0.1)
+run("geometry.assign_representation", model, product=interior_door_opening, representation=opening_rep)
+
+# Position opening in interior wall
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft/2, length_20ft/2, 0]
+matrix = np.dot(matrix, np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+run("geometry.edit_object_placement", model, product=interior_door_opening, matrix=matrix)
+
+# Create void in interior wall for door
+run("void.add_opening", model, opening=interior_door_opening, element=interior_wall)
+
+# Add representations for walls
+north_wall_rep = run("geometry.add_wall_representation", model, context=body, length=length_50ft, height=room_height, thickness=wall_thickness)
+south_wall_rep = run("geometry.add_wall_representation", model, context=body, length=length_50ft, height=room_height, thickness=wall_thickness)
+east_wall_rep = run("geometry.add_wall_representation", model, context=body, length=length_20ft, height=room_height, thickness=wall_thickness)
+west_wall_rep = run("geometry.add_wall_representation", model, context=body, length=length_20ft, height=room_height, thickness=wall_thickness)
+interior_wall_rep = run("geometry.add_wall_representation", model, context=body, length=length_20ft, height=room_height, thickness=wall_thickness)
+
+# Assign representations to walls
+run("geometry.assign_representation", model, product=north_wall, representation=north_wall_rep)
+run("geometry.assign_representation", model, product=south_wall, representation=south_wall_rep)
+run("geometry.assign_representation", model, product=east_wall, representation=east_wall_rep)
+run("geometry.assign_representation", model, product=west_wall, representation=west_wall_rep)
+run("geometry.assign_representation", model, product=interior_wall, representation=interior_wall_rep)
+
+# Create and position doors
+main_door = run("root.create_entity", model, ifc_class="IfcDoor", name="Main Entrance")
+main_door_rep = run("geometry.add_wall_representation", model, context=body, 
+                    length=door_width, height=door_height, thickness=wall_thickness/2)
+run("geometry.assign_representation", model, product=main_door, representation=main_door_rep)
+
+# Position main door in opening
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft/4, 0, 0]
+run("geometry.edit_object_placement", model, product=main_door, matrix=matrix)
+
+# Create relationship between door and opening
+rel_fills_element = model.create_entity(
+    "IfcRelFillsElement",
+    GlobalId=ifcopenshell.guid.new(),
+    RelatingOpeningElement=main_door_opening,
+    RelatedBuildingElement=main_door
+)
+
+# Create interior door
+interior_door = run("root.create_entity", model, ifc_class="IfcDoor", name="Interior Door")
+interior_door_rep = run("geometry.add_wall_representation", model, context=body, 
+                       length=door_width, height=door_height, thickness=wall_thickness/2)
+run("geometry.assign_representation", model, product=interior_door, representation=interior_door_rep)
+
+# Position interior door in opening
+matrix = np.eye(4)
+matrix[0:3, 3] = [length_50ft/2, length_20ft/2, 0]
+matrix = np.dot(matrix, np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]))
+run("geometry.edit_object_placement", model, product=interior_door, matrix=matrix)
+
+# Create relationship between interior door and opening
+rel_fills_element = model.create_entity(
+    "IfcRelFillsElement",
+    GlobalId=ifcopenshell.guid.new(),
+    RelatingOpeningElement=interior_door_opening,
+    RelatedBuildingElement=interior_door
+)
+
+# Create spaces (rooms)
+room_a = run("root.create_entity", model, ifc_class="IfcSpace", name="Office Room A")
+room_b = run("root.create_entity", model, ifc_class="IfcSpace", name="Office Room B")
+
+# Add all elements to storey
+all_elements = [
+    floor_slab, roof_slab,
+    north_wall, south_wall, east_wall, west_wall, interior_wall,
+    main_door, interior_door,
+    room_a, room_b
 ]
+run("aggregate.assign_object", model, relating_object=storey, products=all_elements)
 
-# Assign building elements to the storey
-ifcopenshell.api.run("spatial.assign_container", model, relating_structure=storey, products=building_elements)
+# Add material information
+brick_material = run("material.add_material", model, name="Brick Veneer")
+drywall_material = run("material.add_material", model, name="Drywall")
+concrete_material = run("material.add_material", model, name="Concrete")
+door_material = run("material.add_material", model, name="Wood - Solid Core")
 
-# Add geometric representations for walls
-for wall in [wall_north_a, wall_east_a, wall_south_a, wall_north_b, wall_west_b, wall_south_b]:
-    # Create wall representation (length=6.096m (20ft), height=3.658m (12ft), thickness=0.3048m (1ft))
-    representation = ifcopenshell.api.run("geometry.add_wall_representation", model, 
-        context=body, length=6.096, height=3.658, thickness=0.3048)
-    ifcopenshell.api.run("geometry.assign_representation", model, product=wall, representation=representation)
+# Assign materials
+exterior_walls = [north_wall, south_wall, east_wall, west_wall]
+run("material.assign_material", model, products=exterior_walls, material=brick_material, type="IfcMaterial")
+run("material.assign_material", model, products=[interior_wall], material=drywall_material, type="IfcMaterial")
+run("material.assign_material", model, products=[floor_slab, roof_slab], material=concrete_material, type="IfcMaterial")
+run("material.assign_material", model, products=[main_door, interior_door], material=door_material, type="IfcMaterial")
 
-# Add geometric representation for interior wall
-representation = ifcopenshell.api.run("geometry.add_wall_representation", model,
-    context=body, length=6.096, height=3.658, thickness=0.1524)
-ifcopenshell.api.run("geometry.assign_representation", model, product=interior_wall, representation=representation)
-
-# Save the IFC file
+# Write the IFC file
 model.write("office_building.ifc")
