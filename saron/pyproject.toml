@@ -9,6 +9,10 @@ python = "==3.11.*"
 ifcopenshell = "^0.8.0"
 mathutils = "^3.3.0"
 bpy = "^4.2.0"
+openai = "^1.54.4"
+python-dotenv = "^1.0.1"
+litellm = "^1.52.10"
+pytest = "^8.3.3"
 
 
 [build-system]
