@@ -2,3 +2,4 @@
 *.ifc
 __pycache__/
 .env*
+*.pdf

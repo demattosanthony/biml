@@ -1,9 +1,10 @@
 from litellm import completion
 import io
 import ifcopenshell
-from ifcopenshell import guid 
+from ifcopenshell import guid
 import math
 import numpy as np
+import base64
 
 # Inital IFC Model
 model = """import ifcopenshell
@@ -268,96 +269,41 @@ def extract_code_blocks(content):
     return parsed_blocks
 
 
-goal = """### Specification for Building Information Model (BIM): 1-Story Office Building
+# read pdf file as base64 and then utf-8
+with open("arch_set_setty-office.pdf", "rb") as file:
+    pdf_base64 = base64.b64encode(file.read()).decode("utf-8")
 
-#### General Overview
-- **Building Type**: 1-story office building  
-- **Number of Rooms**: 2  
-- **Interconnectivity**: The two rooms are connected by a single interior door.
+# goal = """Analyze this architectural set of drawings and generate a BIM model to represent it."""
 
----
 
-#### Building Dimensions
-- **Total Floor Area**: 1,000 sq. ft. (adjustable as needed)
-- **Building Height**: 12 ft. (floor-to-ceiling height)
-- **Exterior Dimensions**: Rectangular footprint, e.g., 50 ft. x 20 ft.
+# {
+#       "role": "user",
+#       "content": [
+#           {"type": "text", "text": f"<Goal>{goal}</Goal>\n\n<Code>{model}</Code>"},
+#           {
+#               "type": "image_url",
+#               "image_url": f"data:application/pdf;base64,{pdf_base64}",
+#           },
+#       ],
+#   }
 
----
 
-#### Room Details
+goal = "A simple model that renders a sphere."
 
-1. **Room 1 (Office Room A)**  
-   - **Function**: General office use  
-   - **Dimensions**: 20 ft. x 20 ft.  
-   - **Features**:  
-     - One exterior-facing window (4 ft. x 6 ft.)  
-     - One exterior-facing door (main entrance, 3 ft. x 7 ft.)  
-
-2. **Room 2 (Office Room B)**  
-   - **Function**: General office use  
-   - **Dimensions**: 20 ft. x 20 ft.  
-   - **Features**:  
-     - One exterior-facing window (4 ft. x 6 ft.)  
-
----
-
-#### Connectivity
-- **Interior Door**:  
-  - Placement: On the shared wall between Room 1 and Room 2  
-  - Dimensions: 3 ft. x 7 ft.  
-  - Swing Direction: Hinged to swing into Room 2  
-
----
-
-#### Materials and Finishes
-- **Walls**:  
-  - Interior: Drywall with a smooth white paint finish  
-  - Exterior: Brick veneer  
-- **Flooring**: Vinyl tile throughout  
-- **Ceiling**: Drop ceiling with acoustic panels  
-
----
-
-#### Electrical and Lighting
-- **Lighting**:  
-  - Ceiling-mounted LED panels in both rooms  
-- **Power Outlets**:  
-  - Room 1: Four duplex outlets  
-  - Room 2: Four duplex outlets  
-
----
-
-#### HVAC
-- **Heating and Cooling**: Centralized HVAC system with vents in both rooms  
-
----
-
-#### Additional Features
-- **Fire Safety**:  
-  - Smoke detectors in each room  
-  - Fire extinguisher in Room 1 near the main entrance  
-
----
-
-### BIM File Structure and Metadata
-- **IFC Schema**: IFC4  
-- **Entities**:  
-  - `IfcBuilding`  
-  - `IfcBuildingStorey`  
-  - `IfcSpace` (Room 1 and Room 2)  
-  - `IfcWallStandardCase` (for interior and exterior walls)  
-  - `IfcDoor` (interior connecting door)  
-  - `IfcWindow` (exterior-facing windows)"""
 
 messages = [
     {"role": "system", "content": system_message},
-    {"role": "user", "content": f"<Goal>{goal}</Goal>\n\n<Code>{model}</Code>"},
+    {
+        "role": "user",
+        "content": f"<Goal>{goal}</Goal>\n\n<Code>{model}</Code>",
+    },
 ]
 
-claude_sonnet = "claude-3-5-haiku-20241022"
+claude_haiku = "claude-3-5-haiku-20241022"
 claude_sonnet = "claude-3-5-sonnet-20241022"
 o1_preview = "o1-preview"
 gpt_4o = "gpt-4o"
+
 
 def main():
     while True:
@@ -396,12 +342,11 @@ def main():
                 messages.append(
                     {
                         "role": "user",
-                        "content": f"<CodeTracebackErrors>{result['traceback']}</CodeTracebackErrors>\n\nMake the required changes so that the code runs without errors and produces the excpected output."
+                        "content": f"<CodeTracebackErrors>{result['traceback']}</CodeTracebackErrors>\n\nMake the required changes so that the code runs without errors and produces the excpected output.",
                     }
                 )
                 continue  # Skip the user input prompt and go back to resolve the error
 
-            
         # Take in user input in case there is some issues found
         user_input = input("Enter your response: ")
 
