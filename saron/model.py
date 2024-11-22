@@ -1,128 +1,65 @@
 import ifcopenshell
-from ifcopenshell import guid
+from ifcopenshell.file import file
 
-# Create a new IFC file
-model = ifcopenshell.file()
+# Initialize an empty IFC model with the specified schema
+model = file(schema="IFC4")
 
-# Create project
-project = model.create_entity(
-    "IfcProject",
-    GlobalId=guid.new(),
-    Name="My Project"
-)
+# Create the main project entity
+project = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcProject", name="2-Story Office Project")
 
-# Set up units
-length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE")
-area_unit = model.create_entity("IfcSIUnit", UnitType="AREAUNIT", Name="SQUARE_METRE")
-volume_unit = model.create_entity("IfcSIUnit", UnitType="VOLUMEUNIT", Name="CUBIC_METRE")
-units = model.create_entity(
-    "IfcUnitAssignment",
-    Units=[length_unit, area_unit, volume_unit]
-)
-project.UnitsInContext = units
+# Assign metric units
+ifcopenshell.api.run("unit.assign_unit", model)
 
-# Set up geometric representation context
-context = model.create_entity(
-    "IfcGeometricRepresentationContext",
-    ContextType="Model",
-    CoordinateSpaceDimension=3,
-    Precision=1.0e-5,
-    WorldCoordinateSystem=model.create_entity(
-        "IfcAxis2Placement3D",
-        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0., 0., 0.))
-    )
-)
+# Create a modeling geometry context for 3D geometry
+context = ifcopenshell.api.run("context.add_context", model, context_type="Model")
 
-project.RepresentationContexts = [context]
-
-# Create spatial structure
-site = model.create_entity(
-    "IfcSite",
-    GlobalId=guid.new(),
-    Name="My Site"
-)
-
-building = model.create_entity(
-    "IfcBuilding",
-    GlobalId=guid.new(),
-    Name="My Building"
-)
-
-storey = model.create_entity(
-    "IfcBuildingStorey",
-    GlobalId=guid.new(),
-    Name="Ground Floor"
-)
+# Context for the body geometry
+body_context = ifcopenshell.api.run("context.add_context", model, context_type="Model",
+    context_identifier="Body", target_view="MODEL_VIEW", parent=context)
 
 # Create spatial hierarchy
-model.create_entity(
-    "IfcRelAggregates",
-    GlobalId=guid.new(),
-    RelatingObject=project,
-    RelatedObjects=[site]
-)
+site = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSite", name="Site")
+building = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuilding", name="Office Building")
+storey_1 = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="First Floor")
+storey_2 = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcBuildingStorey", name="Second Floor")
 
-model.create_entity(
-    "IfcRelAggregates",
-    GlobalId=guid.new(),
-    RelatingObject=site,
-    RelatedObjects=[building]
-)
+# Assign the hierarchy: Site -> Building -> Storeys
+ifcopenshell.api.run("aggregate.assign_object", model, relating_object=project, products=[site])
+ifcopenshell.api.run("aggregate.assign_object", model, relating_object=site, products=[building])
+ifcopenshell.api.run("aggregate.assign_object", model, relating_object=building, products=[storey_1, storey_2])
 
-model.create_entity(
-    "IfcRelAggregates",
-    GlobalId=guid.new(),
-    RelatingObject=building,
-    RelatedObjects=[storey]
-)
+# Define office spaces and major areas
+def create_space(name, area):
+    return ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcSpace", name=name)
 
-# Create sphere directly
-radius = 1.0
-sphere = model.create_entity(
-    "IfcSphere",
-    Radius=radius
-)
+entrance_lobby = create_space("Entrance Lobby", 400)
+open_office_1 = create_space("Open Office 1", 1500)
+open_office_2 = create_space("Open Office 2", 2000)
+private_offices = [create_space(f"Private Office {i+1}", 150) for i in range(4)]
+conference_rooms = [create_space(f"Conference Room {i+1}", 300) for i in range(2)]
+restrooms = [create_space(f"Restroom {i+1}", 150) for i in range(4)]
+break_room = create_space("Break Room", 300)
+mechanical_room = create_space("Mechanical Room", 200)
 
-# Create shape representation
-shape_representation = model.create_entity(
-    "IfcShapeRepresentation",
-    ContextOfItems=context,
-    RepresentationIdentifier="Body",
-    RepresentationType="CSG",
-    Items=[sphere]
-)
+# Assign spaces to storeys
+ifcopenshell.api.run("aggregate.assign_object", model, relating_object=storey_1, products=[entrance_lobby, open_office_1] + private_offices[:2] + [conference_rooms[0]] + restrooms[:2])
+ifcopenshell.api.run("aggregate.assign_object", model, relating_object=storey_2, products=[open_office_2] + private_offices[2:] + [conference_rooms[1], break_room] + restrooms[2:] + [mechanical_room])
 
-# Create product definition shape
-product_definition_shape = model.create_entity(
-    "IfcProductDefinitionShape",
-    Representations=[shape_representation]
-)
+# Create structural elements (walls)
+wall = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcWall")
 
-# Create placement
-placement = model.create_entity(
-    "IfcLocalPlacement",
-    RelativePlacement=model.create_entity(
-        "IfcAxis2Placement3D",
-        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0., 0., 2.))
-    )
-)
+# Add wall representation as a placeholder
+representation = ifcopenshell.api.run("geometry.add_wall_representation", model, context=body_context, length=10, height=3, thickness=0.3)
+ifcopenshell.api.run("geometry.assign_representation", model, product=wall, representation=representation)
 
-# Create proxy element
-sphere_element = model.create_entity(
-    "IfcBuildingElementProxy",
-    GlobalId=guid.new(),
-    Name="Sphere",
-    ObjectPlacement=placement,
-    Representation=product_definition_shape
-)
+# Assign walls to the building's storeys
+ifcopenshell.api.run("spatial.assign_container", model, products=[wall], relating_structure=storey_1)
+ifcopenshell.api.run("spatial.assign_container", model, products=[wall], relating_structure=storey_2)
 
-# Relate sphere to storey
-model.create_entity(
-    "IfcRelContainedInSpatialStructure",
-    GlobalId=guid.new(),
-    RelatingStructure=storey,
-    RelatedElements=[sphere_element]
-)
+# MEP placeholders using a valid IFC4 entity
+for _ in range(4):
+    pipe_placeholder = ifcopenshell.api.run("root.create_entity", model, ifc_class="IfcDistributionElement", name="Pipe Placeholder")
+    ifcopenshell.api.run("spatial.assign_container", model, products=[pipe_placeholder], relating_structure=storey_1)
 
-# Write the file
-model.write("sphere.ifc")
+# Export to IFC file format
+model.write("office_building_model.ifc")

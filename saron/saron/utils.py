@@ -1,6 +1,81 @@
 import ifcopenshell
 from ifcopenshell import file
 import json
+import io
+import sys
+import traceback
+
+
+def execute_python_code(code):
+    """
+    Execute Python code as if running through terminal and capture stdout, stderr, and any exceptions.
+
+    Args:
+        code (str): Python code to execute
+
+    Returns:
+        dict: A dictionary containing execution results
+    """
+    # Redirect stdout and stderr
+    stdout_capture = io.StringIO()
+    stderr_capture = io.StringIO()
+
+    # Store original stream references
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+
+    # Create a clean namespace
+    namespace = {
+        '__name__': '__main__',
+        '__file__': '<string>',
+        '__doc__': None,
+        '__package__': None,
+        '__builtins__': __builtins__,
+    }
+
+    try:
+        # Redirect stdout and stderr to StringIO objects
+        sys.stdout = stdout_capture
+        sys.stderr = stderr_capture
+
+        # Compile the code first
+        compiled_code = compile(code, '<string>', 'exec')
+        
+        # Execute the compiled code with the namespace
+        exec(compiled_code, namespace)
+
+        # Get the last expression's value if it exists
+        result = namespace.get('__result__', None)
+
+        # Compilation and execution successful
+        return {
+            "success": True,
+            "stdout": stdout_capture.getvalue(),
+            "stderr": stderr_capture.getvalue(),
+            "result": result,
+            "namespace": {k: v for k, v in namespace.items() 
+                         if not k.startswith('__')}  # Return user-defined variables
+        }
+
+    except Exception as e:
+        # Capture exception details
+        return {
+            "success": False,
+            "type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc(),
+            "stdout": stdout_capture.getvalue(),
+            "stderr": stderr_capture.getvalue(),
+        }
+
+    finally:
+        # Restore original stdout and stderr
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+
+        # Close StringIO objects
+        stdout_capture.close()
+        stderr_capture.close()
 
 
 def build_object_tree(ifc_entity) -> dict:

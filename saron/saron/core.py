@@ -6,6 +6,8 @@ import math
 import numpy as np
 import base64
 
+from saron.utils import execute_python_code
+
 # Inital IFC Model
 model = """import ifcopenshell
 from ifcopenshell import guid
@@ -181,69 +183,13 @@ ifcopenshell.api.spatial.assign_container(model, relating_structure=storey, prod
 model.write("sample_model.ifc")
 ```
 </Code>
+
+
+### Memory 
+
+- when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
+- all the geomtries need to be added in order for the model to be rendered correctly in a ifc viewer
 """
-
-
-import sys
-import traceback
-
-
-def execute_python_code(code, globals_dict=None, locals_dict=None):
-    """
-    Execute Python code and capture stdout, stderr, and any exceptions.
-
-    Args:
-        code (str): Python code to execute
-        globals_dict (dict, optional): Global namespace dictionary
-        locals_dict (dict, optional): Local namespace dictionary
-
-    Returns:
-        dict: A dictionary containing execution results
-    """
-    # Prepare dictionaries for namespaces if not provided
-    if globals_dict is None:
-        globals_dict = {}
-    if locals_dict is None:
-        locals_dict = {}
-
-    # Redirect stdout and stderr
-    stdout_capture = io.StringIO()
-    stderr_capture = io.StringIO()
-
-    # Store original stream references
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-
-    try:
-        # Redirect stdout and stderr to StringIO objects
-        sys.stdout = stdout_capture
-        sys.stderr = stderr_capture
-
-        # Execute the code
-        exec(code, globals_dict, locals_dict)
-
-        # Compilation and execution successful
-        return {"success": True, "stdout": stdout_capture.getvalue(), "stderr": stderr_capture.getvalue(), "result": None}
-
-    except Exception as e:
-        # Capture exception details
-        return {
-            "success": False,
-            "type": type(e).__name__,
-            "message": str(e),
-            "traceback": traceback.format_exc(),
-            "stdout": stdout_capture.getvalue(),
-            "stderr": stderr_capture.getvalue(),
-        }
-
-    finally:
-        # Restore original stdout and stderr
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-
-        # Close StringIO objects
-        stdout_capture.close()
-        stderr_capture.close()
 
 
 def extract_code_blocks(content):
@@ -288,7 +234,95 @@ with open("arch_set_setty-office.pdf", "rb") as file:
 #   }
 
 
-goal = "A simple model that renders a sphere."
+goal = """# Specification Document for a BIM Model of a 2-Story Office Building
+
+## **Project Overview**
+This document outlines the specifications for creating a simple 2-story office building BIM model to be exported as a single **IFC (Industry Foundation Classes)** file.
+
+---
+
+## **General Information**
+- **Building Type**: Office
+- **Number of Stories**: 2
+- **Total Area**: 10,000 sq ft (approx.)
+  - First Floor: 5,000 sq ft
+  - Second Floor: 5,000 sq ft
+
+---
+
+## **Spaces and Dimensions**
+
+### **Core Spaces**
+1. **Entrance Lobby**  
+   - **Size**: 400 sq ft  
+   - **Features**: Main entrance, reception desk.  
+
+2. **Hallways**  
+   - **Width**: 5 ft minimum.  
+
+3. **Stairwell**  
+   - **Width**: 4 ft  
+   - **Landing**: 5 ft x 5 ft  
+
+4. **Elevator**  
+   - **Type**: Basic ADA-compliant.
+
+---
+
+### **Office Areas**
+1. **Open Office**  
+   - **First Floor**: 1,500 sq ft  
+   - **Second Floor**: 2,000 sq ft  
+
+2. **Private Offices**  
+   - **Number**: 4 (2 per floor)  
+   - **Size**: 150 sq ft each  
+
+3. **Conference Rooms**  
+   - **Number**: 2 (1 per floor)  
+   - **Size**: 300 sq ft each  
+
+---
+
+### **Utility Areas**
+1. **Restrooms**  
+   - **Number**: 2 per floor (Men’s and Women’s)  
+   - **Size**: 150 sq ft each  
+
+2. **Break Room**  
+   - **Location**: Second Floor  
+   - **Size**: 300 sq ft  
+
+3. **Mechanical Room**  
+   - **Size**: 200 sq ft  
+
+---
+
+## **Building Elements**
+
+### **Structure**
+- **Material**: Steel or concrete frame.  
+- **Floor System**: Concrete slab.  
+
+### **Envelope**
+- **Walls**: Simple curtain wall with 40% glazing.  
+- **Windows**: Double-pane, rectangular.  
+- **Roof**: Flat with basic drainage.  
+
+### **Systems**
+1. **HVAC**: Centralized, no zoning needed in the model.  
+2. **Lighting**: Basic LED fixtures.  
+3. **Fire Safety**: Include fire walls, stairwell protection, and exits.
+
+---
+
+## **Deliverables**
+- **IFC Model**: One complete and clean IFC file.  
+  - Include **architectural** (walls, floors, roofs, stairs, doors, windows) and **basic structural elements**.  
+  - **Simplified MEP elements** (e.g., placeholders for ducts, pipes).  
+- **Level of Detail**: Basic geometric representation, minimal detailing.  
+- **Naming Conventions**: Use clear and consistent naming for elements (e.g., "Wall_01," "Door_02").  
+- **Export Format**: IFC 4 or later version."""
 
 
 messages = [
@@ -302,16 +336,18 @@ messages = [
 claude_haiku = "claude-3-5-haiku-20241022"
 claude_sonnet = "claude-3-5-sonnet-20241022"
 o1_preview = "o1-preview"
+o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
-
+pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
 
 def main():
     while True:
-        response = completion(model=claude_sonnet, messages=messages, temperature=0)
-        content = response.choices[0].message.content
+        response = completion(model=claude_sonnet, messages=messages, stream=True)
+        content = ""
+        for chunk in response:
+            print(chunk['choices'][0]['delta']['content'] or "", flush=True, end="")
+            content += chunk['choices'][0]['delta']['content'] or ""
         messages.append({"role": "assistant", "content": content})
-
-        print(content)
         print("\n\n")
 
         # Parse the response content to extract the code
@@ -338,11 +374,24 @@ def main():
                 print(f"Error Message: {result['message']}")
                 print(result["traceback"])
 
+                # Ask online LLM to provide a solution
+                response = completion(model=pplx_online_big, messages=[
+                    {
+                        "role": "user",
+                        "content": f"An error occurred while running this code:\n\n{code}\n\nThe error message is:\n{result['message']}\n\nThe traceback is:\n{result['traceback']}.\n\nGive a code review and provide details on what needs to be changed. Please check the ifcopenshell docs and provide a solution to the error. DO NOT make up any information that is not in the docs. DO NOT rewrite the code, just say what needs to be changed and provide information you found from the documentation or web search.",
+                    }
+                ], temperature=0, stream=True)
+                print("Online LLM response:\n")
+                content = ""
+                for chunk in response:
+                    print(chunk['choices'][0]['delta']['content'] or "", flush=True, end="")
+                    content += chunk['choices'][0]['delta']['content'] or ""
+
                 # Send the review back to the engineer
                 messages.append(
                     {
                         "role": "user",
-                        "content": f"<CodeTracebackErrors>{result['traceback']}</CodeTracebackErrors>\n\nMake the required changes so that the code runs without errors and produces the excpected output.",
+                        "content": f"<CodeTracebackErrors>{result['traceback']}</CodeTracebackErrors>\n\n<CodeReview>{content}</CodeReview>\n\nMake the necessary changes to the code so that it runs properly.",
                     }
                 )
                 continue  # Skip the user input prompt and go back to resolve the error
