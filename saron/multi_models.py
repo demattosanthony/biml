@@ -51,9 +51,65 @@ def load_bim_object(file_path, object_type):
     """Loads a BIM object from a file and returns the first entity of the specified type."""
     bim_model = ifcopenshell.open(file_path)
     for entity in bim_model.by_type(object_type):
-        return bim_model, entity  # Return both the model and the entity
+        return bim_model, entity
     print(f"No object of type {object_type} found in {file_path}.")
     return None, None
+
+def copy_material_definitions(target_model, source_model, material_select, copied_entities):
+    """
+    Recursively copies all material definitions and their associated properties.
+    
+    Args:
+        target_model: The target IFC model
+        source_model: The source IFC model
+        material_select: The material or material list to copy
+        copied_entities: Dictionary to track copied entities
+    
+    Returns:
+        The copied material definition in the target model
+    """
+    if material_select is None:
+        return None
+        
+    # If already copied, return the existing copy
+    if material_select.id() in copied_entities:
+        return copied_entities[material_select.id()]
+        
+    new_material = None
+    
+    # Handle different types of material definitions
+    if material_select.is_a("IfcMaterial"):
+        new_material = copy_deep(target_model, material_select, copied_entities)
+        
+        # Copy material properties
+        for rel in source_model.by_type("IfcMaterialProperties"):
+            if rel.Material == material_select:
+                copy_deep(target_model, rel, copied_entities)
+                
+    elif material_select.is_a("IfcMaterialList"):
+        materials = [copy_material_definitions(target_model, source_model, m, copied_entities) 
+                    for m in material_select.Materials]
+        new_material = target_model.create_entity("IfcMaterialList", Materials=materials)
+        copied_entities[material_select.id()] = new_material
+        
+    elif material_select.is_a("IfcMaterialLayerSet"):
+        new_layers = []
+        for layer in material_select.MaterialLayers:
+            new_material_layer = copy_deep(target_model, layer, copied_entities)
+            if layer.Material:
+                new_material_layer.Material = copy_material_definitions(
+                    target_model, source_model, layer.Material, copied_entities
+                )
+            new_layers.append(new_material_layer)
+        
+        new_material = target_model.create_entity(
+            "IfcMaterialLayerSet",
+            MaterialLayers=new_layers,
+            LayerSetName=material_select.LayerSetName
+        )
+        copied_entities[material_select.id()] = new_material
+        
+    return new_material
 
 def copy_and_place_bim_object(target_model, bim_model, bim_object, container, placement=None):
     """Copies a BIM object into the target model and places it within the spatial structure."""
@@ -65,10 +121,9 @@ def copy_and_place_bim_object(target_model, bim_model, bim_object, container, pl
         copied_entities=copied_entities
     )
 
-    # Copy related property sets and materials
+    # Copy property sets
     for relationship in bim_model.by_type("IfcRelDefinesByProperties"):
         if bim_object in relationship.RelatedObjects:
-            # Copy the property set and link it to the new object
             new_relationship = copy_deep(
                 ifc_file=target_model,
                 element=relationship,
@@ -76,22 +131,32 @@ def copy_and_place_bim_object(target_model, bim_model, bim_object, container, pl
             )
             new_relationship.RelatedObjects = [new_object]
 
+    # Copy materials and their definitions
     for material_relation in bim_model.by_type("IfcRelAssociatesMaterial"):
-        if bim_object == material_relation.RelatedObjects[0]:
-            # Copy material relationship and assign it to the new object
-            new_material_relation = copy_deep(
-                ifc_file=target_model,
-                element=material_relation,
-                copied_entities=copied_entities
+        if bim_object in material_relation.RelatedObjects:
+            # Get the material definition
+            material_select = material_relation.RelatingMaterial
+            
+            # Copy the complete material definition
+            new_material_select = copy_material_definitions(
+                target_model,
+                bim_model,
+                material_select,
+                copied_entities
             )
-            new_material_relation.RelatedObjects = [new_object]
+            
+            # Create new material association
+            target_model.create_entity(
+                "IfcRelAssociatesMaterial",
+                GlobalId=guid.new(),
+                RelatedObjects=[new_object],
+                RelatingMaterial=new_material_select
+            )
 
-    # If a specific placement is provided, update the object's placement
+    # Handle placement
     if placement:
-        # Update the object's object placement
         new_object.ObjectPlacement = placement
     else:
-        # If no placement is provided, create a default placement at the origin
         new_object.ObjectPlacement = target_model.create_entity(
             "IfcLocalPlacement",
             PlacementRelTo=None,
@@ -101,7 +166,7 @@ def copy_and_place_bim_object(target_model, bim_model, bim_object, container, pl
             )
         )
 
-    # Assign the object to the container (e.g., building)
+    # Assign the object to the container
     target_model.create_entity(
         "IfcRelContainedInSpatialStructure",
         RelatedElements=[new_object],
