@@ -58,7 +58,33 @@ def load_bim_object(file_path, object_type):
 def copy_and_place_bim_object(target_model, bim_model, bim_object, container, placement=None):
     """Copies a BIM object into the target model and places it within the spatial structure."""
     # Copy the object into the target model
-    new_object = copy_deep(target_model, bim_object)
+    copied_entities = {}
+    new_object = copy_deep(
+        ifc_file=target_model,
+        element=bim_object,
+        copied_entities=copied_entities
+    )
+
+    # Copy related property sets and materials
+    for relationship in bim_model.by_type("IfcRelDefinesByProperties"):
+        if bim_object in relationship.RelatedObjects:
+            # Copy the property set and link it to the new object
+            new_relationship = copy_deep(
+                ifc_file=target_model,
+                element=relationship,
+                copied_entities=copied_entities
+            )
+            new_relationship.RelatedObjects = [new_object]
+
+    for material_relation in bim_model.by_type("IfcRelAssociatesMaterial"):
+        if bim_object == material_relation.RelatedObjects[0]:
+            # Copy material relationship and assign it to the new object
+            new_material_relation = copy_deep(
+                ifc_file=target_model,
+                element=material_relation,
+                copied_entities=copied_entities
+            )
+            new_material_relation.RelatedObjects = [new_object]
 
     # If a specific placement is provided, update the object's placement
     if placement:

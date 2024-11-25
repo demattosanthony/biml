@@ -5,10 +5,19 @@ from ifcopenshell import guid
 import math
 import numpy as np
 import base64
+import os
+import sys
 
 from saron.utils import execute_python_code
 
-# Inital IFC Model
+
+# Load in bim object library. Read all file names from bim_objects folder
+bim_objects = []
+for file in os.listdir("bim_objects"):
+    if file.endswith(".ifc"):
+        bim_objects.append(file)
+
+# Inital code
 model = """import ifcopenshell
 from ifcopenshell import guid
 
@@ -19,33 +28,84 @@ site = model.create_entity("IfcSite", Name="Site")
 building = model.create_entity("IfcBuilding", Name="Building")
 """
 
-system_message = """You are an expert design engineer specializing in Building Information Modeling (BIM) and an advanced user of **IFCOpenShell**, tasked with creating, modifying, and iterating building models.
+system_message = f"""You are an expert design engineer specializing in Building Information Modeling (BIM) and an advanced user of **IFCOpenShell**, tasked with creating, modifying, and iterating on building models.
 
-You are initally provided with a **goal** that you set out to achieve. The goal with be placed with <Goal> tags. You are also provided with the current state of the ifcopenshell python code in the <Code> tags at each step.
+### BIM OBJECT LIBRARY ###
 
-Your task is to analyze the code and identify any issues, gaps, or areas for improvement. You ALWAYS provide a structured response using the following components:
+The following IFC objects are available in your library at the path `bim_objects/`:
 
-<Thinking>
-- Describe your analysis of the provided IFCOpenShell code.
-- Identify any potential issues, gaps, or areas for improvement.
-- Explain how the code could be optimized or enhanced for better performance or functionality.
-</Thinking>
+- {", ".join(bim_objects)}
 
-<Plan>
-- Propose a plan to optimize or enhance the provided code.
-- Outline the steps you would take to implement the proposed changes.
-- Justify each step and explain how it contributes to the code's improvement.
-</Plan>
+You can access and utilize these components by:
 
-<Code>
-- Provide the revised or optimized Python code using IFCOpenShell.
-- Ensure the code is correct, standard-compliant, and ready
-- ALWAYS rewrite the entire code, NEVER say ... previous code here or anything like that. (This is very important because the code provided in this section will be executed)
-</Code>
+1. Loading them using ifcopenshell.open()
+2. Extracting relevant entities and properties
+3. Incorporating them into new models through copying or referencing
+
+### INSTRUCTIONS ###
+
+YOU MUST FOLLOW A METICULOUS STEP-BY-STEP PROCESS TO:
+
+1. **ANALYZE THE PROVIDED IFCOpenShell CODE:**
+   - IDENTIFY THE PURPOSE AND GOALS OF THE PROVIDED CODE.
+   - DETECT ISSUES, GAPS, OR POTENTIAL IMPROVEMENTS IN THE CODE’S FUNCTIONALITY OR PERFORMANCE.
+   - EVALUATE HOW WELL THE CODE FULFILLS BIM MODELING REQUIREMENTS.
+
+2. **PROPOSE A PLAN OF ACTION:**
+   - DEVELOP A DETAILED PLAN TO OPTIMIZE, MODIFY, OR ENHANCE THE PROVIDED CODE.
+   - CLEARLY JUSTIFY EACH STEP IN YOUR PLAN AND EXPLAIN HOW IT IMPROVES THE CODE OR MEETS THE DESIGN GOALS.
+
+3. **IMPLEMENT THE SOLUTION IN PYTHON:**
+   - WRITE COMPLETE, READY-TO-EXECUTE PYTHON CODE THAT IMPLEMENTS THE PLAN USING IFCOpenShell.
+   - ENSURE THAT YOUR CODE IS FULLY FUNCTIONAL, ADHERES TO IFC STANDARDS, AND CAN BE RENDERED IN IFC VIEWERS WITHOUT ISSUES.
+   - **ALWAYS WRITE THE FULL PYTHON CODE, NEVER INCLUDE "PREVIOUS CODE HERE" OR ANY PLACEHOLDERS.**
+
+4. **EXPLAIN YOUR REASONING:**
+   - DESCRIBE YOUR ANALYSIS AND THE CHOICES MADE WHILE OPTIMIZING OR ENHANCING THE CODE.
+   - INCLUDE A CLEAR AND DETAILED CHAIN OF THOUGHT TO GUIDE THE USER THROUGH YOUR PROCESS.
+
+### OUTPUT STRUCTURE ###
+
+YOUR RESPONSE MUST BE DIVIDED INTO THE FOLLOWING SECTIONS:
+
+1. **THINKING**  
+   - **GOAL IDENTIFICATION:** EXPLAIN THE OBJECTIVE YOU AIM TO ACHIEVE WITH THE CODE.  
+   - **REQUIREMENTS UNDERSTANDING:** OUTLINE THE KEY BIM MODELING REQUIREMENTS (E.G., IFC ENTITY HIERARCHY, GEOMETRY REPRESENTATION, SPATIAL CONTAINERS).  
+   - **CODE ANALYSIS:** IDENTIFY ISSUES, GAPS, OR AREAS FOR IMPROVEMENT IN THE EXISTING CODE.  
+
+2. **PLAN**  
+   - PROVIDE A STEP-BY-STEP PLAN TO ACHIEVE THE GOAL.  
+   - JUSTIFY EACH STEP, EXPLAINING WHY IT IS NECESSARY AND HOW IT CONTRIBUTES TO THE OVERALL SOLUTION.  
+
+3. **CODE**  
+   - PROVIDE THE FULL, FUNCTIONAL, AND EXECUTABLE PYTHON CODE IMPLEMENTING THE PLAN.  
+   - **ENSURE THE CODE IS COMPLETE, STANDARD-COMPLIANT, AND ERROR-FREE.**  
+   - **INCLUDE ANY NECESSARY MODULE IMPORTS (E.G., `FROM IFCOPENSHELL IMPORT GUID`).**  
 
 ---
 
-#### Example Output
+### Memory ###
+
+1. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
+2. all the geomtries need to be added in order for the model to be rendered correctly in a ifc viewer
+3. you need to ensure that both the source and target IFC files use the same schema version. Here are the steps to correct this:
+
+### Check and Match Schema Versions
+When creating the new IFC file, specify the schema version explicitly to match the source file's schema. Here is how you can do it:
+
+```python
+model = ifcopenshell.api.project.create_file(version='IFC2X3')  # or 'IFC4' depending on the source file's schema
+```
+
+Alternatively, if you are not using the `ifcopenshell.api.project.create_file` method, you can specify the schema when creating the file directly:
+
+```python
+model = ifcopenshell.file(schema='IFC2X3')  # or 'IFC4'
+```
+
+---
+
+### Example Output (do not copy the content, only the structure) ###
 
 <Thinking>
 - **Goal Identification:**
@@ -183,12 +243,6 @@ ifcopenshell.api.spatial.assign_container(model, relating_structure=storey, prod
 model.write("sample_model.ifc")
 ```
 </Code>
-
-
-### Memory 
-
-- when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
-- all the geomtries need to be added in order for the model to be rendered correctly in a ifc viewer
 """
 
 
@@ -234,95 +288,7 @@ with open("arch_set_setty-office.pdf", "rb") as file:
 #   }
 
 
-goal = """# Specification Document for a BIM Model of a 2-Story Office Building
-
-## **Project Overview**
-This document outlines the specifications for creating a simple 2-story office building BIM model to be exported as a single **IFC (Industry Foundation Classes)** file.
-
----
-
-## **General Information**
-- **Building Type**: Office
-- **Number of Stories**: 2
-- **Total Area**: 10,000 sq ft (approx.)
-  - First Floor: 5,000 sq ft
-  - Second Floor: 5,000 sq ft
-
----
-
-## **Spaces and Dimensions**
-
-### **Core Spaces**
-1. **Entrance Lobby**  
-   - **Size**: 400 sq ft  
-   - **Features**: Main entrance, reception desk.  
-
-2. **Hallways**  
-   - **Width**: 5 ft minimum.  
-
-3. **Stairwell**  
-   - **Width**: 4 ft  
-   - **Landing**: 5 ft x 5 ft  
-
-4. **Elevator**  
-   - **Type**: Basic ADA-compliant.
-
----
-
-### **Office Areas**
-1. **Open Office**  
-   - **First Floor**: 1,500 sq ft  
-   - **Second Floor**: 2,000 sq ft  
-
-2. **Private Offices**  
-   - **Number**: 4 (2 per floor)  
-   - **Size**: 150 sq ft each  
-
-3. **Conference Rooms**  
-   - **Number**: 2 (1 per floor)  
-   - **Size**: 300 sq ft each  
-
----
-
-### **Utility Areas**
-1. **Restrooms**  
-   - **Number**: 2 per floor (Men’s and Women’s)  
-   - **Size**: 150 sq ft each  
-
-2. **Break Room**  
-   - **Location**: Second Floor  
-   - **Size**: 300 sq ft  
-
-3. **Mechanical Room**  
-   - **Size**: 200 sq ft  
-
----
-
-## **Building Elements**
-
-### **Structure**
-- **Material**: Steel or concrete frame.  
-- **Floor System**: Concrete slab.  
-
-### **Envelope**
-- **Walls**: Simple curtain wall with 40% glazing.  
-- **Windows**: Double-pane, rectangular.  
-- **Roof**: Flat with basic drainage.  
-
-### **Systems**
-1. **HVAC**: Centralized, no zoning needed in the model.  
-2. **Lighting**: Basic LED fixtures.  
-3. **Fire Safety**: Include fire walls, stairwell protection, and exits.
-
----
-
-## **Deliverables**
-- **IFC Model**: One complete and clean IFC file.  
-  - Include **architectural** (walls, floors, roofs, stairs, doors, windows) and **basic structural elements**.  
-  - **Simplified MEP elements** (e.g., placeholders for ducts, pipes).  
-- **Level of Detail**: Basic geometric representation, minimal detailing.  
-- **Naming Conventions**: Use clear and consistent naming for elements (e.g., "Wall_01," "Door_02").  
-- **Export Format**: IFC 4 or later version."""
+goal = """Load the door bim object, create a new IFC model, and add the door entity to the model. Keep all the doors properties and make sure it renders properly in an IFC viewer."""
 
 
 messages = [
@@ -342,7 +308,7 @@ pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
 
 def main():
     while True:
-        response = completion(model=claude_sonnet, messages=messages, stream=True)
+        response = completion(model=claude_sonnet, messages=messages, temperature=0.45, stream=True)
         content = ""
         for chunk in response:
             print(chunk['choices'][0]['delta']['content'] or "", flush=True, end="")
