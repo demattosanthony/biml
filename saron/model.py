@@ -1,148 +1,148 @@
 import ifcopenshell
 from ifcopenshell import guid
-from ifcopenshell.util.element import copy_deep
+import math
 
-def create_ifc_model():
-    """Creates a new IFC model with necessary contexts and project hierarchy."""
-    model = ifcopenshell.file(schema="IFC2X3")
+# Create a new IFC file
+model = ifcopenshell.file(schema="IFC2X3")
 
-    # Create geometric representation context
-    context = model.create_entity(
-        "IfcGeometricRepresentationContext",
-        ContextIdentifier="Plan",
-        ContextType="Model",
-        CoordinateSpaceDimension=3,
-        Precision=0.0001,
-        WorldCoordinateSystem=model.create_entity(
-            "IfcAxis2Placement3D",
-            Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))
-        )
-    )
+# Helper function to create direction
+def create_direction(x, y, z):
+    return model.create_entity('IfcDirection', DirectionRatios=[x, y, z])
 
-    # Create project hierarchy
-    project = model.create_entity("IfcProject", Name="My Project", GlobalId=guid.new())
-    project.RepresentationContexts = [context]
-    project.UnitsInContext = model.create_entity(
-        "IfcUnitAssignment",
-        Units=[
-            model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE"),
-            model.create_entity("IfcSIUnit", UnitType="PLANEANGLEUNIT", Name="RADIAN")
-        ]
-    )
+def create_cartesian_point(coords):
+    return model.create_entity('IfcCartesianPoint', Coordinates=coords)
 
-    site = model.create_entity("IfcSite", Name="Site", GlobalId=guid.new())
-    building = model.create_entity("IfcBuilding", Name="Building", GlobalId=guid.new())
+# Create basic IFC elements
+project = model.create_entity("IfcProject", 
+    GlobalId=guid.new(), 
+    Name="Example Room Specification")
 
-    # Link hierarchy
-    model.create_entity(
-        "IfcRelAggregates",
-        RelatingObject=project,
-        RelatedObjects=[site],
-    )
-    model.create_entity(
-        "IfcRelAggregates",
-        RelatingObject=site,
-        RelatedObjects=[building],
-    )
+# Set up the units
+length_unit = model.create_entity('IfcSIUnit', 
+    UnitType='LENGTHUNIT', 
+    Name='METRE')
+area_unit = model.create_entity('IfcSIUnit',
+    UnitType='AREAUNIT',
+    Name='SQUARE_METRE')
+volume_unit = model.create_entity('IfcSIUnit',
+    UnitType='VOLUMEUNIT',
+    Name='CUBIC_METRE')
+units = model.create_entity('IfcUnitAssignment', Units=[length_unit, area_unit, volume_unit])
+project.UnitsInContext = units
 
-    return model, building
+# Create geometric context
+context = model.create_entity('IfcGeometricRepresentationContext',
+    ContextType="Model",
+    CoordinateSpaceDimension=3,
+    Precision=0.00001,
+    WorldCoordinateSystem=model.create_entity('IfcAxis2Placement3D', Location=create_cartesian_point([0., 0., 0.])))
 
-def load_bim_object(file_path, object_type):
-    """Loads a BIM object from a file and returns the first entity of the specified type."""
-    bim_model = ifcopenshell.open(file_path)
-    for entity in bim_model.by_type(object_type):
-        return bim_model, entity  # Return both the model and the entity
-    print(f"No object of type {object_type} found in {file_path}.")
-    return None, None
+# Set up the site, building and storey hierarchy
+site = model.create_entity("IfcSite", 
+    GlobalId=guid.new(), 
+    Name="Site")
+building = model.create_entity("IfcBuilding", 
+    GlobalId=guid.new(), 
+    Name="Building")
+storey = model.create_entity("IfcBuildingStorey", 
+    GlobalId=guid.new(), 
+    Name="Ground Floor")
 
-def copy_and_place_bim_object(target_model, bim_model, bim_object, container, placement=None):
-    """Copies a BIM object into the target model and places it within the spatial structure."""
-    # Copy the object into the target model
-    new_object = copy_deep(target_model, bim_object)
+# Create spatial structure relationships
+model.create_entity('IfcRelAggregates', 
+    GlobalId=guid.new(),
+    RelatingObject=project,
+    RelatedObjects=[site])
+model.create_entity('IfcRelAggregates',
+    GlobalId=guid.new(),
+    RelatingObject=site,
+    RelatedObjects=[building])
+model.create_entity('IfcRelAggregates',
+    GlobalId=guid.new(),
+    RelatingObject=building,
+    RelatedObjects=[storey])
 
-    # If a specific placement is provided, update the object's placement
-    if placement:
-        # Update the object's object placement
-        new_object.ObjectPlacement = placement
-    else:
-        # If no placement is provided, create a default placement at the origin
-        new_object.ObjectPlacement = target_model.create_entity(
-            "IfcLocalPlacement",
-            PlacementRelTo=None,
-            RelativePlacement=target_model.create_entity(
-                "IfcAxis2Placement3D",
-                Location=target_model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))
-            )
-        )
+# Create the room (space)
+room = model.create_entity('IfcSpace',
+    GlobalId=guid.new(),
+    Name='Example Room',
+    ObjectType='Room',
+    CompositionType='ELEMENT')
 
-    # Assign the object to the container (e.g., building)
-    target_model.create_entity(
-        "IfcRelContainedInSpatialStructure",
-        RelatedElements=[new_object],
-        RelatingStructure=container
-    )
+# Create relationship between storey and room
+model.create_entity('IfcRelAggregates',
+    GlobalId=guid.new(),
+    RelatingObject=storey,
+    RelatedObjects=[room])
 
-    return new_object
+# Create materials
+concrete_material = model.create_entity('IfcMaterial', Name='Concrete')
+gypsum_material = model.create_entity('IfcMaterial', Name='Gypsum Plasterboard')
+insulation_material = model.create_entity('IfcMaterial', Name='Polyurethane Foam')
 
-def main():
-    # Create the new IFC model and get the building container
-    model, building = create_ifc_model()
+# Create wall layer set
+wall_layer_set = model.create_entity('IfcMaterialLayerSet',
+    MaterialLayers=[
+        model.create_entity('IfcMaterialLayer', Material=concrete_material, LayerThickness=0.2),
+        model.create_entity('IfcMaterialLayer', Material=insulation_material, LayerThickness=0.05),
+        model.create_entity('IfcMaterialLayer', Material=gypsum_material, LayerThickness=0.0125)
+    ],
+    LayerSetName='External Wall Construction')
 
-    # List of BIM objects to load with their file paths and object types
-    bim_objects_info = [
-        {
-            "file_path": 'bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc',
-            "object_type": "IfcDoor",
-            "placement": model.create_entity(
-                "IfcLocalPlacement",
-                PlacementRelTo=None,
-                RelativePlacement=model.create_entity(
-                    "IfcAxis2Placement3D",
-                    Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))
-                )
-            )
-        },
-        {
-            "file_path": 'bim_objects/Hot-Water-Heater.ifc',
-            "object_type": "IFCBUILDINGELEMENTPROXY",
-            "placement": model.create_entity(
-                "IfcLocalPlacement",
-                PlacementRelTo=None,
-                RelativePlacement=model.create_entity(
-                    "IfcAxis2Placement3D",
-                    Location=model.create_entity("IfcCartesianPoint", Coordinates=(5.0, 0.0, 2.0))
-                )
-            )
-        },
-        {
-            "file_path": 'bim_objects/Ice-Hockey-Rink.ifc',
-            "object_type": "IFCBUILDINGELEMENTPROXY",
-            "placement": model.create_entity(
-                "IfcLocalPlacement",
-                PlacementRelTo=None,
-                RelativePlacement=model.create_entity(
-                    "IfcAxis2Placement3D",
-                    Location=model.create_entity("IfcCartesianPoint", Coordinates=(10.0, 0.0, 0.0))
-                )
-            )
-        },
-    ]
+# Create walls (simplified geometry)
+walls = []
+wall_lengths = [4.0, 3.0, 4.0, 3.0]  # Length of each wall in meters
+wall_directions = [[1,0,0], [0,1,0], [-1,0,0], [0,-1,0]]  # Direction vectors for each wall
+wall_positions = [[0,0,0], [4,0,0], [4,3,0], [0,3,0]]  # Starting position for each wall
 
-    for obj_info in bim_objects_info:
-        bim_model, bim_object = load_bim_object(obj_info["file_path"], obj_info["object_type"])
-        if bim_object:
-            new_object = copy_and_place_bim_object(
-                target_model=model,
-                bim_model=bim_model,
-                bim_object=bim_object,
-                container=building,
-                placement=obj_info.get("placement")
-            )
-            print(f"{obj_info['object_type']} added with GlobalId: {new_object.GlobalId}")
+for i in range(4):
+    wall = model.create_entity('IfcWall',
+        GlobalId=guid.new(),
+        Name=f'Wall {i+1}',
+        ObjectType='External Wall')
+    
+    # Associate material layer set with wall
+    model.create_entity('IfcRelAssociatesMaterial',
+        GlobalId=guid.new(),
+        RelatedObjects=[wall],
+        RelatingMaterial=wall_layer_set)
+    
+    walls.append(wall)
 
-    # Write the new IFC model to a file
-    model.write('new_model.ifc')
-    print("New IFC model created with multiple BIM objects.")
+# Create door (simplified)
+door = model.create_entity('IfcDoor',
+    GlobalId=guid.new(),
+    Name='Room Door',
+    OverallHeight=2.1,
+    OverallWidth=0.9)
 
-if __name__ == "__main__":
-    main()
+# Create floor slab
+floor_slab = model.create_entity('IfcSlab',
+    GlobalId=guid.new(),
+    Name='Floor',
+    ObjectType='FLOOR')
+
+# Create ceiling
+ceiling = model.create_entity('IfcCovering',
+    GlobalId=guid.new(),
+    Name='Suspended Ceiling',
+    ObjectType='CEILING')
+
+# Create property sets for thermal properties
+thermal_props = model.create_entity('IfcPropertySet',
+    GlobalId=guid.new(),
+    Name='Pset_ThermalProperties',
+    HasProperties=[
+        model.create_entity('IfcPropertySingleValue',
+            Name='ThermalTransmittance',
+            NominalValue=model.create_entity('IfcThermodynamicTemperatureMeasure', 0.3))
+    ])
+
+# Associate elements with the storey
+model.create_entity('IfcRelContainedInSpatialStructure',
+    GlobalId=guid.new(),
+    RelatingStructure=storey,
+    RelatedElements=walls + [door, floor_slab, ceiling])
+
+# Save the IFC file
+model.write('output.ifc')
