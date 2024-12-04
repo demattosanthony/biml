@@ -11,6 +11,20 @@ import sys
 #     if file.endswith(".ifc"):
 #         bim_objects.append(file)
 
+ifcopenshell_doc_paths = [
+    # "/Users/anthonydemattos/auto-bim/docs/hello-world.md",
+    # "/Users/anthonydemattos/auto-bim/docs/code-examples.md",
+    # "/Users/anthonydemattos/auto-bim/docs/geomtry-processing.md",
+    "/Users/anthonydemattos/auto-bim/docs/geometry-creation.md",
+    # "/Users/anthonydemattos/auto-bim/docs/geometry-tree.md"
+]
+
+# read in the geomtry creation docs
+ifcopenshell_docs = ""
+for doc_path in ifcopenshell_doc_paths:
+    with open(doc_path, "r") as file:
+        ifcopenshell_docs += file.read() + ("\n" if doc_path != ifcopenshell_doc_paths[-1] else "")
+
 # Inital code
 model = """import ifcopenshell
 from ifcopenshell import guid
@@ -22,9 +36,17 @@ site = model.create_entity("IfcSite", Name="Site")
 building = model.create_entity("IfcBuilding", Name="Building")
 """
 
-bim_spec = """A simple ifc model of that renders a sphere."""
+bim_spec = input("Enter the BIM specification: ")
 
-prompt = f"""<ifcopenshellscript>
+prompt = f"""<ifcopenshell_docs>
+{ifcopenshell_docs}
+</ifcopenshell_docs>
+
+<memory>
+1. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
+</memory>
+
+<ifcopenshellscript>
 {model}
 </ifcopenshellscript>
 
@@ -34,9 +56,7 @@ Consider the following BIM specification:
 {bim_spec}
 </bim_specification>
 
-Can you help me implement the necessary code to fulfill the requirements specified in the <bim_specification>?
-
-Your task is to write the code leveraging the ifcopenshell python library to meet the specified BIM requirements.
+Your task is to write the code leveraging the ifcopenshell python library to meet the specified BIM requirements. Use the update_code tool when writing the code, instead of writing it all out and then updating.
 
 Follow these steps to complete the task:
 1. As a first step, analyze the provided code and the BIM specification.
@@ -44,26 +64,7 @@ Follow these steps to complete the task:
 3. Update the sourcecode to implement the plan.
 4. Run the code to make sure it works as expected.
 
-Your thinking should be thorough and it's fine if it's very long.
-
-<memory>
-1. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
-2. all the geomtries need to be added in order for the model to be rendered correctly in a ifc viewer
-3. you need to ensure that both the source and target IFC files use the same schema version. Here are the steps to correct this:
-
-### Check and Match Schema Versions
-When creating the new IFC file, specify the schema version explicitly to match the source file's schema. Here is how you can do it:
-
-```python
-model = ifcopenshell.api.project.create_file(version='IFC2X3')  # or 'IFC4' depending on the source file's schema
-```
-
-Alternatively, if you are not using the `ifcopenshell.api.project.create_file` method, you can specify the schema when creating the file directly:
-
-```python
-model = ifcopenshell.file(schema='IFC2X3')  # or 'IFC4'
-```
-</memory>"""
+Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long."""
 
 tools = [
     {

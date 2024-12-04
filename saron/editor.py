@@ -135,15 +135,16 @@ def main():
     new_file, storey, body_context = create_ifc_hierarchy(schema=source_file.schema)
     
     # Create multiple doors
-    spacing = 1000  # 3000mm = 3m spacing
+    spacing = 100  # 100mm spacing between doors
     doors = []
     
-    # Create a 10x10 grid of doors
-    for i in range(10):
-        for j in range(10):
-            # Calculate placement (in millimeters since we set units to MILLI)
-            x = i * spacing
-            y = j * spacing
+    # Create a 5x5 grid of doors (25 doors total)
+    # Starting at origin (0,0,0)  
+    for i in range(5):
+        for j in range(5):
+            # Calculate placement (in millimeters)
+            x = i * spacing  # Each row moves 100mm in x direction
+            y = j * spacing  # Each column moves 100mm in y direction
             z = 0
             
             # Copy the door with geometry
@@ -153,7 +154,7 @@ def main():
             matrix = np.eye(4)
             matrix[0:3, 3] = [x, y, z]  # Set the translation
             
-            # Set the new placement
+            # Set the new placement 
             geometry.edit_object_placement(new_file, product=new_door, matrix=matrix)
             
             # Assign door to storey
