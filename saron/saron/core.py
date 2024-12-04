@@ -2,6 +2,7 @@ from litellm import completion, stream_chunk_builder
 import base64
 import os
 import json
+import sys
 
 
 # Load in bim object library. Read all file names from bim_objects folder
@@ -21,107 +22,7 @@ site = model.create_entity("IfcSite", Name="Site")
 building = model.create_entity("IfcBuilding", Name="Building")
 """
 
-bim_spec = """### BIM Specification Document: Single Room
-
----
-
-**Project Name:** Example Room Specification  
-
----
-
-### 1. General Overview
-
-**Room Name:** Example Room  
-**Room Function:** [Specify Function: e.g., Office, Bedroom, etc.]  
-**Dimensions:** Length: 4.0 m, Width: 3.0 m, Height: 2.8 m  
-
----
-
-### 2. Components and Specifications
-
-#### 2.1. **Walls**  
-- **Number of Walls:** 4  
-- **Material:**  
-  - Internal: Gypsum Plasterboard (12.5 mm thickness)  
-  - External (Structural): Concrete (200 mm thickness)  
-- **Finish:**  
-  - Paint: Matte, White (RAL 9010)  
-- **Thermal Insulation:** Polyurethane Foam (50 mm)  
-- **Fire Rating:** 1-hour fire resistance  
-- **Wall Openings:** 1 (Door)  
-
----
-
-#### 2.2. **Floor**  
-- **Material Layers:**  
-  1. Substrate: Reinforced Concrete (150 mm)  
-  2. Insulation: Rigid Foam Board (50 mm)  
-  3. Finishing: Vinyl Tile Flooring (2 mm thickness, color: Light Oak)  
-- **Thermal Resistance:** R-3.0  
-- **Load Capacity:** 3 kN/m²  
-
----
-
-#### 2.3. **Ceiling**  
-- **Type:** Suspended Ceiling  
-- **Material:** Acoustic Gypsum Panels (12.5 mm thickness)  
-- **Finish:** Smooth Matte White Paint (RAL 9016)  
-- **Height:** 2.8 m from finished floor level  
-- **Lighting Fixtures:**  
-  - Recessed LED Panels (4000K Neutral White)  
-  - Spacing: 2.0 m apart  
-
----
-
-#### 2.4. **Door**  
-- **Type:** Single Swing Door  
-- **Dimensions:** 900 mm (Width) x 2100 mm (Height)  
-- **Material:** Solid Core Wood, Veneered  
-- **Finish:** Satin Varnish (Natural Oak)  
-- **Hardware:**  
-  - Handle: Brushed Stainless Steel  
-  - Hinges: Concealed Hinges (3 Nos.)  
-  - Lock: Keyed Mortise Lock  
-- **Fire Rating:** 30-minute fire resistance  
-- **Acoustic Rating:** 30 dB  
-
----
-
-### 3. Room Performance Specifications
-
-#### 3.1. **Thermal Performance**  
-- U-Value for Walls: 0.3 W/m²K  
-- U-Value for Floor: 0.25 W/m²K  
-- U-Value for Ceiling: 0.22 W/m²K  
-
-#### 3.2. **Acoustic Performance**  
-- Wall Sound Insulation: 45 dB (Rw)  
-- Ceiling Acoustic Absorption: NRC 0.7  
-
-#### 3.3. **Fire Safety**  
-- Room Fire Rating: 1-hour fire containment  
-
----
-
-### 4. BIM Data Fields
-
-**Room Identifier:** Room_001  
-**IFC Element Types:**  
-- Walls: IfcWall  
-- Floor: IfcSlab  
-- Ceiling: IfcCovering  
-- Door: IfcDoor  
-**Geometric Representation:**  
-- Coordinate System: Local Room Origin (0,0,0)  
-- Units: Millimeters  
-
----
-
-### 5. Notes and Assumptions
-
-1. Door hardware selection may vary based on client requirements.  
-2. Lighting layout to be confirmed upon detailed electrical design.  
-3. All materials comply with [Insert Building Code/Standard, e.g., ISO 16739]."""
+bim_spec = """A simple ifc model of that renders a sphere."""
 
 prompt = f"""<ifcopenshellscript>
 {model}
@@ -284,8 +185,10 @@ def main():
                 )
                 print(result)
         else:
-            break
-        
+            user_input = input("\n\nUser: ")
+            if user_input == "exit":
+                sys.exit()
+            messages.append({"role": "user", "content": user_input})
         print("\n\n")
 
 

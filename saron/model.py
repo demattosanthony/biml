@@ -2,147 +2,150 @@ import ifcopenshell
 from ifcopenshell import guid
 import math
 
+def create_sphere_vertices(radius, segments=32):
+    vertices = []
+    
+    # Add top vertex
+    vertices.append([0., 0., radius])
+    
+    # Add middle vertices
+    for i in range(1, segments):
+        lat = math.pi * (-0.5 + float(i) / segments)
+        for j in range(segments):
+            lon = 2 * math.pi * float(j) / segments
+            x = float(radius * math.cos(lat) * math.cos(lon))
+            y = float(radius * math.cos(lat) * math.sin(lon))
+            z = float(radius * math.sin(lat))
+            vertices.append([x, y, z])
+    
+    # Add bottom vertex
+    vertices.append([0., 0., -radius])
+    
+    return vertices
+
+def create_sphere_faces(segments=32):
+    faces = []
+    
+    # Top cap faces
+    for i in range(segments):
+        next_i = (i + 1) % segments
+        faces.append([0, i + 1, next_i + 1])
+    
+    # Middle faces
+    for i in range(1, segments - 1):
+        for j in range(segments):
+            first = (i - 1) * segments + j + 1
+            second = (i - 1) * segments + ((j + 1) % segments) + 1
+            third = i * segments + ((j + 1) % segments) + 1
+            fourth = i * segments + j + 1
+            faces.append([first, second, third, fourth])
+    
+    # Bottom cap faces
+    bottom_vertex_index = (segments - 1) * segments + 1
+    for i in range(segments):
+        next_i = (i + 1) % segments
+        last_row_first = (segments - 2) * segments + i + 1
+        last_row_second = (segments - 2) * segments + next_i + 1
+        faces.append([last_row_first, last_row_second, bottom_vertex_index])
+    
+    return faces
+
 # Create a new IFC file
 model = ifcopenshell.file(schema="IFC2X3")
 
-# Helper function to create direction
-def create_direction(x, y, z):
-    return model.create_entity('IfcDirection', DirectionRatios=[x, y, z])
+# Create project structure
+project = model.create_entity("IfcProject", GlobalId=guid.new(), Name="My Project")
 
-def create_cartesian_point(coords):
-    return model.create_entity('IfcCartesianPoint', Coordinates=coords)
-
-# Create basic IFC elements
-project = model.create_entity("IfcProject", 
-    GlobalId=guid.new(), 
-    Name="Example Room Specification")
-
-# Set up the units
-length_unit = model.create_entity('IfcSIUnit', 
-    UnitType='LENGTHUNIT', 
-    Name='METRE')
-area_unit = model.create_entity('IfcSIUnit',
-    UnitType='AREAUNIT',
-    Name='SQUARE_METRE')
-volume_unit = model.create_entity('IfcSIUnit',
-    UnitType='VOLUMEUNIT',
-    Name='CUBIC_METRE')
-units = model.create_entity('IfcUnitAssignment', Units=[length_unit, area_unit, volume_unit])
+# Set up units
+length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE")
+units = model.create_entity("IfcUnitAssignment", Units=[length_unit])
 project.UnitsInContext = units
 
-# Create geometric context
-context = model.create_entity('IfcGeometricRepresentationContext',
+# Set up geometric context
+context = model.create_entity("IfcGeometricRepresentationContext",
     ContextType="Model",
     CoordinateSpaceDimension=3,
-    Precision=0.00001,
-    WorldCoordinateSystem=model.create_entity('IfcAxis2Placement3D', Location=create_cartesian_point([0., 0., 0.])))
+    Precision=1.0e-5,
+    WorldCoordinateSystem=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=[0., 0., 0.]))
+)
+project.RepresentationContexts = [context]
 
-# Set up the site, building and storey hierarchy
+# Create site
 site = model.create_entity("IfcSite", 
-    GlobalId=guid.new(), 
-    Name="Site")
-building = model.create_entity("IfcBuilding", 
-    GlobalId=guid.new(), 
-    Name="Building")
-storey = model.create_entity("IfcBuildingStorey", 
-    GlobalId=guid.new(), 
-    Name="Ground Floor")
-
-# Create spatial structure relationships
-model.create_entity('IfcRelAggregates', 
     GlobalId=guid.new(),
-    RelatingObject=project,
-    RelatedObjects=[site])
-model.create_entity('IfcRelAggregates',
+    Name="My Site",
+    ObjectPlacement=model.create_entity("IfcLocalPlacement", RelativePlacement=model.create_entity(
+        "IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=[0., 0., 0.])))
+)
+
+# Create building
+building = model.create_entity("IfcBuilding",
     GlobalId=guid.new(),
-    RelatingObject=site,
-    RelatedObjects=[building])
-model.create_entity('IfcRelAggregates',
+    Name="My Building",
+    ObjectPlacement=model.create_entity("IfcLocalPlacement", 
+        PlacementRelTo=site.ObjectPlacement,
+        RelativePlacement=model.create_entity(
+            "IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=[0., 0., 0.])))
+)
+
+# Create aggregation relationships
+model.create_entity("IfcRelAggregates", GlobalId=guid.new(),
+    RelatingObject=project, RelatedObjects=[site])
+model.create_entity("IfcRelAggregates", GlobalId=guid.new(),
+    RelatingObject=site, RelatedObjects=[building])
+
+# Create sphere geometry
+radius = 1.0
+segments = 32  # Increase this number for a smoother sphere
+points = create_sphere_vertices(radius, segments)
+faces = create_sphere_faces(segments)
+
+# Create IFC points
+ifc_points = [model.create_entity("IfcCartesianPoint", Coordinates=p) for p in points]
+
+# Create faces
+ifc_faces = []
+for face in faces:
+    if len(face) == 3:  # Triangle face
+        polyloop = model.create_entity("IfcPolyLoop", Polygon=[ifc_points[i] for i in face])
+        face_outer_bound = model.create_entity("IfcFaceOuterBound", Bound=polyloop, Orientation=True)
+        face = model.create_entity("IfcFace", Bounds=[face_outer_bound])
+        ifc_faces.append(face)
+    elif len(face) == 4:  # Quad face
+        polyloop = model.create_entity("IfcPolyLoop", Polygon=[ifc_points[i] for i in face])
+        face_outer_bound = model.create_entity("IfcFaceOuterBound", Bound=polyloop, Orientation=True)
+        face = model.create_entity("IfcFace", Bounds=[face_outer_bound])
+        ifc_faces.append(face)
+
+# Create the closed shell and brep
+closed_shell = model.create_entity("IfcClosedShell", CfsFaces=ifc_faces)
+faceted_brep = model.create_entity("IfcFacetedBrep", Outer=closed_shell)
+
+# Create shape representation
+shape_representation = model.create_entity("IfcShapeRepresentation",
+    ContextOfItems=context,
+    RepresentationIdentifier="Body",
+    RepresentationType="Brep",
+    Items=[faceted_brep])
+
+# Create product definition shape
+product_definition_shape = model.create_entity("IfcProductDefinitionShape",
+    Representations=[shape_representation])
+
+# Create building element proxy for the sphere
+sphere_element = model.create_entity("IfcBuildingElementProxy",
     GlobalId=guid.new(),
-    RelatingObject=building,
-    RelatedObjects=[storey])
+    Name="Sphere",
+    ObjectPlacement=model.create_entity("IfcLocalPlacement", 
+        PlacementRelTo=building.ObjectPlacement,
+        RelativePlacement=model.create_entity(
+            "IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=[0., 0., 0.]))),
+    Representation=product_definition_shape)
 
-# Create the room (space)
-room = model.create_entity('IfcSpace',
-    GlobalId=guid.new(),
-    Name='Example Room',
-    ObjectType='Room',
-    CompositionType='ELEMENT')
+# Create containment relationship
+model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(),
+    RelatingStructure=building,
+    RelatedElements=[sphere_element])
 
-# Create relationship between storey and room
-model.create_entity('IfcRelAggregates',
-    GlobalId=guid.new(),
-    RelatingObject=storey,
-    RelatedObjects=[room])
-
-# Create materials
-concrete_material = model.create_entity('IfcMaterial', Name='Concrete')
-gypsum_material = model.create_entity('IfcMaterial', Name='Gypsum Plasterboard')
-insulation_material = model.create_entity('IfcMaterial', Name='Polyurethane Foam')
-
-# Create wall layer set
-wall_layer_set = model.create_entity('IfcMaterialLayerSet',
-    MaterialLayers=[
-        model.create_entity('IfcMaterialLayer', Material=concrete_material, LayerThickness=0.2),
-        model.create_entity('IfcMaterialLayer', Material=insulation_material, LayerThickness=0.05),
-        model.create_entity('IfcMaterialLayer', Material=gypsum_material, LayerThickness=0.0125)
-    ],
-    LayerSetName='External Wall Construction')
-
-# Create walls (simplified geometry)
-walls = []
-wall_lengths = [4.0, 3.0, 4.0, 3.0]  # Length of each wall in meters
-wall_directions = [[1,0,0], [0,1,0], [-1,0,0], [0,-1,0]]  # Direction vectors for each wall
-wall_positions = [[0,0,0], [4,0,0], [4,3,0], [0,3,0]]  # Starting position for each wall
-
-for i in range(4):
-    wall = model.create_entity('IfcWall',
-        GlobalId=guid.new(),
-        Name=f'Wall {i+1}',
-        ObjectType='External Wall')
-    
-    # Associate material layer set with wall
-    model.create_entity('IfcRelAssociatesMaterial',
-        GlobalId=guid.new(),
-        RelatedObjects=[wall],
-        RelatingMaterial=wall_layer_set)
-    
-    walls.append(wall)
-
-# Create door (simplified)
-door = model.create_entity('IfcDoor',
-    GlobalId=guid.new(),
-    Name='Room Door',
-    OverallHeight=2.1,
-    OverallWidth=0.9)
-
-# Create floor slab
-floor_slab = model.create_entity('IfcSlab',
-    GlobalId=guid.new(),
-    Name='Floor',
-    ObjectType='FLOOR')
-
-# Create ceiling
-ceiling = model.create_entity('IfcCovering',
-    GlobalId=guid.new(),
-    Name='Suspended Ceiling',
-    ObjectType='CEILING')
-
-# Create property sets for thermal properties
-thermal_props = model.create_entity('IfcPropertySet',
-    GlobalId=guid.new(),
-    Name='Pset_ThermalProperties',
-    HasProperties=[
-        model.create_entity('IfcPropertySingleValue',
-            Name='ThermalTransmittance',
-            NominalValue=model.create_entity('IfcThermodynamicTemperatureMeasure', 0.3))
-    ])
-
-# Associate elements with the storey
-model.create_entity('IfcRelContainedInSpatialStructure',
-    GlobalId=guid.new(),
-    RelatingStructure=storey,
-    RelatedElements=walls + [door, floor_slab, ceiling])
-
-# Save the IFC file
-model.write('output.ifc')
+# Save the file
+model.write("output.ifc")
