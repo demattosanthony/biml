@@ -69,11 +69,18 @@ def create_ifc_hierarchy(schema="IFC2X3"):
     return new_file, storey, body_context
 
 def copy_door_with_geometry(source_file, target_file, source_door):
-    """Create a new door with copied geometry"""
+    """Create a new door with copied geometry and properties"""
     # Create new door
     new_door = root.create_entity(target_file, ifc_class="IfcDoor")
     
-    # Find door style/type
+    # Copy basic attributes
+    new_door.Name = source_door.Name
+    new_door.Description = source_door.Description if hasattr(source_door, 'Description') else None
+    new_door.Tag = source_door.Tag if hasattr(source_door, 'Tag') else None
+    new_door.OverallHeight = source_door.OverallHeight if hasattr(source_door, 'OverallHeight') else None
+    new_door.OverallWidth = source_door.OverallWidth if hasattr(source_door, 'OverallWidth') else None
+    
+    # Find and copy door style/type
     door_style = None
     for rel in source_file.by_type("IfcRelDefinesByType"):
         if rel.RelatedObjects and rel.RelatedObjects[0].id() == source_door.id():
@@ -85,11 +92,36 @@ def copy_door_with_geometry(source_file, target_file, source_door):
         new_style = target_file.add(door_style)
         type.assign_type(target_file, [new_door], new_style)
     
+    # Get owner history from existing entities or create new one
+    owner_history = None
+    existing_entities = target_file.by_type("IfcOwnerHistory")
+    if existing_entities:
+        owner_history = existing_entities[0]
+    else:
+        # Create minimal owner history
+        person = target_file.create_entity("IfcPerson", FamilyName="User")
+        org = target_file.create_entity("IfcOrganization", Name="Organization")
+        person_org = target_file.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=org)
+        app = target_file.create_entity("IfcApplication", ApplicationDeveloper=org, Version="v1.0", ApplicationFullName="Application", ApplicationIdentifier="App")
+        owner_history = target_file.create_entity("IfcOwnerHistory", OwningUser=person_org, OwningApplication=app, ChangeAction="ADDED")
+    
+    # Copy property sets
+    for rel in source_file.by_type("IfcRelDefinesByProperties"):
+        if rel.RelatedObjects and rel.RelatedObjects[0].id() == source_door.id():
+            # Copy the property set
+            new_pset = target_file.add(rel.RelatingPropertyDefinition)
+            # Create new relationship with owner history
+            target_file.create_entity(
+                "IfcRelDefinesByProperties",
+                GlobalId=ifcopenshell.guid.new(),
+                OwnerHistory=owner_history,
+                RelatedObjects=[new_door],
+                RelatingPropertyDefinition=new_pset
+            )
+    
     # Copy representation
     if source_door.Representation:
-        # Add the representation to the target file
         new_representation = target_file.add(source_door.Representation)
-        # Assign the representation to the new door
         new_door.Representation = new_representation
         
     return new_door
@@ -103,7 +135,7 @@ def main():
     new_file, storey, body_context = create_ifc_hierarchy(schema=source_file.schema)
     
     # Create multiple doors
-    spacing = 3000  # 3000mm = 3m spacing
+    spacing = 1000  # 3000mm = 3m spacing
     doors = []
     
     # Create a 10x10 grid of doors
