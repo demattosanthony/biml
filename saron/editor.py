@@ -8,6 +8,7 @@ import ifcopenshell.util
 import ifcopenshell.util.element
 import numpy as np
 import time
+from dataclasses import dataclass
 
 # Create new IFC file
 model = ifcopenshell.file(schema="IFC2X3")
@@ -88,45 +89,54 @@ model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=proj
 model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=site, RelatedObjects=[building])
 model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=building, RelatedObjects=[storey])
 
-# Load source IFC with the door
-source_file = ifcopenshell.open("bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc")
-original_door = source_file.by_type("IfcDoor")[0]
-original_door_materials = ifcopenshell.util.element.get_materials(original_door)
+template_paths = [
+    "bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc",
+    "/Users/anthonydemattos/auto-bim/saron/bim_objects/Hot-Water-Heater.ifc",
+    "/Users/anthonydemattos/auto-bim/saron/bim_objects/Ice-Hockey-Rink.ifc"
+]
 
-# Copy the door into the new model
-new_door = ifcopenshell.util.element.copy_deep(model, original_door)
+coordinates = [
+    (0.0, 0.0, 0.0),
+    (0.0, 1.0, 0.0),
+    (0.0, 22.0, 0.0)
+]
 
-# Update the GlobalId and Name
-new_door.GlobalId = guid.new()
-new_door.Name = "Office Door"
-new_door.Description = "This is an office door that was copied from another IFC file."
+for path, coord in zip(template_paths, coordinates):
+    source_file = ifcopenshell.open(path)
+    original_door = source_file.by_type("IfcProduct")[0]
+    original_door_materials = ifcopenshell.util.element.get_materials(original_door)
 
-door_placement = model.create_entity(
-    "IfcLocalPlacement",
-    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
-)
-new_door.ObjectPlacement = door_placement
+    # Copy the door into the new model
+    new_door = ifcopenshell.util.element.copy_deep(model, original_door)
 
-# Get original door materials
-orig_materials = ifcopenshell.util.element.get_materials(original_door)
-for orig_mat in orig_materials:
-    # Deep copy the material from the source file to the new model
-    new_mat = ifcopenshell.util.element.copy_deep(model, orig_mat)
+    # Update the GlobalId
+    new_door.GlobalId = guid.new()
 
-    # Check for any material definition representations that define color
-    if hasattr(orig_mat, "HasRepresentation") and orig_mat.HasRepresentation:
-        for mdr in orig_mat.HasRepresentation:
-            if mdr.is_a("IfcMaterialDefinitionRepresentation"):
-                # Deep copy the material definition representation
-                new_mdr = ifcopenshell.util.element.copy_deep(model, mdr)
-                # Link the new Mdr to the new material
-                new_mdr.RepresentedMaterial = new_mat
+    door_placement = model.create_entity(
+        "IfcLocalPlacement",
+        RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=coord)),
+    )
+    new_door.ObjectPlacement = door_placement
 
-    # Assign the newly copied material (with its representation) to the new door
-    ifcopenshell.api.material.assign_material(file=model, products=[new_door], material=new_mat)
+    # Get original door materials
+    for orig_mat in original_door_materials:
+        # Deep copy the material from the source file to the new model
+        new_mat = ifcopenshell.util.element.copy_deep(model, orig_mat)
 
-# Set spatial containment
-model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(), RelatingStructure=storey, RelatedElements=[new_door])
+        # Check for any material definition representations that define color
+        if hasattr(orig_mat, "HasRepresentation") and orig_mat.HasRepresentation:
+            for mdr in orig_mat.HasRepresentation:
+                if mdr.is_a("IfcMaterialDefinitionRepresentation"):
+                    # Deep copy the material definition representation
+                    new_mdr = ifcopenshell.util.element.copy_deep(model, mdr)
+                    # Link the new Mdr to the new material
+                    new_mdr.RepresentedMaterial = new_mat
+
+        # Assign the newly copied material (with its representation) to the new door
+        ifcopenshell.api.material.assign_material(file=model, products=[new_door], material=new_mat)
+
+    # Set spatial containment
+    model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(), RelatingStructure=storey, RelatedElements=[new_door])
 
 # Save the model
 model.write("test.ifc")
