@@ -5,11 +5,11 @@ import ifcopenshell.api
 import ifcopenshell.api.geometry
 import ifcopenshell.api.material
 import ifcopenshell.api.pset
+import ifcopenshell.api.style
 import ifcopenshell.util
 import ifcopenshell.util.element
 import numpy as np
 import time
-from dataclasses import dataclass
 
 # Create new IFC file
 model = ifcopenshell.file(schema="IFC2X3")
@@ -93,11 +93,13 @@ model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=buil
 template_paths = [
     "bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc",
     "/Users/anthonydemattos/auto-bim/saron/bim_objects/Hot-Water-Heater.ifc",
+    "/Users/anthonydemattos/auto-bim/saron/bim_objects/Ice-Hockey-Rink.ifc"
 ]
 
 coordinates = [
     (0.0, 0.0, 0.0),
     (0.0, 5.0, 0.0),
+    (0.0, 20.0, 0.0)
 ]
 
 def copy_material_structure(model, old_material_select):
@@ -139,14 +141,26 @@ def copy_material(model, old_material):
                 new_mdr.RepresentedMaterial = new_mat
     return new_mat
 
-def copy_product_with_materials(model, source_product):
-    # Copy the product geometry and properties
-    new_product = ifcopenshell.util.element.copy_deep(model, source_product)
+
+for path, coord in zip(template_paths, coordinates):
+    source_file = ifcopenshell.open(path)
+    original_product = source_file.by_type("IfcProduct")[0]
+    psets = ifcopenshell.util.element.get_psets(original_product, psets_only=True)
+    materials = ifcopenshell.util.element.get_materials(original_product)
+    styles = ifcopenshell.util.element.get_styles(original_product)
+
+    new_product = ifcopenshell.util.element.copy_deep(model, original_product)
     new_product.GlobalId = guid.new()
 
+    # Copy psets
+    for pset_name, pset_values in psets.items():
+        pset = ifcopenshell.api.pset.add_pset(model, new_product, name=pset_name)
+        ifcopenshell.api.pset.edit_pset(model, pset=pset, properties=pset_values)
+
+    # Copy materials
     # Find original IfcRelAssociatesMaterial
-    if source_product.HasAssociations:
-        for assoc in source_product.HasAssociations:
+    if original_product.HasAssociations:
+        for assoc in original_product.HasAssociations:
             if assoc.is_a("IfcRelAssociatesMaterial"):
                 old_mat_select = assoc.RelatingMaterial
                 new_mat_select = copy_material_structure(model, old_mat_select)
@@ -158,23 +172,18 @@ def copy_product_with_materials(model, source_product):
                         RelatingMaterial=new_mat_select,
                         RelatedObjects=[new_product]
                     )
+                    
+    # for material in materials:
+    #     material_copy = ifcopenshell.api.material.copy_material(model, material=material)
+    #     # Copy material representations if any
+    #     if hasattr(material, "HasRepresentation") and material.HasRepresentation:
+    #         for mdr in material.HasRepresentation:
+    #             if mdr.is_a("IfcMaterialDefinitionRepresentation"):
+    #                 new_mdr = ifcopenshell.util.element.copy_deep(model, mdr)
+    #                 new_mdr.RepresentedMaterial = material_copy
 
-    return new_product
-
-for path, coord in zip(template_paths, coordinates):
-    source_file = ifcopenshell.open(path)
-    original_product = source_file.by_type("IfcProduct")[0]
-    psets = ifcopenshell.util.element.get_psets(original_product, psets_only=True)
-
-
-    new_product = copy_product_with_materials(model, original_product) # TODO: try using add_material and add_material set instead of this
-    new_product.GlobalId = guid.new()
-
-    # Copy psets
-    for pset_name, pset_values in psets.items():
-        pset = ifcopenshell.api.pset.add_pset(model, new_product, name=pset_name)
-        ifcopenshell.api.pset.edit_pset(model, pset=pset, properties=pset_values)
-
+    #     ifcopenshell.api.material.assign_material(model, products=[new_product], material=material_copy)
+        
     # Assign placement
     new_placement = model.create_entity(
         "IfcLocalPlacement",
