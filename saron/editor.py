@@ -4,6 +4,7 @@ from ifcopenshell import guid
 import ifcopenshell.api
 import ifcopenshell.api.geometry
 import ifcopenshell.api.material
+import ifcopenshell.api.pset
 import ifcopenshell.util
 import ifcopenshell.util.element
 import numpy as np
@@ -92,13 +93,11 @@ model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=buil
 template_paths = [
     "bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc",
     "/Users/anthonydemattos/auto-bim/saron/bim_objects/Hot-Water-Heater.ifc",
-    "/Users/anthonydemattos/auto-bim/saron/bim_objects/Ice-Hockey-Rink.ifc"
 ]
 
 coordinates = [
     (0.0, 0.0, 0.0),
-    (0.0, 1.0, 0.0),
-    (0.0, 22.0, 0.0)
+    (0.0, 5.0, 0.0),
 ]
 
 def copy_material_structure(model, old_material_select):
@@ -165,13 +164,16 @@ def copy_product_with_materials(model, source_product):
 for path, coord in zip(template_paths, coordinates):
     source_file = ifcopenshell.open(path)
     original_product = source_file.by_type("IfcProduct")[0]
+    psets = ifcopenshell.util.element.get_psets(original_product, psets_only=True)
 
-    new_product = copy_product_with_materials(model, original_product)
 
-
-    # Copy product
-    # new_elem = ifcopenshell.util.element.copy_deep(model, original_elem)
+    new_product = copy_product_with_materials(model, original_product) # TODO: try using add_material and add_material set instead of this
     new_product.GlobalId = guid.new()
+
+    # Copy psets
+    for pset_name, pset_values in psets.items():
+        pset = ifcopenshell.api.pset.add_pset(model, new_product, name=pset_name)
+        ifcopenshell.api.pset.edit_pset(model, pset=pset, properties=pset_values)
 
     # Assign placement
     new_placement = model.create_entity(
