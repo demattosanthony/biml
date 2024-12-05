@@ -97,6 +97,7 @@ tools = [
     },
 ]
 
+
 def update_code(new_code):
     model = new_code
 
@@ -105,12 +106,17 @@ def update_code(new_code):
 
     return "Code updated successfully."
 
+
 def run_code():
     try:
         import subprocess
 
         # Run the model.py script using subprocess
-        result = subprocess.run(['/Users/anthonydemattos/auto-bim/saron/.venv/bin/python3', '/Users/anthonydemattos/auto-bim/saron/model.py'], capture_output=True, text=True)
+        result = subprocess.run(
+            ["/Users/anthonydemattos/auto-bim/saron/.venv/bin/python3", "/Users/anthonydemattos/auto-bim/saron/model.py"],
+            capture_output=True,
+            text=True,
+        )
 
         if result.returncode != 0:
             print("An error occurred during code execution.")
@@ -130,10 +136,7 @@ def run_code():
 
 messages = [
     # {"role": "system", "content": system_message},
-    {
-        "role": "user",
-        "content": prompt
-    },
+    {"role": "user", "content": prompt},
 ]
 
 claude_haiku = "claude-3-5-haiku-20241022"
@@ -142,6 +145,7 @@ o1_preview = "o1-preview"
 o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
 pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
+
 
 def main():
     while True:

@@ -26,11 +26,11 @@ def execute_python_code(code):
 
     # Create a clean namespace
     namespace = {
-        '__name__': '__main__',
-        '__file__': '<string>',
-        '__doc__': None,
-        '__package__': None,
-        '__builtins__': __builtins__,
+        "__name__": "__main__",
+        "__file__": "<string>",
+        "__doc__": None,
+        "__package__": None,
+        "__builtins__": __builtins__,
     }
 
     try:
@@ -39,13 +39,13 @@ def execute_python_code(code):
         sys.stderr = stderr_capture
 
         # Compile the code first
-        compiled_code = compile(code, '<string>', 'exec')
-        
+        compiled_code = compile(code, "<string>", "exec")
+
         # Execute the compiled code with the namespace
         exec(compiled_code, namespace)
 
         # Get the last expression's value if it exists
-        result = namespace.get('__result__', None)
+        result = namespace.get("__result__", None)
 
         # Compilation and execution successful
         return {
@@ -53,8 +53,7 @@ def execute_python_code(code):
             "stdout": stdout_capture.getvalue(),
             "stderr": stderr_capture.getvalue(),
             "result": result,
-            "namespace": {k: v for k, v in namespace.items() 
-                         if not k.startswith('__')}  # Return user-defined variables
+            "namespace": {k: v for k, v in namespace.items() if not k.startswith("__")},  # Return user-defined variables
         }
 
     except Exception as e:

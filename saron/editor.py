@@ -1,169 +1,117 @@
 import ifcopenshell
 from ifcopenshell.api import root, context, unit, spatial, type, geometry, aggregate, owner
+from ifcopenshell import guid
+import ifcopenshell.api
+import ifcopenshell.api.geometry
 import numpy as np
+import time
 
-def create_owner_history(file):
-    """Create a more detailed owner history"""
-    person = owner.add_person(
-        file,
-        identification="user123",
-        family_name="Doe",
-        given_name="John"
-    )
-    
-    org = owner.add_organisation(
-        file,
-        identification="company123",
-        name="Example Company"
-    )
-    
-    user = owner.add_person_and_organisation(file, person, org)
-    
-    application = owner.add_application(
-        file,
-        application_identifier="MyApp",
-        version="1.0",
-        application_full_name="My IFC Application"
-    )
-    
-    # Set up owner history settings
-    owner.settings.get_user = lambda x: user
-    owner.settings.get_application = lambda x: application
-    
-    return user, application
+# Create new IFC file
+model = ifcopenshell.file(schema="IFC2X3")
 
-def create_ifc_hierarchy(schema="IFC2X3"):
-    # Create a new IFC file with matching schema
-    new_file = ifcopenshell.file(schema=schema) 
-    
-    # Create detailed owner history
-    user, application = create_owner_history(new_file)
-    
-    # Create project
-    project = root.create_entity(new_file, ifc_class="IfcProject", name="New Project")
-    
-    # Set up geometric representation contexts
-    model_context = context.add_context(new_file, context_type="Model")
-    body_context = context.add_context(
-        new_file, 
-        context_type="Model",
-        context_identifier="Body",
-        target_view="MODEL_VIEW",
-        parent=model_context
-    )
-    
-    # Set units - using metric
-    length_unit = unit.add_si_unit(new_file, unit_type="LENGTHUNIT", prefix="MILLI")
-    unit.assign_unit(new_file, units=[length_unit])
-    
-    # Create spatial hierarchy
-    site = root.create_entity(new_file, ifc_class="IfcSite", name="Site")
-    building = root.create_entity(new_file, ifc_class="IfcBuilding", name="Building")
-    storey = root.create_entity(new_file, ifc_class="IfcBuildingStorey", name="Level 1")
-    
-    # Set up the spatial containment
-    aggregate.assign_object(new_file, relating_object=project, products=[site])
-    aggregate.assign_object(new_file, relating_object=site, products=[building])
-    aggregate.assign_object(new_file, relating_object=building, products=[storey])
-    
-    return new_file, storey, body_context
+person = model.create_entity("IfcPerson", GivenName="John", FamilyName="Doe")
+organization = model.create_entity("IfcOrganization", Name="My Company")
+person_and_org = model.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=organization)
+application = model.create_entity(
+    "IfcApplication", ApplicationDeveloper=organization, Version="v1.0", ApplicationFullName="My Application", ApplicationIdentifier="MY-APP"
+)
 
-def copy_door_with_geometry(source_file, target_file, source_door):
-    """Create a new door with copied geometry and properties"""
-    # Create new door
-    new_door = root.create_entity(target_file, ifc_class="IfcDoor")
-    
-    # Copy basic attributes
-    new_door.Name = source_door.Name
-    new_door.Description = source_door.Description if hasattr(source_door, 'Description') else None
-    new_door.Tag = source_door.Tag if hasattr(source_door, 'Tag') else None
-    new_door.OverallHeight = source_door.OverallHeight if hasattr(source_door, 'OverallHeight') else None
-    new_door.OverallWidth = source_door.OverallWidth if hasattr(source_door, 'OverallWidth') else None
-    
-    # Find and copy door style/type
-    door_style = None
-    for rel in source_file.by_type("IfcRelDefinesByType"):
-        if rel.RelatedObjects and rel.RelatedObjects[0].id() == source_door.id():
-            door_style = rel.RelatingType
-            break
-    
-    # Copy door style if found
-    if door_style:
-        new_style = target_file.add(door_style)
-        type.assign_type(target_file, [new_door], new_style)
-    
-    # Get owner history from existing entities or create new one
-    owner_history = None
-    existing_entities = target_file.by_type("IfcOwnerHistory")
-    if existing_entities:
-        owner_history = existing_entities[0]
-    else:
-        # Create minimal owner history
-        person = target_file.create_entity("IfcPerson", FamilyName="User")
-        org = target_file.create_entity("IfcOrganization", Name="Organization")
-        person_org = target_file.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=org)
-        app = target_file.create_entity("IfcApplication", ApplicationDeveloper=org, Version="v1.0", ApplicationFullName="Application", ApplicationIdentifier="App")
-        owner_history = target_file.create_entity("IfcOwnerHistory", OwningUser=person_org, OwningApplication=app, ChangeAction="ADDED")
-    
-    # Copy property sets
-    for rel in source_file.by_type("IfcRelDefinesByProperties"):
-        if rel.RelatedObjects and rel.RelatedObjects[0].id() == source_door.id():
-            # Copy the property set
-            new_pset = target_file.add(rel.RelatingPropertyDefinition)
-            # Create new relationship with owner history
-            target_file.create_entity(
-                "IfcRelDefinesByProperties",
-                GlobalId=ifcopenshell.guid.new(),
-                OwnerHistory=owner_history,
-                RelatedObjects=[new_door],
-                RelatingPropertyDefinition=new_pset
-            )
-    
-    # Copy representation
-    if source_door.Representation:
-        new_representation = target_file.add(source_door.Representation)
-        new_door.Representation = new_representation
-        
-    return new_door
+# Create owner history
+owner_history = model.create_entity(
+    "IfcOwnerHistory",
+    OwningUser=person_and_org,
+    OwningApplication=application,
+    State="READWRITE",
+    ChangeAction="ADDED",
+    CreationDate=int(time.time()),
+)
 
-def main():
-    # Load source IFC with the door
-    source_file = ifcopenshell.open('bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc')
-    original_door = source_file.by_type('IfcDoor')[0]
-    
-    # Create new IFC file with proper hierarchy and matching schema
-    new_file, storey, body_context = create_ifc_hierarchy(schema=source_file.schema)
-    
-    # Create multiple doors
-    spacing = 100  # 100mm spacing between doors
-    doors = []
-    
-    # Create a 5x5 grid of doors (25 doors total)
-    # Starting at origin (0,0,0)  
-    for i in range(5):
-        for j in range(5):
-            # Calculate placement (in millimeters)
-            x = i * spacing  # Each row moves 100mm in x direction
-            y = j * spacing  # Each column moves 100mm in y direction
-            z = 0
-            
-            # Copy the door with geometry
-            new_door = copy_door_with_geometry(source_file, new_file, original_door)
-            
-            # Create a transformation matrix for the new placement
-            matrix = np.eye(4)
-            matrix[0:3, 3] = [x, y, z]  # Set the translation
-            
-            # Set the new placement 
-            geometry.edit_object_placement(new_file, product=new_door, matrix=matrix)
-            
-            # Assign door to storey
-            spatial.assign_container(new_file, products=[new_door], relating_structure=storey)
-            
-            doors.append(new_door)
-    
-    # Save the new file
-    new_file.write('output_with_multiple_doors.ifc')
+# Create project
+project = model.create_entity("IfcProject", GlobalId=guid.new(), Name="Office Chair Project")
 
-if __name__ == "__main__":
-    main()
+# Set up geometric context
+context = model.create_entity(
+    "IfcGeometricRepresentationContext",
+    ContextType="Model",
+    CoordinateSpaceDimension=3,
+    WorldCoordinateSystem=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
+)
+
+project.RepresentationContexts = [context]
+
+# Set up units
+unit_assignment = model.create_entity(
+    "IfcUnitAssignment",
+    Units=[
+        model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE"),
+        model.create_entity("IfcSIUnit", UnitType="AREAUNIT", Name="SQUARE_METRE"),
+        model.create_entity("IfcSIUnit", UnitType="VOLUMEUNIT", Name="CUBIC_METRE"),
+    ],
+)
+project.UnitsInContext = unit_assignment
+
+# Create 3D context
+model3d = model.create_entity(
+    "IfcGeometricRepresentationSubContext", ContextIdentifier="Body", ContextType="Model", ParentContext=context, TargetView="MODEL_VIEW"
+)
+
+# Create site and building
+site = model.create_entity("IfcSite", GlobalId=guid.new(), Name="Site")
+building = model.create_entity("IfcBuilding", GlobalId=guid.new(), Name="Building")
+storey = model.create_entity("IfcBuildingStorey", GlobalId=guid.new(), Name="Ground Floor")
+
+# Create placements
+site_placement = model.create_entity(
+    "IfcLocalPlacement",
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
+)
+building_placement = model.create_entity(
+    "IfcLocalPlacement",
+    PlacementRelTo=site_placement,
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
+)
+storey_placement = model.create_entity(
+    "IfcLocalPlacement",
+    PlacementRelTo=building_placement,
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
+)
+
+site.ObjectPlacement = site_placement
+building.ObjectPlacement = building_placement
+storey.ObjectPlacement = storey_placement
+
+# Setup containment
+model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=project, RelatedObjects=[site])
+model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=site, RelatedObjects=[building])
+model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=building, RelatedObjects=[storey])
+
+# Load source IFC with the door
+source_file = ifcopenshell.open("bim_objects/DoorPanel_Aluminum_Cline_Louver-TopAndBottom.ifc")
+original_door = source_file.by_type("IfcDoor")[0]
+
+# Copy the door into the new model
+new_door = ifcopenshell.util.element.copy_deep(model, original_door)
+new_door_2 = ifcopenshell.util.element.copy_deep(model, original_door)
+
+# Update the GlobalId and Name
+new_door.GlobalId = guid.new()
+new_door.Name = "Office Door"
+
+door_placement = model.create_entity(
+    "IfcLocalPlacement",
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
+)
+new_door.ObjectPlacement = door_placement
+
+door_2_placement = model.create_entity(
+    "IfcLocalPlacement",
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 1.0, 0.0))),
+)
+new_door_2.ObjectPlacement = door_2_placement
+
+# Set spatial containment
+model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(), RelatingStructure=storey, RelatedElements=[new_door])
+model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(), RelatingStructure=storey, RelatedElements=[new_door_2])
+
+# Save the model
+model.write("test.ifc")
