@@ -113,7 +113,10 @@ def run_code():
 
         # Run the model.py script using subprocess
         result = subprocess.run(
-            ["/Users/anthonydemattos/auto-bim/saron/.venv/bin/python3", "/Users/anthonydemattos/auto-bim/saron/model.py"],
+            [
+                "/Users/anthonydemattos/auto-bim/saron/.venv/bin/python3",
+                "/Users/anthonydemattos/auto-bim/saron/model.py",
+            ],
             capture_output=True,
             text=True,
         )
@@ -149,7 +152,13 @@ pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
 
 def main():
     while True:
-        response = completion(model=claude_sonnet, messages=messages, temperature=0, stream=True, tools=tools)
+        response = completion(
+            model=claude_sonnet,
+            messages=messages,
+            temperature=0,
+            stream=True,
+            tools=tools,
+        )
 
         chunks = []
         for chunk in response:

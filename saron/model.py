@@ -1,178 +1,290 @@
 import ifcopenshell
 from ifcopenshell import guid
-import math
-from ifcopenshell.util.shape_builder import ShapeBuilder, V
-from ifcopenshell.util.placement import get_axis2placement
+import numpy
+import time
 
 # Create new IFC file
-model = ifcopenshell.file(schema="IFC4")
+model = ifcopenshell.file(schema="IFC2X3")
 
-# Create project
-project = model.create_entity("IfcProject", GlobalId=guid.new(), Name="Office Chair Project")
+# Create project structure
+project = model.create_entity("IfcProject", GlobalId=guid.new(), Name="My Project")
+site = model.create_entity("IfcSite", GlobalId=guid.new(), Name="My Site")
+building = model.create_entity("IfcBuilding", GlobalId=guid.new(), Name="My Building")
 
-# Set up units
-context = model.create_entity("IfcGeometricRepresentationContext", ContextType="Model", CoordinateSpaceDimension=3)
-model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Prefix="MILLI", Name="METRE")
-model.create_entity("IfcSIUnit", UnitType="AREAUNIT", Name="SQUARE_METRE")
-model.create_entity("IfcSIUnit", UnitType="VOLUMEUNIT", Name="CUBIC_METRE")
-
-# Create 3D and plan contexts
-model3d = model.create_entity(
-    "IfcGeometricRepresentationSubContext", ContextIdentifier="Body", ContextType="Model", ParentContext=context, TargetView="MODEL_VIEW"
+# Create owner history
+person = model.create_entity("IfcPerson", FamilyName="Demo", GivenName="User")
+organization = model.create_entity("IfcOrganization", Name="Demo Organization")
+person_and_org = model.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=organization)
+application = model.create_entity(
+    "IfcApplication",
+    ApplicationDeveloper=organization,
+    Version="1.0",
+    ApplicationFullName="Demo Application",
+    ApplicationIdentifier="Demo App",
+)
+owner_history = model.create_entity(
+    "IfcOwnerHistory",
+    OwningUser=person_and_org,
+    OwningApplication=application,
+    ChangeAction="ADDED",
+    CreationDate=int(time.time()),
 )
 
-# Create site and building
-site = model.create_entity("IfcSite", GlobalId=guid.new(), Name="Site")
-building = model.create_entity("IfcBuilding", GlobalId=guid.new(), Name="Building")
-storey = model.create_entity("IfcBuildingStorey", GlobalId=guid.new(), Name="Ground Floor")
+# Set up units - using millimeters
+units = model.create_entity("IfcUnitAssignment")
+length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Prefix="MILLI", Name="METRE")
+units.Units = [length_unit]
+project.UnitsInContext = units
 
-# Setup containment
-model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=project, RelatedObjects=[site])
-model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=site, RelatedObjects=[building])
-model.create_entity("IfcRelAggregates", GlobalId=guid.new(), RelatingObject=building, RelatedObjects=[storey])
+# Set up geometric representation contexts
+context = model.create_entity(
+    "IfcGeometricRepresentationContext",
+    ContextType="Model",
+    CoordinateSpaceDimension=3,
+    Precision=0.01,
+    WorldCoordinateSystem=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+    ),
+)
 
-# Create shape builder
-builder = ShapeBuilder(model)
+model_context = model.create_entity(
+    "IfcGeometricRepresentationSubContext",
+    ContextIdentifier="Body",
+    ContextType="Model",
+    ParentContext=context,
+    TargetView="MODEL_VIEW",
+)
 
-# Create furniture type
-chair_type = model.create_entity("IfcFurnitureType", GlobalId=guid.new(), Name="Office Chair Type", PredefinedType="CHAIR")
+# Create placement for wall
+wall_placement = model.create_entity(
+    "IfcLocalPlacement",
+    PlacementRelTo=None,
+    RelativePlacement=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+        Axis=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+        RefDirection=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0)),
+    ),
+)
 
-# Create materials
-plastic_material = model.create_entity("IfcMaterial", Name="Black Plastic")
-metal_material = model.create_entity("IfcMaterial", Name="Chrome Metal")
-fabric_material = model.create_entity("IfcMaterial", Name="Blue Fabric")
+# Create wall profile (6000mm long x 200mm thick)
+wall_profile = model.create_entity(
+    "IfcRectangleProfileDef",
+    ProfileType="AREA",
+    XDim=6000.0,  # Length
+    YDim=200.0,  # Thickness
+)
 
+# Create wall extrusion (3000mm high)
+wall_solid = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=wall_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+    Depth=3000.0,
+)
 
-def create_circular_extrusion(builder, radius, height):
-    circle = builder.circle(radius=radius)
-    return builder.extrude(builder.profile(circle), height)
+# Create wall shape representation
+wall_representation = model.create_entity(
+    "IfcShapeRepresentation",
+    ContextOfItems=model_context,
+    RepresentationIdentifier="Body",
+    RepresentationType="SweptSolid",
+    Items=[wall_solid],
+)
 
+# Create wall product definition shape
+wall_shape = model.create_entity("IfcProductDefinitionShape", Representations=[wall_representation])
 
-# Create base star shape
-base_radius = 300
-leg_width = 50
-leg_height = 30
-base_items = []
+# Create wall
+wall = model.create_entity(
+    "IfcWall",
+    GlobalId=guid.new(),
+    OwnerHistory=owner_history,
+    Name="Basic Wall",
+    ObjectPlacement=wall_placement,
+    Representation=wall_shape,
+)
 
-# Create 5 star legs
-for i in range(5):
-    angle = i * 2 * math.pi / 5
-    # Create leg profile
-    points = [
-        V(0, -leg_width / 2),
-        V(base_radius, -leg_width / 4),
-        V(base_radius, leg_width / 4),
-        V(0, leg_width / 2),
-    ]
-    leg_curve = builder.polyline(points, closed=True)
-    leg = builder.extrude(builder.profile(leg_curve), leg_height)
+# Create opening
+opening_placement = model.create_entity(
+    "IfcLocalPlacement",
+    PlacementRelTo=wall_placement,
+    RelativePlacement=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(1500.0, 0.0, 0.0)),
+    ),
+)
 
-    # Rotate and position leg
-    builder.rotate([leg], angle)
-    base_items.append(leg)
+# Create opening profile
+opening_profile = model.create_entity(
+    "IfcRectangleProfileDef",
+    ProfileType="AREA",
+    XDim=900.0,  # Width
+    YDim=200.0,  # Same as wall thickness
+)
 
-    # Add simplified caster as cylinder
-    caster = create_circular_extrusion(builder, 30, 20)
-    builder.translate([caster], V(base_radius * math.cos(angle), base_radius * math.sin(angle), -20))
-    base_items.append(caster)
+# Create opening extrusion
+opening_solid = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=opening_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+    Depth=2100.0,  # Standard door height
+)
 
-# Create central hub
-hub_radius = 80
-hub_height = 50
-hub = create_circular_extrusion(builder, hub_radius, hub_height)
-base_items.append(hub)
+# Create opening shape representation
+opening_representation = model.create_entity(
+    "IfcShapeRepresentation",
+    ContextOfItems=model_context,
+    RepresentationIdentifier="Body",
+    RepresentationType="SweptSolid",
+    Items=[opening_solid],
+)
 
-# Create gas lift cylinder
-cylinder_height = 400
-cylinder_radius = 25
-gas_lift = create_circular_extrusion(builder, cylinder_radius, cylinder_height)
-builder.translate([gas_lift], V(0, 0, hub_height))
-base_items.append(gas_lift)
+# Create opening product definition shape
+opening_shape = model.create_entity("IfcProductDefinitionShape", Representations=[opening_representation])
 
-# Create seat cushion
-seat_width = 500
-seat_depth = 480
-seat_thickness = 80
+# Create opening element
+opening = model.create_entity(
+    "IfcOpeningElement",
+    GlobalId=guid.new(),
+    OwnerHistory=owner_history,
+    Name="Door Opening",
+    ObjectPlacement=opening_placement,
+    Representation=opening_shape,
+)
 
-# Main seat cushion
-seat_points = [
-    V(-seat_width / 2, -seat_depth / 2),
-    V(seat_width / 2, -seat_depth / 2),
-    V(seat_width / 2, seat_depth / 2),
-    V(-seat_width / 2, seat_depth / 2),
-]
-seat_curve = builder.polyline(seat_points, closed=True)
-seat = builder.extrude(builder.profile(seat_curve), seat_thickness)
-builder.translate([seat], V(0, 0, hub_height + cylinder_height))
+# Create relationship between wall and opening
+void_relation = model.create_entity(
+    "IfcRelVoidsElement",
+    GlobalId=guid.new(),
+    OwnerHistory=owner_history,
+    RelatingBuildingElement=wall,
+    RelatedOpeningElement=opening,
+)
 
-# Create backrest
-back_height = 600
-back_width = 460
-back_thickness = 60
+# Create door placement (relative to the opening)
+door_placement = model.create_entity(
+    "IfcLocalPlacement",
+    PlacementRelTo=opening_placement,
+    RelativePlacement=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+    ),
+)
 
-# Simplified backrest as a rectangular extrusion
-back_points = [
-    V(0, -back_width / 2),
-    V(0, back_width / 2),
-    V(back_height, back_width / 2),
-    V(back_height, -back_width / 2),
-]
-back_curve = builder.polyline(back_points, closed=True)
-back = builder.extrude(builder.profile(back_curve), back_thickness)
+# Create door profile (slightly smaller than opening)
+door_profile = model.create_entity(
+    "IfcRectangleProfileDef",
+    ProfileType="AREA",
+    XDim=850.0,  # Door panel width (slightly smaller than opening)
+    YDim=40.0,  # Door thickness
+)
 
-# Position backrest
-builder.translate([back], V(-back_thickness / 2, 0, hub_height + cylinder_height + seat_thickness))
+# Create door panel extrusion
+door_solid = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=door_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(25.0, 80.0, 0.0)),  # Centered in opening
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+    Depth=2050.0,  # Door panel height (slightly smaller than opening)
+)
 
-# Create armrests
-arm_items = []
-for side in [-1, 1]:
-    # Simplified armrest as rectangular extrusion
-    arm_width = 50
-    arm_length = 300
-    arm_height = 30
+# Create door frame profiles and extrusions
+frame_width = 50.0
+frame_depth = 200.0  # Same as wall thickness
+frame_thickness = 40.0
 
-    arm_points = [
-        V(0, -arm_width / 2),
-        V(arm_length, -arm_width / 2),
-        V(arm_length, arm_width / 2),
-        V(0, arm_width / 2),
-    ]
-    arm_curve = builder.polyline(arm_points, closed=True)
-    arm = builder.extrude(builder.profile(arm_curve), arm_height)
+# Jamb (vertical frame) profile
+jamb_profile = model.create_entity("IfcRectangleProfileDef", ProfileType="AREA", XDim=frame_width, YDim=frame_depth)
 
-    # Position armrest
-    builder.translate([arm], V(side * seat_width / 3, -seat_depth / 4, hub_height + cylinder_height + seat_thickness + 200))
-    arm_items.append(arm)
+# Head (horizontal frame) profile
+head_profile = model.create_entity(
+    "IfcRectangleProfileDef",
+    ProfileType="AREA",
+    XDim=900.0,  # Full opening width
+    YDim=frame_width,
+)
 
-    # Armrest support
-    support = create_circular_extrusion(builder, 20, 200)
-    builder.translate([support], V(side * seat_width / 3, -seat_depth / 4, hub_height + cylinder_height + seat_thickness))
-    arm_items.append(support)
+# Create left jamb
+left_jamb = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=jamb_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+    Depth=2100.0,  # Full opening height
+)
 
-# Combine all items
-all_items = base_items + [seat] + [back] + arm_items
+# Create right jamb
+right_jamb = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=jamb_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(850.0, 0.0, 0.0)),
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
+    Depth=2100.0,
+)
 
-# Create the chair representation
-chair_representation = builder.get_representation(context=model3d, items=all_items)
+# Create head (top frame)
+head = model.create_entity(
+    "IfcExtrudedAreaSolid",
+    SweptArea=head_profile,
+    Position=model.create_entity(
+        "IfcAxis2Placement3D",
+        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 2050.0)),
+    ),
+    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 1.0, 0.0)),
+    Depth=frame_depth,
+)
 
-# Assign representation to chair type
-model.create_entity("IfcRelDefinesByRepresentation", GlobalId=guid.new(), RelatingRepresentation=chair_representation, RelatedObjects=[chair_type])
+# Create door shape representation including panel and frame
+door_representation = model.create_entity(
+    "IfcShapeRepresentation",
+    ContextOfItems=model_context,
+    RepresentationIdentifier="Body",
+    RepresentationType="SweptSolid",
+    Items=[door_solid, left_jamb, right_jamb, head],
+)
 
-# Create chair occurrence
-chair = model.create_entity("IfcFurniture", GlobalId=guid.new(), Name="Office Chair")
+# Create door product definition shape
+door_shape = model.create_entity("IfcProductDefinitionShape", Representations=[door_representation])
 
-# Create placement for chair
-placement = model.create_entity("IfcLocalPlacement")
-axis2placement = model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)))
-placement.RelativePlacement = axis2placement
+# Create door
+door = model.create_entity(
+    "IfcDoor",
+    GlobalId=guid.new(),
+    OwnerHistory=owner_history,
+    Name="Standard Door",
+    ObjectPlacement=door_placement,
+    Representation=door_shape,
+    OverallHeight=2100.0,
+    OverallWidth=900.0,
+)
 
-chair.ObjectPlacement = placement
-
-# Assign type to occurrence
-model.create_entity("IfcRelDefinesByType", GlobalId=guid.new(), RelatingType=chair_type, RelatedObjects=[chair])
-
-# Add chair to storey
-model.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid.new(), RelatingStructure=storey, RelatedElements=[chair])
+# Create relationship between opening and door
+fill_relation = model.create_entity(
+    "IfcRelFillsElement",
+    GlobalId=guid.new(),
+    OwnerHistory=owner_history,
+    RelatingOpeningElement=opening,
+    RelatedBuildingElement=door,
+)
 
 # Save the file
 model.write("output.ifc")
