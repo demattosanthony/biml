@@ -908,6 +908,21 @@ dev = ["pytest"]
 geometry = ["mathutils"]
 
 [[package]]
+name = "ifcpatch"
+version = "0.8.0"
+description = "IFC patching utility"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ifcpatch-0.8.0-py3-none-any.whl", hash = "sha256:d614c38d119d7de45afe3bf09f5c6653209fc993692b1c414e426680cc9d7236"},
+]
+
+[package.dependencies]
+ifcopenshell = "*"
+numpy = "*"
+toposort = "*"
+
+[[package]]
 name = "importlib-metadata"
 version = "8.5.0"
 description = "Read metadata from Python packages"
@@ -2721,6 +2736,17 @@ docs = ["setuptools-rust", "sphinx", "sphinx-rtd-theme"]
 testing = ["black (==22.3)", "datasets", "numpy", "pytest", "requests", "ruff"]
 
 [[package]]
+name = "toposort"
+version = "1.10"
+description = "Implements a topological sort algorithm."
+optional = false
+python-versions = "*"
+files = [
+    {file = "toposort-1.10-py3-none-any.whl", hash = "sha256:cbdbc0d0bee4d2695ab2ceec97fe0679e9c10eab4b2a87a9372b929e70563a87"},
+    {file = "toposort-1.10.tar.gz", hash = "sha256:bfbb479c53d0a696ea7402601f4e693c97b0367837c8898bc6471adfca37a6bd"},
+]
+
+[[package]]
 name = "tornado"
 version = "6.4.2"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -3045,4 +3071,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "==3.11.*"
-content-hash = "5a7ca4a730ce97aa1cc8c8d4ee1e8ae1c26bf973fe5ec0b7b6ad20d03cce3a4a"
+content-hash = "435341bc816788c30acd5af9ad26cf36fe12d46cebd3fd41c4dd812dd93e8a23"
