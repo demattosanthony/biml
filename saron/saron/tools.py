@@ -99,6 +99,8 @@ def vi_code_editor(filename: str, commands: str):
     Raises:
         RuntimeError: If the vi commands fail to execute, with the specific error message
         subprocess.CalledProcessError: If the subprocess fails to run
+
+    You should mainly use this tool to edit the model.py file to meet the BIM requirements.
     """
     try:
         # Run ex with the commands string directly

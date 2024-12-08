@@ -1,112 +1,160 @@
 import ifcopenshell
 from ifcopenshell import guid
-import time
 import math
 
-# Create new IFC file
-model = ifcopenshell.file(schema="IFC2X3")
+# Create a new IFC file
+model = ifcopenshell.file(schema="IFC4")
 
-# Create project structure
-project = model.create_entity("IfcProject", GlobalId=guid.new(), Name="Cube Project")
-site = model.create_entity("IfcSite", GlobalId=guid.new(), Name="Main Site")
-building = model.create_entity("IfcBuilding", GlobalId=guid.new(), Name="Cube Building")
-
-# Create owner history
-person = model.create_entity("IfcPerson", FamilyName="Demo", GivenName="User")
-organization = model.create_entity("IfcOrganization", Name="Demo Organization")
-person_and_org = model.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=organization)
-application = model.create_entity(
-    "IfcApplication",
-    ApplicationDeveloper=organization,
-    Version="1.0",
-    ApplicationFullName="Cube Generator",
-    ApplicationIdentifier="CubeApp",
+# Set up units
+length_unit = model.createIfcSIUnit(
+    UnitType="LENGTHUNIT",
+    Prefix="MILLI",
+    Name="METRE"
 )
-owner_history = model.create_entity(
-    "IfcOwnerHistory",
-    OwningUser=person_and_org,
-    OwningApplication=application,
-    ChangeAction="ADDED",
-    CreationDate=int(time.time()),
-)
+units = model.createIfcUnitAssignment([length_unit])
 
-# Set up units - using millimeters
-units = model.create_entity("IfcUnitAssignment")
-length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Prefix="MILLI", Name="METRE")
-units.Units = [length_unit]
-project.UnitsInContext = units
-
-# Set up geometric representation contexts
-context = model.create_entity(
-    "IfcGeometricRepresentationContext",
+# Set up 3D and Plan contexts
+context_3d = model.createIfcGeometricRepresentationContext(
+    ContextIdentifier="Model",
     ContextType="Model",
     CoordinateSpaceDimension=3,
-    Precision=0.01,
-    WorldCoordinateSystem=model.create_entity(
-        "IfcAxis2Placement3D",
-        Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
-    ),
-)
-
-model_context = model.create_entity(
-    "IfcGeometricRepresentationSubContext",
-    ContextIdentifier="Body",
-    ContextType="Model",
-    ParentContext=context,
-    TargetView="MODEL_VIEW",
-)
-
-# Cube Parameters
-cube_size = 1000.0  # 1 meter cube in millimeters
-
-# Create 2D profile for extrusion (rectangular profile)
-profile_def = model.create_entity(
-    "IfcRectangleProfileDef",
-    ProfileType="AREA",
-    ProfileName="Cube Base",
-    XDim=cube_size,
-    YDim=cube_size
-)
-
-# Create 3D placement for the profile
-placement = model.create_entity(
-    "IfcAxis2Placement3D",
-    Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
-    Axis=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
-    RefDirection=model.create_entity("IfcDirection", DirectionRatios=(1.0, 0.0, 0.0))
-)
-
-# Create extrusion
-extrusion = model.create_entity(
-    "IfcExtrudedAreaSolid",
-    SweptArea=profile_def,
-    Position=placement,
-    ExtrudedDirection=model.create_entity("IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)),
-    Depth=cube_size
-)
-
-# Create shape representation
-shape_representation = model.create_entity(
-    "IfcShapeRepresentation",
-    ContextOfItems=model_context,
-    RepresentationType="SWEPTSOLID",
-    Items=[extrusion]
-)
-
-# Create cube as a building element
-# Create cube as a building element
-cube = model.create_entity(
-    "IfcBuildingElementProxy",
-    GlobalId=guid.new(),
-    Name="Solid Cube",
-    OwnerHistory=owner_history,
-    Representation=model.create_entity(
-        "IfcProductDefinitionShape",
-        Representations=[shape_representation]
+    WorldCoordinateSystem=model.createIfcAxis2Placement3D(
+        Location=model.createIfcCartesianPoint([0.0, 0.0, 0.0])
     )
 )
 
-# Save the model
-model.write("/Users/anthonydemattos/auto-bim/saron/output.ifc")
+# Add subcontexts for 3D
+body_context = model.createIfcGeometricRepresentationSubContext(
+    ContextIdentifier="Body",
+    ContextType="Model",
+    ParentContext=context_3d,
+    TargetView="MODEL_VIEW"
+)
 
-print("IFC file with cube created successfully!")
+# Create project and assign units and contexts
+project = model.createIfcProject(
+    GlobalId=guid.new(),
+    Name="Table Project",
+    UnitsInContext=units,
+    RepresentationContexts=[context_3d]
+)
+
+# Create site
+site = model.createIfcSite(
+    GlobalId=guid.new(),
+    Name="Site"
+)
+
+# Create building
+building = model.createIfcBuilding(
+    GlobalId=guid.new(),
+    Name="Building"
+)
+
+# Create spatial hierarchy
+site_container = model.createIfcRelAggregates(
+    GlobalId=guid.new(),
+    RelatingObject=project,
+    RelatedObjects=[site]
+)
+
+building_container = model.createIfcRelAggregates(
+    GlobalId=guid.new(),
+    RelatingObject=site,
+    RelatedObjects=[building]
+)
+
+# Create table using extruded area solids
+# Table parameters (in millimeters)
+width = 1200
+depth = 700
+height = 750
+leg_size = 50
+thickness = 50
+
+# Create table top profile
+table_top_profile = model.createIfcRectangleProfileDef(
+    ProfileType="AREA",
+    XDim=float(width),
+    YDim=float(depth)
+)
+
+# Create table top solid
+table_top = model.createIfcExtrudedAreaSolid(
+    SweptArea=table_top_profile,
+    Position=model.createIfcAxis2Placement3D(
+        Location=model.createIfcCartesianPoint([0.0, 0.0, float(height - thickness)]),
+        Axis=model.createIfcDirection([0.0, 0.0, 1.0]),
+        RefDirection=model.createIfcDirection([1.0, 0.0, 0.0])
+    ),
+    ExtrudedDirection=model.createIfcDirection([0.0, 0.0, 1.0]),
+    Depth=float(thickness)
+)
+
+# Create leg profile
+leg_profile = model.createIfcRectangleProfileDef(
+    ProfileType="AREA",
+    XDim=float(leg_size),
+    YDim=float(leg_size)
+)
+
+# Create four legs
+legs = []
+leg_positions = [
+    [-width/2 + leg_size/2, -depth/2 + leg_size/2, 0],
+    [width/2 - leg_size/2, -depth/2 + leg_size/2, 0],
+    [-width/2 + leg_size/2, depth/2 - leg_size/2, 0],
+    [width/2 - leg_size/2, depth/2 - leg_size/2, 0]
+]
+
+for pos in leg_positions:
+    leg = model.createIfcExtrudedAreaSolid(
+        SweptArea=leg_profile,
+        Position=model.createIfcAxis2Placement3D(
+            Location=model.createIfcCartesianPoint([float(x) for x in pos]),
+            Axis=model.createIfcDirection([0.0, 0.0, 1.0]),
+            RefDirection=model.createIfcDirection([1.0, 0.0, 0.0])
+        ),
+        ExtrudedDirection=model.createIfcDirection([0.0, 0.0, 1.0]),
+        Depth=float(height - thickness)
+    )
+    legs.append(leg)
+
+# Create shape representation
+shape_representation = model.createIfcShapeRepresentation(
+    ContextOfItems=body_context,
+    RepresentationIdentifier="Body",
+    RepresentationType="SweptSolid",
+    Items=[table_top] + legs
+)
+
+# Create table instance
+table = model.createIfcFurniture(
+    GlobalId=guid.new(),
+    Name="Table 01",
+    ObjectType="Table"
+)
+
+# Create placement at origin
+placement = model.createIfcLocalPlacement(
+    RelativePlacement=model.createIfcAxis2Placement3D(
+        Location=model.createIfcCartesianPoint([0.0, 0.0, 0.0])
+    )
+)
+table.ObjectPlacement = placement
+
+# Assign representation
+table_shape = model.createIfcProductDefinitionShape(
+    Representations=[shape_representation]
+)
+table.Representation = table_shape
+
+# Add table to building
+building_contents = model.createIfcRelContainedInSpatialStructure(
+    GlobalId=guid.new(),
+    RelatingStructure=building,
+    RelatedElements=[table]
+)
+
+# Save the file
+model.write("output.ifc")

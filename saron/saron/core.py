@@ -11,26 +11,39 @@ tools = {
 }
 
 # Inital code
-model = ""
-with open("model.py", "r") as file:
-    model = file.read()
+inital_code = """import ifcopenshell
+from ifcopenshell import guid
+
+# Setup project
+model = ifcopenshell.file(schema="IFC4")
+project = model.create_entity("IfcProject", Name="My Project")
+site = model.create_entity("IfcSite", Name="Site")
+building = model.create_entity("IfcBuilding", Name="Building")
+"""
+with open("model.py", "w") as file:
+    file.write(inital_code)
 
 bim_spec = input("Enter the BIM specification: ")
 
-# <ifcopenshell_docs>
-# {ifcopenshell_docs}
-# </ifcopenshell_docs>
+ifcopenshell_docs = ""
+with open("/Users/anthonydemattos/auto-bim/docs/geometry-creation.md", "r") as file:
+    ifcopenshell_docs = file.read()
 
-prompt = f"""<memory>
+prompt = f"""<ifcopenshell_docs>
+{ifcopenshell_docs}
+</ifcopenshell_docs>
+
+<memory>
 1. You are currently at the path /Users/anthonydemattos/auto-bim/saron on this system.
 2. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
 </memory>
 
-<inital_code>
-{model}
-</inital_code>
-
-The inital code above is the current contents of the model.py file with the absolute path of /Users/anthonydemattos/auto-bim/saron/model.py
+<file>
+<filepath>/Users/anthonydemattos/auto-bim/saron/model.py</filepath>
+<contents>
+{inital_code}
+</contents>
+</file>
 
 <bim_specification>
 {bim_spec}
@@ -67,7 +80,7 @@ pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
 def main():
     while True:
         response = completion(
-            model=claude_haiku,
+            model=claude_sonnet,
             messages=messages,
             temperature=0,
             stream=True,
@@ -94,14 +107,15 @@ def main():
                 tool_parameters = json.loads(tool_call.function.arguments)
 
                 print(f"Tool Call: {tool_name}")
-                print(f"Parameters: {tool_parameters}")
+                for key, value in tool_parameters.items():
+                    print(f"{key}: {value}")
 
                 result = ""
                 tool_function = tools.get(tool_name)
-                if tool_function:
+                try:
                     result = tool_function.execute(tool_parameters)
-                else:
-                    result = f"Error: Tool '{tool_name}' not found."
+                except Exception as e:
+                    result = f"An error occurred: {str(e)}"
 
                 messages.append(
                     {
