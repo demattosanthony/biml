@@ -10,26 +10,6 @@ tools = {
     "run_code": run_code,
 }
 
-# Load in bim object library. Read all file names from bim_objects folder
-# bim_objects = []
-# for file in os.listdir("bim_objects"):
-#     if file.endswith(".ifc"):
-#         bim_objects.append(file)
-
-ifcopenshell_doc_paths = [
-    # "/Users/anthonydemattos/auto-bim/docs/hello-world.md",
-    # "/Users/anthonydemattos/auto-bim/docs/code-examples.md",
-    # "/Users/anthonydemattos/auto-bim/docs/geomtry-processing.md",
-    "/Users/anthonydemattos/auto-bim/docs/geometry-creation.md",
-    # "/Users/anthonydemattos/auto-bim/docs/geometry-tree.md"
-]
-
-# read in the geomtry creation docs
-ifcopenshell_docs = ""
-for doc_path in ifcopenshell_doc_paths:
-    with open(doc_path, "r") as file:
-        ifcopenshell_docs += file.read() + ("\n" if doc_path != ifcopenshell_doc_paths[-1] else "")
-
 # Inital code
 model = ""
 with open("model.py", "r") as file:
@@ -65,15 +45,6 @@ Follow these steps to complete the task:
 4. Run the code to make sure it works as expected.
 
 Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long. Always save the file to output.ifc in the script."""
-
-
-def update_code(new_code):
-    model = new_code
-
-    with open("model.py", "w") as file:
-        file.write(model)
-
-    return "Code updated successfully."
 
 
 # read pdf file as base64 and then utf-8
