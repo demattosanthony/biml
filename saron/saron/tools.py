@@ -67,8 +67,7 @@ def tool(func):
 
 @tool
 def vi_code_editor(filename: str, commands: str):
-    """
-    Edit a file using vi editor's ex mode commands. This function allows programmatic text editing
+    """Edit a file using vi editor's ex mode commands. This function allows programmatic text editing
     by executing a series of vi/ex commands on a specified file.
     
     Args:
@@ -84,14 +83,17 @@ def vi_code_editor(filename: str, commands: str):
         - 'wq': Save and quit
 
     Examples:
-        # Insert two lines at line 1
-        commands = "1i|Hello World\nSecond line\n.\nwq"
+        # Insert text after a specific pattern
+        commands = "/pattern/a|New text after pattern\n.\nwq"
         
-        # Append text at line 5 and delete line 7
-        commands = "5a|New Line\n.\n7dd\nwq"
+        # Replace a line containing a pattern
+        commands = "/old text/c|Updated content\n.\nwq"
         
-        # Replace line 3 with new content
-        commands = "3d\n2a|Updated Content\n.\nwq"
+        # Delete lines between two patterns
+        commands = "/start pattern/,/end pattern/d\nwq"
+        
+        # Append text at the end of file
+        commands = "$a|Text at end of file\n.\nwq"
 
     Returns:
         str: "File edited successfully" if the operation succeeds
@@ -100,8 +102,7 @@ def vi_code_editor(filename: str, commands: str):
         RuntimeError: If the vi commands fail to execute, with the specific error message
         subprocess.CalledProcessError: If the subprocess fails to run
 
-    You should mainly use this tool to edit the model.py file to meet the BIM requirements.
-    """
+    You should mainly use this tool to edit the model.py file to meet the BIM requirements."""
     try:
         # Run ex with the commands string directly
         subprocess.run(["ex", "-sc", commands, "-cx", filename], check=True)
@@ -116,8 +117,6 @@ def run_code():
     Run the current ifcopenshell script and generate the output IFC file. This will return any errors that need to be fixed.
     """
     try:
-        import subprocess
-
         # Run the model.py script using subprocess
         result = subprocess.run(
             [
@@ -138,3 +137,4 @@ def run_code():
             return "Code executed successfully."
     except Exception as e:
         return f"An error occurred: {str(e)}"
+    

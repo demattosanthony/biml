@@ -39,10 +39,10 @@ prompt = f"""<ifcopenshell_docs>
 </memory>
 
 <file>
-<filepath>/Users/anthonydemattos/auto-bim/saron/model.py</filepath>
-<contents>
-{inital_code}
-</contents>
+    <filepath>/Users/anthonydemattos/auto-bim/saron/model.py</filepath>
+    <contents>
+    {inital_code}
+    </contents>
 </file>
 
 <bim_specification>
