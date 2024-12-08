@@ -3,7 +3,12 @@ import base64
 import os
 import json
 import sys
+from saron.tools import vi_code_editor, run_code
 
+tools = {
+    "vi_code_editor": vi_code_editor,
+    "run_code": run_code,
+}
 
 # Load in bim object library. Read all file names from bim_objects folder
 # bim_objects = []
@@ -26,37 +31,32 @@ for doc_path in ifcopenshell_doc_paths:
         ifcopenshell_docs += file.read() + ("\n" if doc_path != ifcopenshell_doc_paths[-1] else "")
 
 # Inital code
-model = """import ifcopenshell
-from ifcopenshell import guid
-
-# Setup project
-model = ifcopenshell.file(schema="IFC2X3")
-project = model.create_entity("IfcProject", Name="My Project")
-site = model.create_entity("IfcSite", Name="Site")
-building = model.create_entity("IfcBuilding", Name="Building")
-"""
+model = ""
+with open("model.py", "r") as file:
+    model = file.read()
 
 bim_spec = input("Enter the BIM specification: ")
 
-prompt = f"""<ifcopenshell_docs>
-{ifcopenshell_docs}
-</ifcopenshell_docs>
+# <ifcopenshell_docs>
+# {ifcopenshell_docs}
+# </ifcopenshell_docs>
 
-<memory>
-1. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
+prompt = f"""<memory>
+1. You are currently at the path /Users/anthonydemattos/auto-bim/saron on this system.
+2. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
 </memory>
 
-<ifcopenshellscript>
+<inital_code>
 {model}
-</ifcopenshellscript>
+</inital_code>
 
-Consider the following BIM specification:
+The inital code above is the current contents of the model.py file with the absolute path of /Users/anthonydemattos/auto-bim/saron/model.py
 
 <bim_specification>
 {bim_spec}
 </bim_specification>
 
-Your task is to write the code leveraging the ifcopenshell python library to meet the specified BIM requirements. Use the update_code tool when writing the code, instead of writing it all out and then updating.
+Your task is to write the code leveraging the ifcopenshell python library to meet the specified BIM requirements. Use the vi_code_editor tool when writing the code, instead of writing it all out and then updating.
 
 Follow these steps to complete the task:
 1. As a first step, analyze the provided code and the BIM specification.
@@ -64,38 +64,7 @@ Follow these steps to complete the task:
 3. Update the sourcecode to implement the plan.
 4. Run the code to make sure it works as expected.
 
-Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long."""
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "update_code",
-            "description": """Update and replace the existing ifcopenshell script with a new one.\nWhen invoking this tool, the contents of "new_code" will replace the existing code in the script.\nThe new code should always save the ifc model to a file named "output.ifc".""",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "new_code": {
-                        "type": "string",
-                        "description": "The new ifcopenshell script to replace the existing one.",
-                    },
-                },
-                "required": ["new_code"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "run_code",
-            "description": "Run the current ifcopenshell script and generate the output IFC file. This will return any errors that need to be fixed.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-            },
-        },
-    },
-]
+Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long. Always save the file to output.ifc in the script."""
 
 
 def update_code(new_code):
@@ -105,32 +74,6 @@ def update_code(new_code):
         file.write(model)
 
     return "Code updated successfully."
-
-
-def run_code():
-    try:
-        import subprocess
-
-        # Run the model.py script using subprocess
-        result = subprocess.run(
-            [
-                "/Users/anthonydemattos/auto-bim/saron/.venv/bin/python3",
-                "/Users/anthonydemattos/auto-bim/saron/model.py",
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
-            print("An error occurred during code execution.")
-            print(f"Error Message: {result.stderr}")
-
-            return f"An error occurred while running the code. The error message is:\n{result.stderr}"
-        else:
-            print(result.stdout)
-            return "Code executed successfully."
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
 
 
 # read pdf file as base64 and then utf-8
@@ -153,11 +96,11 @@ pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
 def main():
     while True:
         response = completion(
-            model=claude_sonnet,
+            model=claude_haiku,
             messages=messages,
             temperature=0,
             stream=True,
-            tools=tools,
+            tools=[tool.to_dict() for tool in tools.values()],
         )
 
         chunks = []
@@ -183,11 +126,11 @@ def main():
                 print(f"Parameters: {tool_parameters}")
 
                 result = ""
-                if tool_name == "update_code":
-                    new_code = tool_parameters["new_code"]
-                    result = update_code(new_code)
-                elif tool_name == "run_code":
-                    result = run_code()
+                tool_function = tools.get(tool_name)
+                if tool_function:
+                    result = tool_function.execute(tool_parameters)
+                else:
+                    result = f"Error: Tool '{tool_name}' not found."
 
                 messages.append(
                     {

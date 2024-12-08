@@ -1,4 +1,4 @@
-from saron.core import extract_code_blocks
+from saron.utils import extract_code_blocks
 
 
 def test_extract_code_blocks():
