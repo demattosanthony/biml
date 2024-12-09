@@ -141,7 +141,7 @@ def run_code():
 
 @tool
 def browse_codebase(path: str, filename: str = None):
-    """This tool is designed to interact with the Bonsai codebase, a Blender addon for IFC editing. It provides two primary functionalities: browsing directories and reading file contents.
+    """This tool is designed to interact with the Bonsai (formerly blenderbim) codebase, a Blender addon for IFC editing. It provides two primary functionalities: browsing directories and reading file contents.
 
 **Functionality:**
 
@@ -189,7 +189,9 @@ The tool includes error handling for various scenarios:
 
 *   The tool assumes that the Bonsai repository is located at `/Users/anthonydemattos/IfcOpenShell/src/bonsai`.
 *   All paths are relative to the root of the Bonsai repository (`/bonsai`).
-*   The tool is read-only; it cannot modify files or directories."""
+*   The tool is read-only; it cannot modify files or directories.
+
+When writing code that uses this package make sure to import from bonsai and not from legacy blenderbim. Don't be afraid to really explore the codebase and see the contens of lots of files."""
     bonsai_root = "/Users/anthonydemattos/IfcOpenShell/src/bonsai"  # Assuming 'bonsai' is in the current working directory
     path = "/Users/anthonydemattos/IfcOpenShell/src" + path
 
