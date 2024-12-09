@@ -1,13 +1,27 @@
 version: "3.6"
 services:
-  pg:
-    build:
-      context: ./postgres
-      dockerfile: Dockerfile
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  blender:
+    image: lscr.io/linuxserver/blender:latest
+    container_name: blender
     ports:
-      - 5432:5432
+      - 3000:3000
+      - 3001:3001
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    restart: unless-stopped
+    volumes:
+      - /Users/anthonydemattos/Library/Application Support/Blender/4.3:/config
+
+  # pg:
+  #   build:
+  #     context: ./postgres
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - 5432:5432
 
 volumes:
   postgres_data:
