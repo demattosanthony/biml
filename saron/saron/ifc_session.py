@@ -3,6 +3,7 @@ from ifcopenshell import api
 from ifcopenshell.api import context, aggregate, owner
 import ifcopenshell.api
 import ifcopenshell.api.owner
+import code
 
 class IfcSession:
     def __init__(self) -> None:
@@ -95,6 +96,30 @@ class IfcSession:
                 tree += f"      * {item}\n"
 
         return tree
+    
+    def start_console(self):
+        """Start an interactive Python console with the current session available as 'session'"""
+        console_locals = {
+            'session': self,
+            'ifc': self.file,
+            'ifcopenshell': ifcopenshell,
+            'api': ifcopenshell.api
+        }
+        
+        banner = """
+IFC Interactive Console
+----------------------
+Available objects:
+- session: Current IfcSession instance
+- ifc: Current IFC file
+- ifcopenshell: IfcOpenShell module
+- api: IfcOpenShell API module
+
+Type 'exit()' or Ctrl+D to exit
+"""     
+        code.InteractiveConsole(console_locals).interact(banner=banner)
+    
+
 
 def build_hierarchy(project: list[ifcopenshell.entity_instance], with_properties=False):
     """Build the hierarchy of the IFC project
