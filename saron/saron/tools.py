@@ -1,5 +1,6 @@
 import inspect
 import subprocess
+import os
 from typing import get_type_hints
 
 def tool(func):
@@ -137,4 +138,86 @@ def run_code():
             return "Code executed successfully."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-    
+
+@tool
+def browse_codebase(path: str, filename: str = None):
+    """This tool is designed to interact with the Bonsai codebase, a Blender addon for IFC editing. It provides two primary functionalities: browsing directories and reading file contents.
+
+**Functionality:**
+
+1. **Directory Browsing:**
+    *   You can use this tool to list the contents of any directory within the Bonsai codebase.
+    *   To do this, provide the `path` argument, which should be a string representing the directory path relative to the root of the Bonsai repository (`/bonsai`).
+    *   The tool will return a list of strings, where each string is the name of a file or subdirectory within the specified directory.
+
+2. **File Reading:**
+    *   You can use this tool to read the contents of a specific file within the Bonsai codebase.
+    *   To do this, provide both the `path` argument (the directory containing the file) and the `filename` argument (the name of the file you want to read).
+    *   The tool will return a string containing the entire content of the specified file.
+
+**Arguments:**
+
+*   `path` (str): The directory path within the Bonsai codebase, relative to the root directory `/bonsai`. For example:
+    *   `/bonsai` to refer to the main source directory.
+    *   `/bonsai/bonsai/core` to refer to the `core` subdirectory.
+*   `filename` (str, optional): The name of the file you want to read. If provided, the tool will return the file's content. If omitted, the tool will list the contents of the directory specified by `path`.
+
+**Error Handling:**
+
+The tool includes error handling for various scenarios:
+
+*   **Invalid Path:** If the provided `path` does not exist or is outside the Bonsai codebase, it returns an appropriate error message.
+*   **Not a File:** If a `filename` is provided, but it does not correspond to a file in the specified `path`, an error message is returned.
+*   **Read/List Errors:** If there are issues reading the file or listing the directory contents (e.g., due to permissions), an error message detailing the issue is returned.
+
+**Examples:**
+
+*   **List contents of the main source directory:**
+    ```python
+    browse_codebase(path="/bonsai")
+    ```
+*   **List contents of the `core` directory:**
+    ```python
+    browse_codebase(path="/bonsai/bonsai/core")
+    ```
+*   **Read the contents of the `project.py` file within the `core` directory:**
+    ```python
+    browse_codebase(path="/bonsai/bonsai/core", filename="project.py")
+    ```
+
+**Important Notes:**
+
+*   The tool assumes that the Bonsai repository is located at `/Users/anthonydemattos/IfcOpenShell/src/bonsai`.
+*   All paths are relative to the root of the Bonsai repository (`/bonsai`).
+*   The tool is read-only; it cannot modify files or directories."""
+    bonsai_root = "/Users/anthonydemattos/IfcOpenShell/src/bonsai"  # Assuming 'bonsai' is in the current working directory
+    path = "/Users/anthonydemattos/IfcOpenShell/src" + path
+
+    # Construct the absolute path
+    absolute_path = os.path.abspath(os.path.join(bonsai_root, path))
+
+    # Check if the path is within the bonsai directory
+    if not absolute_path.startswith(os.path.abspath(bonsai_root)):
+        return "Error: The specified path is outside the 'bonsai' codebase."
+
+    if not os.path.exists(absolute_path):
+        return f"Error: The path '{path}' does not exist."
+
+    if filename:
+        # Display file content
+        file_path = os.path.join(absolute_path, filename)
+        if not os.path.isfile(file_path):
+            return f"Error: '{filename}' is not a file in the specified path."
+        try:
+            with open(file_path, "r") as f:
+                content = f.read()
+            return content
+        except Exception as e:
+            return f"Error reading file: {e}"
+    else:
+        # List directory contents
+        try:
+            items = os.listdir(absolute_path)
+            return str(items)
+        except Exception as e:
+            return f"Error listing directory contents: {e}"

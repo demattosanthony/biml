@@ -3,11 +3,12 @@ import base64
 import os
 import json
 import sys
-from saron.tools import vi_code_editor, run_code
+from saron.tools import vi_code_editor, run_code, browse_codebase
 
 tools = {
-    "vi_code_editor": vi_code_editor,
-    "run_code": run_code,
+    # "vi_code_editor": vi_code_editor,
+    # "run_code": run_code,
+    "browse_codebase": browse_codebase,
 }
 
 # Inital code
@@ -66,7 +67,7 @@ Always set up context for 3d and plan views in the IFC file. Your thinking shoul
 
 messages = [
     # {"role": "system", "content": system_message},
-    {"role": "user", "content": prompt},
+    {"role": "user", "content": bim_spec},
 ]
 
 claude_haiku = "claude-3-5-haiku-20241022"
@@ -75,6 +76,7 @@ o1_preview = "o1-preview"
 o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
 pplx_online_big = "perplexity/llama-3.1-sonar-large-128k-online"
+gemini = "gemini/gemini-exp-1206"
 
 
 def main():
