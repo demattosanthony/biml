@@ -4,7 +4,7 @@ from ifcopenshell.api import context, aggregate, owner
 import ifcopenshell.api
 import ifcopenshell.api.owner
 
-from saron.utils import get_spatial_hierarchy
+from saron.utils import build_hierarchy 
 
 class IfcSession:
     def __init__(self) -> None:
@@ -75,10 +75,7 @@ class IfcSession:
         model.write(path)
 
     def get_geometry_tree(self):
-        tree = ""
-        for line in get_spatial_hierarchy(self.file.by_type("IfcProject")[0]).split("\n"):
-            tree += f"   {line}\n"
-        return tree
+        return build_hierarchy(self.file.by_type("IfcProduct"))
         
     
     def get_ifc_project_library_tree(self) -> str:
