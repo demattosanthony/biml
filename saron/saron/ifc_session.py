@@ -7,7 +7,7 @@ import ifcopenshell.api.owner
 class IfcSession:
     def __init__(self) -> None:
         self.file: ifcopenshell.file = None
-        self.ifc_project_library = ifcopenshell.open("/Users/anthonydemattos/auto-bim/saron/blenderbim-demo-library.ifc").by_type("IfcProject")[0]
+        self.ifc_project_library: ifcopenshell.entity_instance = None
 
     def open_ifc_project(self, path: str) -> None:
         self.file = ifcopenshell.open(path)
@@ -74,9 +74,12 @@ class IfcSession:
 
     def get_geometry_tree(self):
         return build_hierarchy(self.file.by_type("IfcProduct"))
-        
+    
+    def load_ifc_project_library(self, path: str) -> None:
+        self.ifc_project_library = ifcopenshell.open(path).by_type("IfcProduct")[0]
     
     def get_ifc_project_library_tree(self) -> str:
+        if self.ifc_project_library is None: return "No IFC project library loaded."
         types_dict = {}
         for decl in self.ifc_project_library.Declares:
             for defn in decl.RelatedDefinitions:
@@ -87,17 +90,17 @@ class IfcSession:
 
         tree = ""
         for type_name, items in sorted(types_dict.items()):
-            content += f"   * {type_name}\n"
+            tree += f"   * {type_name}\n"
             for item in sorted(items):
-                content += f"      * {item}\n"
+                tree += f"      * {item}\n"
 
         return tree
 
-def build_hierarchy(project: ifcopenshell.entity_instance, with_properties=False):
+def build_hierarchy(project: list[ifcopenshell.entity_instance], with_properties=False):
     """Build the hierarchy of the IFC project
     
     Args:
-        project (ifcopenshell.entity_instance): The IFC project
+        project (ifcopenshell.entity_instance): The list of IFC entities from the project
         with_properties (bool, optional): Include properties. Defaults to False.
     
     Returns:
