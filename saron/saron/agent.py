@@ -3,40 +3,40 @@ import base64
 import os
 import json
 import sys
-from saron.tools import vi_code_editor, run_code, browse_codebase
+from saron.tools import vi_code_editor, run_code, browse_ifcopenshell_codebase
 
 tools = {
-    # "vi_code_editor": vi_code_editor,
-    # "run_code": run_code,
-    "browse_codebase": browse_codebase,
+    "vi_code_editor": vi_code_editor,
+    "run_code": run_code,
+    "browse_ifcopenshell_codebase": browse_ifcopenshell_codebase,
 }
 
 # Inital code
 inital_code = """import ifcopenshell
-from ifcopenshell import guid
+from ifcopenshell import api
+from ifcopenshell.api import project, root
 
 # Setup project
-model = ifcopenshell.file(schema="IFC4")
-project = model.create_entity("IfcProject", Name="My Project")
-site = model.create_entity("IfcSite", Name="Site")
-building = model.create_entity("IfcBuilding", Name="Building")
+model = ifcopenshell.api.project.create_file(version="IFC4")
+project = ifcopenshell.api.root.create_entity(model, ifc_class="IfcProject", name="My Project")
+site = ifcopenshell.api.root.create_entity(model, ifc_class="IfcSite", name="Site")
+building = ifcopenshell.api.root.create_entity(model, ifc_class="IfcBuilding", name="Building")
 """
 with open("model.py", "w") as file:
     file.write(inital_code)
 
 bim_spec = input("Enter the BIM specification: ")
 
-ifcopenshell_docs = ""
-with open("/Users/anthonydemattos/auto-bim/docs/geometry-creation.md", "r") as file:
-    ifcopenshell_docs = file.read()
+# ifcopenshell_docs = ""
+# with open("/Users/anthonydemattos/auto-bim/docs/geometry-creation.md", "r") as file:
+#     ifcopenshell_docs = file.read()
+#     <ifcopenshell_docs>
+# {ifcopenshell_docs}
+# </ifcopenshell_docs>
 
-prompt = f"""<ifcopenshell_docs>
-{ifcopenshell_docs}
-</ifcopenshell_docs>
-
-<memory>
+prompt = f"""<memory>
 1. You are currently at the path /Users/anthonydemattos/auto-bim/saron on this system.
-2. when using the guid or other modules from ifcopenshell you need to import like this: `from ifcopenshell import guid`
+2. when using any modules from ifcopenshell, you should import them like this: `from ifcopenshell import module_name`
 </memory>
 
 <file>
@@ -58,7 +58,7 @@ Follow these steps to complete the task:
 3. Update the sourcecode to implement the plan.
 4. Run the code to make sure it works as expected.
 
-Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long. Always save the file to output.ifc in the script."""
+Always set up context for 3d and plan views in the IFC file. Your thinking should be thorough so it's fine if it's very long. ALWAYS save the file to output.ifc in the script."""
 
 
 # read pdf file as base64 and then utf-8
@@ -67,7 +67,7 @@ Always set up context for 3d and plan views in the IFC file. Your thinking shoul
 
 messages = [
     # {"role": "system", "content": system_message},
-    {"role": "user", "content": bim_spec},
+    {"role": "user", "content": prompt},
 ]
 
 claude_haiku = "claude-3-5-haiku-20241022"
@@ -82,7 +82,7 @@ gemini = "gemini/gemini-exp-1206"
 def main():
     while True:
         response = completion(
-            model=claude_sonnet,
+            model=claude_haiku,
             messages=messages,
             temperature=0,
             stream=True,

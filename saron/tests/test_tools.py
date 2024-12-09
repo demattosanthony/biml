@@ -4,22 +4,20 @@ import os
 from subprocess import CalledProcessError
 from saron.tools import tool, vi_code_editor
 
+
 @tool
 def get_current_weather(location: str, unit: str = "celsius"):
     """
     This function gets current weather in a given location.
     """
-    return {
-        "location": location,
-        "temperature": "20",
-        "unit": unit,
-        "condition": "Sunny"
-    }
+    return {"location": location, "temperature": "20", "unit": unit, "condition": "Sunny"}
+
 
 @tool
 def say_hello(name: str):
     """Greet someone by name."""
     return f"Hello, {name}!"
+
 
 @tool
 def add_numbers(a: int, b: int):
@@ -28,13 +26,14 @@ def add_numbers(a: int, b: int):
     """
     return a + b
 
+
 class TestToolsDecorator(unittest.TestCase):
     def setUp(self):
         # Create a temporary file with initial content
         self.temp_file = tempfile.NamedTemporaryFile(delete=False)
         self.temp_file_name = self.temp_file.name
         initial_content = "This is the old line.\nAnother old line.\n"
-        self.temp_file.write(initial_content.encode('utf-8'))
+        self.temp_file.write(initial_content.encode("utf-8"))
         self.temp_file.close()
 
     def tearDown(self):
@@ -92,25 +91,24 @@ class TestToolsDecorator(unittest.TestCase):
         result = add_numbers.execute(a=3, b=5)
         self.assertEqual(result, 8)
 
-
     def test_basic_editing(self):
         # test editing a file
-        commands = '1i|Line 1 content\nLine 2 content'
+        commands = "1i|Line 1 content\nLine 2 content"
         result = vi_code_editor.execute(filename=self.temp_file_name, commands=commands)
-        
+
         # Verify the result
         self.assertEqual(result, "File edited successfully")
-        
+
         # Check the file contents
         with open(self.temp_file_name, "r") as f:
             content = f.read()
-        
+
         self.assertIn("Line 1 content", content)
 
     def test_vi_editor_multiple_commands(self):
         """Test executing multiple vi commands in sequence"""
         # First verify the initial content
-        with open(self.temp_file_name, 'r') as f:
+        with open(self.temp_file_name, "r") as f:
             initial_content = f.read().splitlines()
             self.assertEqual(len(initial_content), 2)  # Should be 2 lines initially
 
@@ -125,17 +123,12 @@ w
 q"""  # Split write and quit commands
         result = vi_code_editor.execute(filename=self.temp_file_name, commands=commands)
         self.assertEqual(result, "File edited successfully")
-        
+
         # Read and verify the final content
-        with open(self.temp_file_name, 'r') as f:
+        with open(self.temp_file_name, "r") as f:
             content = f.read().splitlines()
             # Let's verify each line
-            expected_content = [
-                "New first line",
-                "This is the old line.",
-                "Another old line.",
-                "Last line"
-            ]
+            expected_content = ["New first line", "This is the old line.", "Another old line.", "Last line"]
             self.assertEqual(content, expected_content)
             self.assertEqual(len(content), 4)  # Should now have 4 lines total
 
@@ -192,8 +185,8 @@ q"""  # Split write and quit commands
         )
         result = vi_code_editor.execute(filename=self.temp_file_name, commands=commands)
         self.assertEqual(result, "File edited successfully")
-        
-        with open(self.temp_file_name, 'r') as f:
+
+        with open(self.temp_file_name, "r") as f:
             content = f.read().splitlines()
             self.assertEqual(len(content), 3)
             self.assertEqual(content[0], "First line")

@@ -2,6 +2,7 @@ import ifcopenshell
 from ifcopenshell import file
 import json
 
+
 def build_object_tree(ifc_entity) -> dict:
     """
     Recursively builds a dictionary representation of the object tree of an IFC entity.
@@ -98,7 +99,6 @@ def extract_code_blocks(content):
         parsed_blocks.append({"language": language, "code": code})
 
     return parsed_blocks
-
 
 
 if __name__ == "__main__":

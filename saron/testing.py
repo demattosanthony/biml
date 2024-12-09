@@ -60,18 +60,18 @@ for rep_map in crane_type.RepresentationMaps:
     # Copy all items in the representation
     for item in rep_map.MappedRepresentation.Items:
         # Copy styles if they exist
-        if hasattr(item, 'StyledByItem'):
+        if hasattr(item, "StyledByItem"):
             for styled_item in item.StyledByItem:
                 # Copy the style assignment
                 model.add(styled_item)
                 for style in styled_item.Styles:
                     # Copy the presentation style
                     model.add(style)
-                    if hasattr(style, 'Styles'):
+                    if hasattr(style, "Styles"):
                         for substyle in style.Styles:
                             # Copy surface styles and colors
                             model.add(substyle)
-                            if hasattr(substyle, 'SurfaceColour'):
+                            if hasattr(substyle, "SurfaceColour"):
                                 model.add(substyle.SurfaceColour)
 
 # Copy the crane type
@@ -87,24 +87,13 @@ crane = model.create_entity("IfcBuildingElementProxy", Name="cool crane")
 crane.ObjectType = new_crane_type.Name
 
 # Create type relationship
-type_relationship = model.create_entity(
-    "IfcRelDefinesByType",
-    GlobalId=ifcopenshell.guid.new(),
-    RelatedObjects=[crane],
-    RelatingType=new_crane_type
-)
+type_relationship = model.create_entity("IfcRelDefinesByType", GlobalId=ifcopenshell.guid.new(), RelatedObjects=[crane], RelatingType=new_crane_type)
 
 # Create placement for the crane
 placement = model.create_entity(
     "IfcLocalPlacement",
     PlacementRelTo=storey.ObjectPlacement,
-    RelativePlacement=model.create_entity(
-        "IfcAxis2Placement3D",
-        Location=model.create_entity(
-            "IfcCartesianPoint",
-            Coordinates=(0.0, 0.0, 0.0)
-        )
-    )
+    RelativePlacement=model.create_entity("IfcAxis2Placement3D", Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0))),
 )
 crane.ObjectPlacement = placement
 
@@ -116,7 +105,7 @@ if new_crane_type.RepresentationMaps:
         RepresentationIdentifier=new_crane_type.RepresentationMaps[0].MappedRepresentation.RepresentationIdentifier,
         RepresentationType=new_crane_type.RepresentationMaps[0].MappedRepresentation.RepresentationType,
     )
-    
+
     # Create mapping
     mapped_item = model.create_entity(
         "IfcMappedItem",
@@ -125,48 +114,38 @@ if new_crane_type.RepresentationMaps:
             "IfcCartesianTransformationOperator3D",
             Axis1=None,
             Axis2=None,
-            LocalOrigin=model.create_entity(
-                "IfcCartesianPoint",
-                Coordinates=(0.0, 0.0, 0.0)
-            ),
+            LocalOrigin=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
             Scale=1.0,
-            Axis3=None
-        )
+            Axis3=None,
+        ),
     )
     shape.Items = [mapped_item]
-    
+
     # Create product definition shape
-    product_shape = model.create_entity(
-        "IfcProductDefinitionShape",
-        Representations=[shape]
-    )
+    product_shape = model.create_entity("IfcProductDefinitionShape", Representations=[shape])
     crane.Representation = product_shape
 
 # Assign the crane to the storey
-ifcopenshell.api.aggregate.assign_object(
-    model,
-    relating_object=storey,
-    products=[crane]
-)
+ifcopenshell.api.aggregate.assign_object(model, relating_object=storey, products=[crane])
 
 # Copy materials and their associations
-if hasattr(crane_type, 'HasAssociations'):
+if hasattr(crane_type, "HasAssociations"):
     for association in crane_type.HasAssociations:
-        if association.is_a('IfcRelAssociatesMaterial'):
+        if association.is_a("IfcRelAssociatesMaterial"):
             # Copy the material
             material = association.RelatingMaterial
             model.add(material)
-            
+
             # Copy material properties
-            if material.is_a('IfcMaterial'):
-                if hasattr(material, 'HasProperties'):
+            if material.is_a("IfcMaterial"):
+                if hasattr(material, "HasProperties"):
                     for props in material.HasProperties:
                         model.add(props)
-                if hasattr(material, 'HasRepresentation'):
+                if hasattr(material, "HasRepresentation"):
                     model.add(material.HasRepresentation)
                     for rep in material.HasRepresentation.Representations:
                         model.add(rep)
-            
+
             # Copy the association
             model.add(association)
 
