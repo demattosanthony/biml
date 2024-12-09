@@ -6,8 +6,54 @@ import signal
 import sys
 from queue import Queue
 import traceback
+from io import StringIO
+import contextlib
+import json
 
 command_queue = Queue()
+
+class OutputCapture:
+    def __init__(self):
+        self.value = StringIO()
+
+    def write(self, txt):
+        self.value.write(txt)
+        sys.__stdout__.write(txt)  # Also write to the real stdout
+
+    def flush(self):
+        self.value.flush()
+
+def capture_output(func):
+    """Decorator to capture stdout and return value"""
+    def wrapper(*args, **kwargs):
+        temp_out = OutputCapture()
+        sys.stdout = temp_out
+        try:
+            result = func(*args, **kwargs)
+            output = temp_out.value.getvalue()
+            return {
+                'output': output,
+                'result': str(result) if result is not None else None,
+                'error': None
+            }
+        except Exception as e:
+            return {
+                'output': temp_out.value.getvalue(),
+                'result': None,
+                'error': str(e) + '\n' + traceback.format_exc()
+            }
+        finally:
+            sys.stdout = sys.__stdout__
+    return wrapper
+
+@capture_output
+def execute_command(cmd):
+    globals_dict = {
+        "bpy": bpy,
+        "print": print,
+        "__builtins__": __builtins__
+    }
+    return eval(cmd, globals_dict)
 
 def signal_handler(sig, frame):
     print("\nShutting down server and Blender...")
@@ -22,15 +68,20 @@ class ModalTimerOperator(bpy.types.Operator):
     def modal(self, context, event):
         if event.type == 'TIMER':
             while not command_queue.empty():
-                cmd = command_queue.get()
+                cmd, conn = command_queue.get()
                 try:
                     print(f"Executing command: {cmd}")
-                    exec(cmd, {"bpy": bpy})
-                    print(f"Command executed successfully: {cmd}")
+                    result = execute_command(cmd)
+                    conn.send(json.dumps(result).encode('utf-8'))
                 except Exception as e:
-                    print(f"Error executing command: {cmd}")
-                    print(f"Error details: {str(e)}")
-                    print(traceback.format_exc())
+                    error_msg = {
+                        'output': '',
+                        'result': None,
+                        'error': str(e) + '\n' + traceback.format_exc()
+                    }
+                    conn.send(json.dumps(error_msg).encode('utf-8'))
+                finally:
+                    conn.close()
             return {'RUNNING_MODAL'}
         return {'PASS_THROUGH'}
 
@@ -66,9 +117,7 @@ def run_server():
             data = conn.recv(1024).decode('utf-8')
             if data:
                 print(f"Received command: {data}")
-                command_queue.put(data)
-                conn.send(b"Command queued for execution")
-            conn.close()
+                command_queue.put((data, conn))
         except socket.timeout:
             continue
         except Exception as e:
