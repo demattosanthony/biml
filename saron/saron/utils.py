@@ -1,82 +1,5 @@
 import ifcopenshell
-from ifcopenshell import file
-import json
-
-
-def build_object_tree(ifc_entity) -> dict:
-    """
-    Recursively builds a dictionary representation of the object tree of an IFC entity.
-
-    :param ifc_entity: The IFC entity to process.
-    :return: A dictionary representing the object tree.
-    """
-    # Create the base node for this entity
-    entity_node = {
-        "guid": ifc_entity.GlobalId,  # Add the GUID
-        "type": ifc_entity.is_a(),
-        "name": ifc_entity.Name or ifc_entity.LongName or "Unnamed",
-        "children": [],
-    }
-
-    # Fetch related elements for spaces or building structure
-    if ifc_entity.is_a("IfcSpatialStructureElement"):
-        related_elements = ifc_entity.ContainsElements
-        for element_relation in related_elements:
-            for element in element_relation.RelatedElements:
-                entity_node["children"].append(
-                    {
-                        "guid": element.GlobalId,  # Add the GUID
-                        "type": element.is_a(),
-                        "name": element.Name or "Unnamed",
-                        "children": [],  # Ensure child nodes are consistent
-                    }
-                )
-
-    # Check if the entity has a decomposition relationship and recurse
-    if ifc_entity.is_a("IfcObjectDefinition") or ifc_entity.is_a("IfcSpatialStructureElement"):
-        for related in ifc_entity.IsDecomposedBy:
-            for child in related.RelatedObjects:
-                entity_node["children"].append(build_object_tree(child))
-
-    return entity_node
-
-
-def get_ifc_object_tree(ifc_file: file, output_format="dict"):
-    """
-    Loads an IFC file and returns its object tree in the specified format.
-
-    :param ifc_file: IFC file.
-    :param output_format: Output format ('dict', 'json', or 'string').
-    :return: Object tree in the desired format.
-    """
-
-    # Get the top-level project entity
-    project = ifc_file.by_type("IfcProject")[0]
-    object_tree = build_object_tree(project)
-
-    if output_format == "dict":
-        return object_tree
-    elif output_format == "json":
-        return json.dumps(object_tree, indent=2)
-    elif output_format == "string":
-        return format_tree_as_string(object_tree)
-    else:
-        raise ValueError("Unsupported output format. Use 'dict', 'json', or 'string'.")
-
-
-def format_tree_as_string(tree, indent=0):
-    """
-    Formats the object tree as a nicely indented string.
-
-    :param tree: The object tree dictionary.
-    :param indent: Current indentation level.
-    :return: Nicely formatted string.
-    """
-    result = " " * indent + f"{tree['type']} ({tree['guid']}) - {tree['name']}\n"
-    for child in tree.get("children", []):  # Use get() to ensure no KeyError
-        result += format_tree_as_string(child, indent + 2)
-    return result
-
+import ifcopenshell.util
 
 def extract_code_blocks(content):
     # Remove the outer <Code> tags
@@ -100,12 +23,64 @@ def extract_code_blocks(content):
 
     return parsed_blocks
 
+def build_hierarchy(project: ifcopenshell.entity_instance, with_properties=False):
+    result = []
+    spacer = '.  '
+    
+    def add_line(text, level):
+        result.append(spacer * level + text)
+    
+    def add_property_set(property_set, level):
+        add_line(property_set.Name, level)
+        for prop in property_set.HasProperties:
+            if prop.is_a('IfcPropertySingleValue'):
+                add_line(f"{prop.Name} = {str(prop.NominalValue.wrappedValue)}", level + 1)
 
-if __name__ == "__main__":
-    # Replace with the path to your IFC file
-    ifc_file_path = "/Users/anthonydemattos/auto-bim/saron/output.ifc"
+    def add_quantity_set(quantity_set, level):
+        add_line(quantity_set.Name, level)
+        for quantity in quantity_set.Quantities:
+            if quantity.is_a('IfcQuantityLength'):
+                add_line(f"{quantity.Name} = {str(quantity.LengthValue)}", level + 1)
+            elif quantity.is_a('IfcQuantityArea'):
+                add_line(f"{quantity.Name} = {str(quantity.AreaValue)}", level + 1)
+            elif quantity.is_a('IfcQuantityVolume'):
+                add_line(f"{quantity.Name} = {str(quantity.VolumeValue)}", level + 1)
+            elif quantity.is_a('IfcQuantityCount'):
+                add_line(f"{quantity.Name} = {str(quantity.CountValue)}", level + 1)
+            else:
+                add_line(quantity.Name, level + 1)
 
-    ifc_file = ifcopenshell.open(ifc_file_path)
-    # Get the object tree in the desired format
-    result = get_ifc_object_tree(ifc_file, output_format="string")  # Change to 'dict' or 'json' as needed
-    print(result)  # Prints the string if 'string' format is chosen
+    def add_element_type(type, level):
+        add_line(type.Name, level)
+
+    def add_element(element, level):
+        add_line(f"#{element.id()} = {element.is_a()} \"{element.Name}\" ({element.GlobalId})", level)
+        
+        for definition in element.IsDefinedBy:
+            if with_properties:
+                if definition.is_a('IfcRelDefinesByProperties'):
+                    related_data = definition.RelatingPropertyDefinition
+                    if related_data.is_a('IfcPropertySet'):
+                        add_property_set(related_data, level + 1)
+                    elif related_data.is_a('IfcElementQuantity'):
+                        add_quantity_set(related_data, level + 1)
+            if definition.is_a('IfcRelDefinesByType'):
+                add_element_type(definition.RelatingType, level + 1)
+
+        # Spatial relation
+        if element.is_a('IfcSpatialStructureElement'):
+            for rel in element.ContainsElements:
+                for child in rel.RelatedElements:
+                    add_element(child, level + 1)
+
+        # Aggregation Relation
+        if element.is_a('IfcObjectDefinition'):
+            for rel in element.IsDecomposedBy:
+                for child in rel.RelatedObjects:
+                    add_element(child, level + 1)
+
+    # Main execution
+    for item in project:
+        add_element(item, 0)
+    
+    return '\n'.join(result)
