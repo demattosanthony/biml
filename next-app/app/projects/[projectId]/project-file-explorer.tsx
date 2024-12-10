@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronRight, File, Folder } from "lucide-react";
 
 export function ProjectFileExplorer() {

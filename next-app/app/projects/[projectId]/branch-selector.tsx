@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const branches = [
+const BRANCHES = [
   {
     value: "main",
     label: "main",
@@ -55,15 +55,15 @@ export function BranchSelector() {
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
+          onClick={() => setOpen(!open)}
           className="w-[200px] justify-between"
           size="sm"
         >
           <div className="flex items-center gap-2">
             <GitBranch className="h-4 w-4" />
-            {value
-              ? branches.find((branch) => branch.value === value)?.label
-              : "Select branch..."}
+            {(value &&
+              BRANCHES.find((branch) => branch.value === value)?.label) ||
+              "Select branch..."}
           </div>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -73,12 +73,11 @@ export function BranchSelector() {
           <CommandInput placeholder="Search branch..." />
           <CommandEmpty>No branch found.</CommandEmpty>
           <CommandGroup>
-            {branches.map((branch) => (
+            {BRANCHES.map((branch) => (
               <CommandItem
                 key={branch.value}
-                value={branch.value}
-                onSelect={(currentValue) => {
-                  setValue(currentValue);
+                onSelect={() => {
+                  setValue(branch.value);
                   setOpen(false);
                 }}
               >

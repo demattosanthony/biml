@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  GitBranch,
-  Plus,
-  Search,
-  Code,
-  Tag,
-  History,
-} from "lucide-react";
+import { Building2, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -27,8 +19,12 @@ export default function ProjectPage() {
           <div className="container py-6 px-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <Building2 className="h-6 w-6" />
-                <h1 className="text-xl font-semibold">Dunbar High School</h1>
+                <img
+                  src="/setty_favicon.png"
+                  alt="Setty & Associates"
+                  className="h-6"
+                />
+                <h1 className="text-2xl font-bold">Dunbar High School</h1>
                 <span className="text-sm text-muted-foreground">
                   Washington, DC
                 </span>
