@@ -105,7 +105,14 @@ class IfcSession:
         model.write(path)
 
     def get_geometry_tree(self):
-        return build_hierarchy(self.file.by_type("IfcProduct"))
+        model_structure = build_hierarchy(self.file.by_type("IfcProduct"))
+
+        types = self.file.by_type("IfcTypeProduct")
+        result = []
+        for type in types:
+            result.append(f"{type.is_a()} \"{type.Name}\" ({type.GlobalId})")
+
+        return "=== Model Structure ===\n" + model_structure + "\n\n=== Loaded Types ===\n" + '\n'.join(result)
     
     def load_ifc_project_library(self, path: str) -> None:
         self.ifc_project_library = ifcopenshell.open(path)
