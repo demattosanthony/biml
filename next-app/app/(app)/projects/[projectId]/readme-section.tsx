@@ -8,7 +8,7 @@ export function ReadmeSection() {
     <div className="border rounded-lg">
       <div className="flex items-center gap-2 p-4 bg-muted/50 font-semibold">
         <FileText className="h-4 w-4" />
-        README.md
+        Project Overview
       </div>
       <div className="p-4 prose max-w-none gap-2">
         <MarkdownViewer

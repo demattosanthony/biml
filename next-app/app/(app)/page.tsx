@@ -1,20 +1,7 @@
 "use client";
 
-// import { TypographyH1, TypographyP } from "@/components/typography";
-// import MainInputForm from "./main-input-form";
-
-import {
-  BarChart,
-  Users,
-  LinkIcon,
-  Mail,
-  Star,
-  GitFork,
-  Clock,
-  Percent,
-} from "lucide-react";
+import { BarChart, Users, LinkIcon, Mail, Clock, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -24,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default function ProjectsPage() {
   return (
@@ -97,7 +85,7 @@ export default function ProjectsPage() {
 
       {/* Featured Project Section */}
       <div className="mb-8">
-        <h2 className="text-base font-semibold mb-4">Featured Project</h2>
+        <h2 className="text-base font-semibold mb-4">Featured Projects</h2>
         <Card className="p-4">
           <div className="flex items-start gap-3">
             <div className="mt-1">🏆</div>
@@ -168,12 +156,12 @@ export default function ProjectsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <a
+                    <Link
                       href="/projects/1"
                       className="font-semibold text-blue-600 hover:underline"
                     >
                       {project.name}
-                    </a>
+                    </Link>
                     <Badge variant="secondary">{project.type}</Badge>
                   </div>
                   {project.description && (
@@ -250,25 +238,23 @@ const projects = [
     teamSize: 10,
     lastUpdated: "3 days ago",
   },
+  {
+    name: "Mixed-Use Development",
+    description:
+      "Residential and commercial complex with sustainable design features",
+    type: "Mixed-Use",
+    phase: "Design Development",
+    percentComplete: 60,
+    teamSize: 15,
+    lastUpdated: "4 days ago",
+  },
+  {
+    name: "Civic Center Plaza",
+    description: "Public park and community center with cultural programming",
+    type: "Public",
+    phase: "Construction Administration",
+    percentComplete: 90,
+    teamSize: 5,
+    lastUpdated: "1 month ago",
+  },
 ];
-
-// export default function Home() {
-//   return (
-//     <main className="h-screen w-screen overflow-hidden flex flex-col">
-//       {/* <div className="w-full justify-end flex p-2">
-//         <ModeToggle />
-//       </div> */}
-//       <div className="flex h-[90%] flex-col gap-10 justify-center items-center ">
-//         <div className="flex flex-col gap-2 items-center justify-center">
-//           <TypographyH1>What will you create?</TypographyH1>
-
-//           <TypographyP>Expert design engineer at your service.</TypographyP>
-//         </div>
-
-//         <div className=" max-w-[734px] flex flex-col gap-2">
-//           <MainInputForm />
-//         </div>
-//       </div>
-//     </main>
-//   );
-// }
