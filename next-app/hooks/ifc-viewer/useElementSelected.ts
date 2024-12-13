@@ -38,6 +38,7 @@ export function useElementSelected() {
       for (const model of models) {
         console.log("Checking model", model.name);
 
+        if (!fragmentId) continue;
         const entityAttrs = await model.fragmentsGroup.getProperties(
           fragmentId
         );

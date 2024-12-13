@@ -17,7 +17,7 @@ import {
   TypographyList,
   TypographyLi,
   TypographyInlineCode,
-} from "./Typography";
+} from "./typography";
 
 // CodeBlock component
 const CodeBlock: React.FC<{

@@ -1,7 +1,7 @@
 "use client";
 
 import MainInputForm from "@/components/main-input-form";
-import { TypographyH1, TypographyP } from "@/components/Typography";
+import { TypographyH1, TypographyP } from "@/components/typography";
 
 export default function ChatPage() {
   return (

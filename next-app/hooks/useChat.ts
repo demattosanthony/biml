@@ -18,6 +18,26 @@ export type ChatMessage = {
   isStreamingIfc?: boolean;
 };
 
+export type TestToolResult = Array<{
+  content: string;
+  metadata: Record<string, any>;
+  id: number;
+}>;
+
+type FunctionResultMap = {
+  testTool: TestToolResult;
+};
+
+export type ToolCall = {
+  [K in keyof FunctionResultMap]: {
+    id: string;
+    type: "function";
+    function: { name: K; arguments: string };
+    status: "pending" | "completed" | "failed";
+    result?: FunctionResultMap[K];
+  };
+}[keyof FunctionResultMap];
+
 export const messagesAtom = atom<ChatMessage[]>([
   //   {
   //     role: MessageRole.user,
