@@ -19,35 +19,30 @@ import {
 
 const BRANCHES = [
   {
-    value: "main",
-    label: "main",
-    description: "Main project branch",
+    value: "concept",
+    label: "concept",
+    description: "Conceptual design phase",
   },
   {
-    value: "structural",
-    label: "structural",
-    description: "Structural engineering updates",
+    value: "schematic",
+    label: "schematic",
+    description: "Schematic design phase",
   },
   {
-    value: "mep",
-    label: "mep",
-    description: "MEP systems coordination",
+    value: "design-dev",
+    label: "design-dev",
+    description: "Design development phase",
   },
   {
-    value: "arch",
-    label: "arch",
-    description: "Architectural revisions",
-  },
-  {
-    value: "site",
-    label: "site",
-    description: "Site and civil engineering",
+    value: "construction",
+    label: "construction",
+    description: "Construction documentation phase",
   },
 ];
 
 export function BranchSelector() {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("main");
+  const [value, setValue] = React.useState("concept");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

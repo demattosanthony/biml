@@ -12,7 +12,7 @@ export function ReadmeSection() {
       </div>
       <div className="p-4 prose max-w-none gap-2">
         <MarkdownViewer
-          content={`## Dunbar High School Renovation Project
+          content={`## Dunbar High School
         
 This repository contains all the design and engineering files for the Dunbar High School renovation project in Washington, DC.
 
