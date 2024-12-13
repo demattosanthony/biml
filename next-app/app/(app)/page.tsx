@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function ProjectsPage() {
   return (
@@ -147,6 +148,9 @@ export default function ProjectsPage() {
                 <SelectItem value="stars">Stars</SelectItem>
               </SelectContent>
             </Select>
+            <Link href="/projects/new">
+              <Button>New Project</Button>
+            </Link>
           </div>
         </div>
 
