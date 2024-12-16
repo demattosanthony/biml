@@ -40,17 +40,6 @@ export default function NewProjectPage() {
 
       <div className="space-y-6">
         <div className="grid gap-2">
-          <Label htmlFor="client">Client Name *</Label>
-          <Input
-            id="client"
-            value={projectInfo.client}
-            onChange={(e) => handleProjectInfoChange("client", e.target.value)}
-            placeholder="Enter client name"
-            required
-          />
-        </div>
-
-        <div className="grid gap-2">
           <Label htmlFor="projectName">Project Name *</Label>
           <Input
             id="projectName"
@@ -61,9 +50,16 @@ export default function NewProjectPage() {
             placeholder="Enter project name"
             required
           />
-          <p className="text-sm text-muted-foreground">
-            Great project names are short and memorable.
-          </p>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="client">Client Name *</Label>
+          <Input
+            id="client"
+            value={projectInfo.client}
+            onChange={(e) => handleProjectInfoChange("client", e.target.value)}
+            placeholder="Enter client name"
+            required
+          />
         </div>
 
         <div className="grid gap-2">
