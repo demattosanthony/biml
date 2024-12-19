@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, Paperclip, StopCircle } from "lucide-react";
+import { Paperclip, SendHorizonal, StopCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -10,6 +10,7 @@ import { MessageRole, useChat } from "@/hooks/useChat";
 export default function ChatInputForm() {
   const { threadId } = useParams();
   const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(true);
 
   const {
     addMessage,
@@ -72,7 +73,7 @@ export default function ChatInputForm() {
 
   useEffect(() => {
     if (textAreaRef.current) {
-      textAreaRef.current.style.height = "24px";
+      textAreaRef.current.style.height = "50px";
       textAreaRef.current.style.height =
         textAreaRef.current.scrollHeight + "px";
     }
@@ -86,42 +87,45 @@ export default function ChatInputForm() {
 
   return (
     <form
+      className={`relative h-auto min-h-[24px] max-h-[450px] w-[750px] max-w-4xl mx-auto rounded-2xl border ${
+        focused && "border-black"
+      }`}
       onSubmit={handleSubmit}
-      className="flex items-center relative h-auto gap-2 z-50 max-w-[800px] w-full"
     >
-      <Paperclip className="p-1 absolute bottom-[13px] left-2 h-8 w-8 rounded-full" />
+      <div className="flex h-full w-full items-end">
+        <Textarea
+          placeholder="Ask Davinci..."
+          onChange={(e) => setInput(e.target.value)}
+          ref={textAreaRef}
+          onKeyDown={handleKeyDown}
+          value={input}
+          onBlur={() => setFocused(false)}
+          onFocus={() => setFocused(true)}
+          autoFocus
+          className="resize-none min-h-[24px] h-[50px] max-h-[400px] w-full pt-[14px] rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 text-base focus-visible:ring-offset-0 bg-transparent"
+        />
 
-      <Textarea
-        ref={textAreaRef}
-        value={input}
-        role="textbox"
-        autoFocus
-        onChange={(e) => setInput(e.currentTarget.value)}
-        onKeyDown={handleKeyDown}
-        // disabled={disabled || generating}
-        placeholder="Design anything..."
-        className="h-[24px] max-h-[250px] pr-[58px] pt-[17px] pl-11 resize-none w-full text-md overflow-hidden overflow-y-auto rounded-3xl focus:shadow-sm"
-      />
-      <Button
-        size="sm"
-        className="p-1 absolute right-2 bottom-[12px] h-9 w-9 rounded-full"
-        type="submit"
-        ref={buttonRef}
-        onClick={(e) => {
-          e.preventDefault();
-          if (generating) {
-            handleAbort();
-          } else {
-            handleSubmit(e);
-          }
-        }}
-      >
-        {generating ? (
-          <StopCircle className="w-5" />
-        ) : (
-          <CheckIcon className="w-5" />
-        )}
-      </Button>
+        <div className="h-full pr-1 flex pb-[9px]">
+          <Button
+            ref={buttonRef}
+            className="h-8 w-8"
+            variant="ghost"
+            type="submit"
+          >
+            <Paperclip />
+          </Button>
+
+          <Button
+            ref={buttonRef}
+            className="h-8 w-8"
+            variant="ghost"
+            type="submit"
+            // disabled={!input}
+          >
+            {generating ? <StopCircle /> : <SendHorizonal />}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

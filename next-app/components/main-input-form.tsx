@@ -72,11 +72,11 @@ export default function MainInputForm() {
 
   return (
     <form
-      className="relative h-auto min-h-[96px] max-h-[450px] w-[734px] max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border-2 border-gray-100"
+      className="relative h-auto min-h-[96px] max-h-[450px] w-[734px] max-w-4xl mx-auto rounded-3xl shadow-sm border group"
       onSubmit={handleSubmit}
     >
       <Textarea
-        placeholder="Ask anything..."
+        placeholder="Ask Davinci..."
         onChange={(e) => setInput(e.target.value)}
         ref={textAreaRef}
         onKeyDown={handleKeyDown}

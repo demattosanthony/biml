@@ -29,13 +29,13 @@ export default function ChatPage() {
   const { isCopied, copyToClipboard } = useClipboard();
 
   return (
-    <div className="h-screen w-screen flex transition-all">
+    <div className="h-full w-full flex transition-all">
       <div
         className={`flex flex-1 flex-col ${selectedIfcFile && "max-w-[50%]"}`}
       >
         <ChatMessagesList />
 
-        <div className="w-full flex items-center justify-center mx-auto p-2 pt-1">
+        <div className="w-full flex items-center justify-center mx-auto p-2 pt-1 pb-4">
           <ChatInputForm />
         </div>
       </div>
