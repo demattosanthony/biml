@@ -13,10 +13,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Link from "next/link";
 
 export default function ProjectPage() {
   return (
-    <div className="flex flex-col items-center max-w-6xl w-full">
+    <div className="flex flex-col items-center max-w-5xl w-full">
       {/* Project Header */}
       <header className="border-b w-full">
         <div className="container py-6 px-6">
@@ -100,13 +101,15 @@ export default function ProjectPage() {
                     </span>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                >
-                  yesterday
-                </Button>
+                <Link href={`/projects/1/commits`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                  >
+                    yesterday
+                  </Button>
+                </Link>
               </div>
               <ProjectFileExplorer />
             </div>

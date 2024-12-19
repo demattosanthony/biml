@@ -18,6 +18,23 @@ class IfcSession:
 
     def open_ifc_project(self, path: str) -> None:
         self.file = ifcopenshell.open(path)
+    
+    def get_geometry_tree(self):
+        model_structure = build_hierarchy(self.file.by_type("IfcProduct"))
+
+        types = self.file.by_type("IfcTypeProduct")
+        result = []
+        for type in types:
+            result.append(f"{type.is_a()} \"{type.Name}\" ({type.GlobalId})")
+
+        return "=== Model Structure ===\n" + model_structure + "\n\n=== Loaded Types ===\n" + '\n'.join(result)
+    
+    def get_element_by_guid(self, guid: str):
+        element = self.file.by_guid(guid)
+        if element is None:
+            return f"Element with GUID {guid} not found."
+        
+        return f"#{element.id()} = {element.is_a()} \"{element.Name}\" ({element.GlobalId})"
 
     def create_new_ifc_project(self, schema: str = "IFC4", path: str = "output.ifc") -> None:
         model = ifcopenshell.file(schema=schema)
@@ -104,15 +121,7 @@ class IfcSession:
 
         model.write(path)
 
-    def get_geometry_tree(self):
-        model_structure = build_hierarchy(self.file.by_type("IfcProduct"))
 
-        types = self.file.by_type("IfcTypeProduct")
-        result = []
-        for type in types:
-            result.append(f"{type.is_a()} \"{type.Name}\" ({type.GlobalId})")
-
-        return "=== Model Structure ===\n" + model_structure + "\n\n=== Loaded Types ===\n" + '\n'.join(result)
     
     def load_ifc_project_library(self, path: str) -> None:
         self.ifc_project_library = ifcopenshell.open(path)

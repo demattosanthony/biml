@@ -105,7 +105,7 @@ export default function NewProjectPage() {
           </RadioGroup>
         </div>
 
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           <Label>Initialize this project with:</Label>
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -122,7 +122,7 @@ export default function NewProjectPage() {
           <p className="text-sm text-muted-foreground pl-6">
             Start with pre-configured IDS templates for common building elements
           </p>
-        </div>
+        </div> */}
 
         <div className="pt-6 border-t">
           <Button size="lg">Create project</Button>

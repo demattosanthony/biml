@@ -34,7 +34,7 @@ export default function TopicPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="container max-w-6xl py-6">
+    <div className="container max-w-5xl py-6">
       <TopicDetails topic={topic} />
       <h2 className="text-2xl font-bold mt-8 mb-4">Comments</h2>
       <CommentThread

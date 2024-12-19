@@ -1,4 +1,5 @@
 import { Topic, Comment } from "@/types/comments";
+import { Commit } from "@/types/commits";
 
 export const sampleTopics: Topic[] = [
   {
@@ -65,3 +66,82 @@ export const sampleComments: Comment[] = [
     topic_guid: "A211FCC2-3A3B-EAA4-C321-DE22ABC8414",
   },
 ];
+export const commitsByDate: Record<string, Commit[]> = {
+  "Dec 18, 2024": [
+    {
+      id: "1",
+      message: "Adjust column positions to resolve MEP conflicts on Level 3",
+      author: {
+        name: "Emily Chen",
+        avatar: "/placeholder.svg",
+      },
+      date: "2 hours ago",
+      hash: "df7942a",
+      verified: true,
+      pullRequest: {
+        number: 45,
+        branch: "feature/structural-mep-coordination",
+      },
+      status: "2/2",
+    },
+    {
+      id: "2",
+      message: "Update plenum space requirements in north wing",
+      author: {
+        name: "Marcus Johnson",
+        avatar: "/placeholder.svg",
+      },
+      date: "5 hours ago",
+      hash: "7e8ad99",
+      verified: true,
+      pullRequest: {
+        number: 44,
+        branch: "feature/plenum-revision",
+      },
+      status: "2/2",
+    },
+  ],
+  "Dec 17, 2024": [
+    {
+      id: "3",
+      message: "Revise HVAC ductwork layout in east wing",
+      author: {
+        name: "Sophia Lee",
+        avatar: "/placeholder.svg",
+      },
+      date: "yesterday",
+      hash: "35432fa",
+      verified: false,
+    },
+    {
+      id: "4",
+      message: "Modify beam depths to accommodate MEP services",
+      author: {
+        name: "Alex Rodriguez",
+        avatar: "/placeholder.svg",
+      },
+      date: "yesterday",
+      hash: "c1f5e2b",
+      verified: true,
+      status: "1/1",
+    },
+  ],
+  "Dec 15, 2024": [
+    {
+      id: "5",
+      message: "Update structural grid layout for east wing expansion",
+      author: {
+        name: "Olivia Taylor",
+        avatar: "/placeholder.svg",
+      },
+      date: "3 days ago",
+      hash: "9a8b7c6",
+      verified: true,
+      pullRequest: {
+        number: 42,
+        branch: "feature/grid-revision",
+      },
+      status: "3/3",
+    },
+  ],
+};

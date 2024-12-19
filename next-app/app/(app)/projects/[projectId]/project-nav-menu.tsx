@@ -54,7 +54,7 @@ export default function NavigationMenu() {
   const [activeItem, setActiveItem] = useState("Overview");
 
   return (
-    <nav className="border-b w-full flex items-start max-w-6xl">
+    <nav className="border-b w-full flex items-start max-w-5xl">
       <div className="flex h-14 items-center gap-2 px-4 overflow-x-auto">
         {navItems.map((item) => (
           <Button

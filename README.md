@@ -2,9 +2,14 @@
 
 This software will be like buying autodesk revit + all the engineers that would use the tool.
 
-Plus Plus a git like enviornment for managing all of the projects you are working on
+Plus Plus a git like enviornment for managing all of the projects you are working on.
 
-Eat the software spend on autodesk revit + the spend on engineers and drafters.
+A place for designers to design, projects managers to QA/QC, track progress. Save building states. Open source building design.
+Lets actually solve the problem of design -> construction -> operation dgital handover. Creating repositories with all the information that can collaboratively updated.
+
+This could lead to really cool stuff like open source building design or bounties and engineering freelance work.
+
+Eat the software spend on autodesk revit + the spend on engineers and drafters. (maybe)
 
 Devin AI engineer for building information modeling === Need to focus on davinci workspace
 
@@ -32,3 +37,14 @@ Plans:
 - opensource ?
 - pay per compute usage
 - enterprise version to host on your own servers
+
+### Pitch to raj
+
+- improve the efficencny of your engineers (especially the ones in india)
+- remove dependance on autodesk
+- improve qa/qc process
+- improve your digital handover
+- specification in code compared against the models
+
+- create the brick schema models within the models
+- strong version control
