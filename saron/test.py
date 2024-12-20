@@ -7,6 +7,7 @@ class IfcSession:
         self.model = ifcopenshell.open(ifc_file_path)
         if not self.model:
             raise FileNotFoundError(f"Could not open IFC file at: {ifc_file_path}")
+        self.containment_hierarchy = None  # Will store the hierarchy after first build
 
     def get_metadata(self):
         file_name = self.model.header.file_name
@@ -77,9 +78,15 @@ class IfcSession:
         }
 
     def get_containment_hierarchy(self):
+        # Return cached version if available
+        if self.containment_hierarchy is not None:
+            return self.containment_hierarchy
+
         projects = self.list_projects()
         if not projects:
-            return {}
+            self.containment_hierarchy = {}
+            return self.containment_hierarchy
+
         project = projects[0]
 
         def decompose(spatial_element):
@@ -108,7 +115,8 @@ class IfcSession:
                         })
             return node
 
-        return decompose(project)
+        self.containment_hierarchy = decompose(project)
+        return self.containment_hierarchy
 
     def get_component_hierarchy(self):
         elements = self.get_all_elements()
@@ -168,12 +176,12 @@ class IfcSession:
 
     def search_in_containment(self, search_term):
         """
-        Searches through the containment hierarchy for entries matching the search_term.
+        Searches through the pre-built containment hierarchy for entries matching the search_term.
         Match is partial and case-insensitive. It looks into 'guid', 'type', 'name',
         and string properties.
         """
 
-        hierarchy = self.get_containment_hierarchy()
+        hierarchy = self.get_containment_hierarchy()  # Uses cached version
 
         results = []
 
@@ -208,7 +216,6 @@ class IfcSession:
                 # If this dict matches, add to results
                 if check_item(structure):
                     results.append(structure)
-
                 for v in structure.values():
                     recursive_search(v)
 
@@ -221,26 +228,29 @@ class IfcSession:
         return results
 
 
+import time
 # Example usage:
 session = IfcSession("/Users/anthonydemattos/auto-bim/train/dataset/mechanical.ifc")
+start_time = time.time()
 hierarchies = session.build_all_hierarchies()
+end_time = time.time() - start_time
+print(f"Hierarchies built in {end_time} seconds")
 
 # Save each hierarchy to separate JSON files
-with open('containment_hierarchy.json', 'w') as f:
-    json.dump(hierarchies["containment_hierarchy"], f, indent=2)
+# with open('containment_hierarchy.json', 'w') as f:
+#     json.dump(hierarchies["containment_hierarchy"], f, indent=2)
 
-with open('component_hierarchy.json', 'w') as f:
-    json.dump(hierarchies["component_hierarchy"], f, indent=2)
+# with open('component_hierarchy.json', 'w') as f:
+#     json.dump(hierarchies["component_hierarchy"], f, indent=2)
 
-with open('federated_floor_hierarchy.json', 'w') as f:
-    json.dump(hierarchies["federated_floor_hierarchy"], f, indent=2)
+# with open('federated_floor_hierarchy.json', 'w') as f:
+#     json.dump(hierarchies["federated_floor_hierarchy"], f, indent=2)
 
 print("Hierarchies have been saved to separate JSON files")
 
 # Example of searching:
-import time
 start = time.time()
-search_term = "DOAS 2"
+search_term = "rhvav"
 search_results = session.search_in_containment(search_term)
 end_time = time.time() - start
 print(f"Search results for '{search_term}':")
