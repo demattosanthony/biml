@@ -10,7 +10,8 @@ import useClipboard from "@/hooks/useClipboard";
 import { Eye, Download, Check, Copy } from "lucide-react";
 
 export default function ChatPage() {
-  const { selectedIfcFile, artifactMode, setArtifactMode } = useChat();
+  const { selectedIfcFile, artifactMode, setArtifactMode, messages } =
+    useChat();
   const fileName = "test.ifc";
 
   const handleDownload = () => {

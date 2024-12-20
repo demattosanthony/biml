@@ -4,22 +4,21 @@ import { Paperclip, SendHorizonal, StopCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { useParams } from "next/navigation";
-import { MessageRole, useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 
-export default function ChatInputForm() {
-  const { threadId } = useParams();
+interface ChatInputFormProps {
+  placeholder?: string;
+  onSubmit?: (input: string) => void;
+}
+
+export default function ChatInputForm({
+  placeholder = "Ask Davinci...",
+  onSubmit,
+}: ChatInputFormProps) {
   const [input, setInput] = useState("");
   const [focused, setFocused] = useState(true);
 
-  const {
-    addMessage,
-    messages,
-    resetChat,
-    generateText,
-    handleAbort,
-    generating,
-  } = useChat();
+  const { generating } = useChat();
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -48,27 +47,9 @@ export default function ChatInputForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // setGenerating(true);
 
-    addMessage({
-      role: MessageRole.user,
-      content: input,
-    });
-
-    addMessage({
-      role: MessageRole.assistant,
-      content: "",
-    });
-
-    setInput("");
-
-    await generateText([
-      ...messages,
-      {
-        role: MessageRole.user,
-        content: input,
-      },
-    ]);
+    if (!input.trim()) return;
+    if (onSubmit) onSubmit(input);
   };
 
   useEffect(() => {
@@ -79,22 +60,16 @@ export default function ChatInputForm() {
     }
   }, [input]);
 
-  useEffect(() => {
-    return () => {
-      resetChat();
-    };
-  }, []);
-
   return (
     <form
       className={`relative h-auto min-h-[24px] max-h-[450px] w-[750px] max-w-4xl mx-auto rounded-2xl border ${
-        focused && "border-black"
+        focused && "border-primary"
       }`}
       onSubmit={handleSubmit}
     >
       <div className="flex h-full w-full items-end">
         <Textarea
-          placeholder="Ask Davinci..."
+          placeholder={placeholder}
           onChange={(e) => setInput(e.target.value)}
           ref={textAreaRef}
           onKeyDown={handleKeyDown}
@@ -102,7 +77,7 @@ export default function ChatInputForm() {
           onBlur={() => setFocused(false)}
           onFocus={() => setFocused(true)}
           autoFocus
-          className="resize-none min-h-[24px] h-[50px] max-h-[400px] w-full pt-[14px] rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 text-base focus-visible:ring-offset-0 bg-transparent"
+          className="resize-none min-h-[24px] h-[50px] max-h-[400px] w-full pt-[14px] text-lg rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 focus-visible:ring-offset-0 bg-transparent"
         />
 
         <div className="h-full pr-1 flex pb-[9px]">
@@ -110,7 +85,10 @@ export default function ChatInputForm() {
             ref={buttonRef}
             className="h-8 w-8"
             variant="ghost"
-            type="submit"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             <Paperclip />
           </Button>
