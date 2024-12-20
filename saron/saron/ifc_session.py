@@ -1,354 +1,353 @@
 import ifcopenshell
-from ifcopenshell import api, guid
-from ifcopenshell.api import context, aggregate, owner
 import ifcopenshell.api
-import ifcopenshell.api.aggregate
-import ifcopenshell.api.owner
-import code
-
-import ifcopenshell.guid
+import ifcopenshell.util.element
 
 class IfcSession:
-    def __init__(self) -> None:
-        self.file: ifcopenshell.file = None
-        self.ifc_project_library: ifcopenshell.file = None
+    def __init__(self, ifc_file_path: str):
+        self.model = ifcopenshell.open(ifc_file_path)
+        if not self.model:
+            raise FileNotFoundError(f"Could not open IFC file at: {ifc_file_path}")
 
-        self.context = None
-        self.model_context = None
-
-    def open_ifc_project(self, path: str) -> None:
-        self.file = ifcopenshell.open(path)
-    
-    def get_geometry_tree(self):
-        model_structure = build_hierarchy(self.file.by_type("IfcProduct"))
-
-        types = self.file.by_type("IfcTypeProduct")
-        result = []
-        for type in types:
-            result.append(f"{type.is_a()} \"{type.Name}\" ({type.GlobalId})")
-
-        return "=== Model Structure ===\n" + model_structure + "\n\n=== Loaded Types ===\n" + '\n'.join(result)
-    
-    def get_element_by_guid(self, guid: str):
-        element = self.file.by_guid(guid)
-        if element is None:
-            return f"Element with GUID {guid} not found."
-        
-        return f"#{element.id()} = {element.is_a()} \"{element.Name}\" ({element.GlobalId})"
-
-    def create_new_ifc_project(self, schema: str = "IFC4", path: str = "output.ifc") -> None:
-        model = ifcopenshell.file(schema=schema)
-        self.file = model
-
-        # setup owner history if schema is IFC2X3
-        if schema == "IFC2X3":
-            application = ifcopenshell.api.owner.add_application(model)
-            person = ifcopenshell.api.owner.add_person(model, identification="LPARTEE", family_name="Partee", given_name="Leeable")
-            organisation = ifcopenshell.api.owner.add_organisation(model, identification="AWB", name="Architects Without Ballpens")
-            user = ifcopenshell.api.owner.add_person_and_organisation(model, person=person, organisation=organisation)
-            ifcopenshell.api.owner.settings.get_user = lambda x: user
-            ifcopenshell.api.owner.settings.get_application = lambda x: application
-
-        project = model.create_entity("IfcProject", Name="My Project")
-
-        # Set up units
-        units = model.create_entity("IfcUnitAssignment")
-        length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE")
-        units.Units = [length_unit]
-        project.UnitsInContext = units
-
-        site = model.create_entity("IfcSite", Name="Site")
-        building = model.create_entity("IfcBuilding", Name="Building")
-        storey = model.create_entity("IfcBuildingStorey", Name="Storey")
-
-        # Setup all the contexts
-        # If we plan to store 3D geometry in our IFC model, we have to setup a "Model" context.
-        model3d = ifcopenshell.api.context.add_context(model, context_type="Model")
-        # And/Or, if we plan to store 2D geometry, we need a "Plan" context
-        plan = ifcopenshell.api.context.add_context(model, context_type="Plan")
-        # Now we setup the subcontexts with each of the geometric "purposes"
-        # we plan to store in our model. "Body" is by far the most important
-        # and common context, as most IFC models are assumed to be viewable
-        # in 3D.
-        body = ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Body", target_view="MODEL_VIEW", parent=model3d)
-
-        # The 3D Axis subcontext is important if any "axis-based" parametric
-        # geometry is going to be created. For example, a beam, or column
-        # may be drawn using a single 3D axis line, and for this we need an
-        # Axis subcontext.
-        ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Axis", target_view="GRAPH_VIEW", parent=model3d)
-
-        # It's also important to have a 2D Axis subcontext for things like
-        # walls and claddings which can be drawn using a 2D axis line.
-        ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Axis", target_view="GRAPH_VIEW", parent=plan)
-
-        # The 3D Box subcontext is useful for clash detection or shape
-        # analysis, or even lazy-loading of large models.
-        ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Box", target_view="MODEL_VIEW", parent=model3d)
-
-        # A 2D annotation subcontext for plan views are important for door
-        # swings, window cuts, and symbols for equipment like GPOs, fire
-        # extinguishers, and so on.
-        ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="PLAN_VIEW", parent=plan)
-
-        # You may also create 2D annotation subcontexts for sections and
-        # elevation views.
-        ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="SECTION_VIEW", parent=plan)
-        ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="ELEVATION_VIEW", parent=plan)
-
-        self.context = model.create_entity(
-            "IfcGeometricRepresentationContext",
-            ContextType="Model",
-            CoordinateSpaceDimension=3,
-            Precision=0.01,
-            WorldCoordinateSystem=model.create_entity(
-                "IfcAxis2Placement3D",
-                Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
-            ),
-        )
-        self.model_context = model.create_entity(
-            "IfcGeometricRepresentationSubContext",
-            ContextIdentifier="Body",
-            ContextType="Model",
-            ParentContext=self.context,
-            TargetView="MODEL_VIEW",
-        )
-
-        # assign spatial containers
-        ifcopenshell.api.aggregate.assign_object(model, products=[site], relating_object=project)
-        ifcopenshell.api.aggregate.assign_object(model, products=[building], relating_object=site)
-        ifcopenshell.api.aggregate.assign_object(model, products=[storey], relating_object=building)
-
-        model.write(path)
-
-
-    
-    def load_ifc_project_library(self, path: str) -> None:
-        self.ifc_project_library = ifcopenshell.open(path)
-    
-    def get_ifc_project_library_tree(self) -> str:
-        if self.ifc_project_library is None: 
-            return "No IFC project library loaded."
-        
-        types_dict = {}
-        for decl in self.ifc_project_library.by_type("IfcProjectLibrary")[0].Declares:
-            for defn in decl.RelatedDefinitions:
-                if 'Type' in defn.is_a():  # Quick filter for type products
-                    type_name = defn.is_a()
-                    name = defn.Name if hasattr(defn, 'Name') else 'Unnamed'
-                    guid = defn.GlobalId
-                    types_dict.setdefault(type_name, []).append({
-                        'name': name,
-                        'guid': guid,
-                        'entity': defn  # Store the actual entity for potential future use
-                    })
-
-        tree = ""
-        for type_name, items in sorted(types_dict.items()):
-            tree += f"   * {type_name}\n"
-            for item in sorted(items, key=lambda x: x['name']):
-                tree += f"      * [{item['guid']}] {item['name']}\n"
-
-        return tree
-    
-    def load_library_element_by_guid(self, guid: str):
-        if self.ifc_project_library is None:
-            return "No IFC project library loaded."
-        
-        element = self.ifc_project_library.by_guid(guid)
-        if element is None:
-            return f"Element with GUID {guid} not found."
-        
-        # First copy all representation items and their styles
-        if element.RepresentationMaps:
-            for rep_map in element.RepresentationMaps:
-                # Copy all items in the representation
-                for item in rep_map.MappedRepresentation.Items:
-                    # Copy styles if they exist
-                    if hasattr(item, 'StyledByItem'):
-                        for styled_item in item.StyledByItem:
-                            # Copy the style assignment
-                            self.file.add(styled_item)
-                            for style in styled_item.Styles:
-                                # Copy the presentation style
-                                self.file.add(style)
-                                if hasattr(style, 'Styles'):
-                                    for substyle in style.Styles:
-                                        # Copy surface styles and colors
-                                        self.file.add(substyle)
-                                        if hasattr(substyle, 'SurfaceColour'):
-                                            self.file.add(substyle.SurfaceColour)
-                
-        self.file.add(element)
-        if element.RepresentationMaps:
-            for rep_map in element.RepresentationMaps:
-                self.file.add(rep_map)
-                self.file.add(rep_map.MappedRepresentation)
-
-        return f"Loaded {element.is_a()} \"{element.Name}\" ({element.GlobalId})"
-    
-    def create_instance(self, type_guid: str, instance_name: str, ifc_class: str):
-        if self.ifc_project_library is None:
-            return "No IFC project library loaded."
-        
-        type_entity = self.ifc_project_library.by_guid(type_guid)
-        if type_entity is None:
-            return f"Type with GUID {type_guid} not found."
-        
-        instance = self.file.create_entity(ifc_class, Name=instance_name)
-        instance.ObjectType = type_entity.Name
-        type_relationship = self.file.create_entity("IfcRelDefinesByType", GlobalId=ifcopenshell.guid.new(), RelatedObjects=[instance], RelatingType=type_entity)
-
-        # Create placement 
-        storey = self.file.by_type("IfcBuildingStorey")[0]
-        placement = self.file.create_entity(
-            "IfcLocalPlacement",
-            PlacementRelTo=storey.ObjectPlacement,
-            RelativePlacement=self.file.create_entity(
-                "IfcAxis2Placement3D",
-                Location=self.file.create_entity(
-                    "IfcCartesianPoint",
-                    Coordinates=(0.0, 0.0, 0.0)
-                )
-            )
-        )
-        instance.ObjectPlacement = placement
-
-        ifcopenshell.api.aggregate.assign_object(self.file, relating_object=storey, products=[instance])
-
-        # Copy representation
-        if type_entity.RepresentationMaps:
-            shape = self.file.create_entity(
-                "IfcShapeRepresentation",
-                ContextOfItems=self.model_context,
-                RepresentationIdentifier=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationIdentifier,
-                RepresentationType=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationType,
-            )
-            
-            # Create mapping
-            mapped_item = self.file.create_entity(
-                "IfcMappedItem",
-                MappingSource=type_entity.RepresentationMaps[0],
-                MappingTarget=self.file.create_entity(
-                    "IfcCartesianTransformationOperator3D",
-                    Axis1=None,
-                    Axis2=None,
-                    LocalOrigin=self.file.create_entity(
-                        "IfcCartesianPoint",
-                        Coordinates=(0.0, 0.0, 0.0)
-                    ),
-                    Scale=1.0,
-                    Axis3=None
-                )
-            )
-            shape.Items = [mapped_item]
-            
-            # Create product definition shape
-            product_shape = self.file.create_entity(
-                "IfcProductDefinitionShape",
-                Representations=[shape]
-            )
-            instance.Representation = product_shape
-    
-        
-        return f"Created {instance.is_a()} \"{instance.Name}\" ({instance.GlobalId})"
-    
-    def start_console(self):
-        """Start an interactive Python console with the current session available as 'session'"""
-        console_locals = {
-            'session': self,
-            'ifc': self.file,
-            'ifcopenshell': ifcopenshell,
-            'api': ifcopenshell.api
+    def get_metadata(self):
+        file_name = self.model.header.file_name
+        file_description = self.model.header.file_description
+        file_schema = self.model.header.file_schema
+        return {
+            "name": file_name.name if file_name else None,
+            "time_stamp": file_name.time_stamp if file_name else None,
+            "author": file_name.author if file_name else None,
+            "organization": file_name.organization if file_name else None,
+            "description": file_description.description if file_description else None,
+            "schema": file_schema.schema_identifiers if file_schema else None,
         }
-        
-        banner = """
-IFC Interactive Console
-----------------------
-Available objects:
-- session: Current IfcSession instance
-- ifc: Current IFC file
-- ifcopenshell: IfcOpenShell module
-- api: IfcOpenShell API module
 
-Type 'exit()' or Ctrl+D to exit
-"""     
-        code.InteractiveConsole(console_locals).interact(banner=banner)
+    def get_element_properties(self, element):
+        return ifcopenshell.util.element.get_psets(element)
 
-    def save(self, path: str="output.ifc"):
-        if self.file is None: return "No IFC project loaded."
-        self.file.write(path)
-        print("IFC project saved to", path)
-    
+    def list_projects(self):
+        """List top-level projects."""
+        projects = self.model.by_type("IfcProject")
+        return [self._element_summary(p) for p in projects]
 
+    def list_children(self, guid, ifc_type=None):
+        """
+        List the children of a given element, whether via decomposition or containment.
+        Optionally filter by IFC type (e.g., 'IfcBuilding', 'IfcSpace', etc.).
 
-def build_hierarchy(project: list[ifcopenshell.entity_instance], with_properties=False):
-    """Build the hierarchy of the IFC project
-    
-    Args:
-        project (ifcopenshell.entity_instance): The list of IFC entities from the project
-        with_properties (bool, optional): Include properties. Defaults to False.
-    
-    Returns:
-        str: The hierarchy of the IFC project
-    """
-    result = []
-    spacer = '.  '
-    
-    def add_line(text, level):
-        result.append(spacer * level + text)
-    
-    def add_property_set(property_set, level):
-        add_line(property_set.Name, level)
-        for prop in property_set.HasProperties:
-            if prop.is_a('IfcPropertySingleValue'):
-                add_line(f"{prop.Name} = {str(prop.NominalValue.wrappedValue)}", level + 1)
+        Returns a list of dicts: [{ "guid": <>, "type": <>, "name": <> }, ...]
+        """
+        parent = self._get_element_by_guid(guid)
+        if not parent:
+            return []
 
-    def add_quantity_set(quantity_set, level):
-        add_line(quantity_set.Name, level)
-        for quantity in quantity_set.Quantities:
-            if quantity.is_a('IfcQuantityLength'):
-                add_line(f"{quantity.Name} = {str(quantity.LengthValue)}", level + 1)
-            elif quantity.is_a('IfcQuantityArea'):
-                add_line(f"{quantity.Name} = {str(quantity.AreaValue)}", level + 1)
-            elif quantity.is_a('IfcQuantityVolume'):
-                add_line(f"{quantity.Name} = {str(quantity.VolumeValue)}", level + 1)
-            elif quantity.is_a('IfcQuantityCount'):
-                add_line(f"{quantity.Name} = {str(quantity.CountValue)}", level + 1)
-            else:
-                add_line(quantity.Name, level + 1)
-
-    def add_element_type(type, level):
-        add_line(type.Name, level)
-
-    def add_element(element, level):
-        add_line(f"#{element.id()} = {element.is_a()} \"{element.Name}\" ({element.GlobalId})", level)
-        
-        for definition in element.IsDefinedBy:
-            if with_properties:
-                if definition.is_a('IfcRelDefinesByProperties'):
-                    related_data = definition.RelatingPropertyDefinition
-                    if related_data.is_a('IfcPropertySet'):
-                        add_property_set(related_data, level + 1)
-                    elif related_data.is_a('IfcElementQuantity'):
-                        add_quantity_set(related_data, level + 1)
-            if definition.is_a('IfcRelDefinesByType'):
-                add_element_type(definition.RelatingType, level + 1)
-
-        # Spatial relation
-        if element.is_a('IfcSpatialStructureElement'):
-            for rel in element.ContainsElements:
-                for child in rel.RelatedElements:
-                    add_element(child, level + 1)
-
-        # Aggregation Relation
-        if element.is_a('IfcObjectDefinition'):
-            for rel in element.IsDecomposedBy:
+        children = []
+        # Children from decomposition (IsDecomposedBy)
+        if hasattr(parent, "IsDecomposedBy"):
+            for rel in parent.IsDecomposedBy:
                 for child in rel.RelatedObjects:
-                    add_element(child, level + 1)
+                    if ifc_type is None or child.is_a(ifc_type):
+                        children.append(self._element_summary(child))
 
-    # Main execution
-    for item in project:
-        add_element(item, 0)
+        # Children from containment (ContainsElements)
+        if hasattr(parent, "ContainsElements"):
+            for rel in parent.ContainsElements:
+                for child in rel.RelatedElements:
+                    if ifc_type is None or child.is_a(ifc_type):
+                        children.append(self._element_summary(child))
+
+        return children
+
+    def get_node_info(self, guid: str):
+        """
+        Returns detailed info about a node (element).
+        """
+        element = self._get_element_by_guid(guid)
+        if not element:
+            return None
+        return {
+            "guid": element.GlobalId,
+            "type": element.is_a(),
+            "name": getattr(element, "Name", None),
+            "properties": self.get_element_properties(element),
+        }
+
+    def get_units(self):
+        project = self.model.by_type("IfcProject")
+        if not project:
+            return None
+        project = project[0]
+        if project.UnitsInContext:
+            units = {}
+            for unit_assignment in project.UnitsInContext.Units:
+                unit_type = getattr(unit_assignment, 'UnitType', None)
+                units[unit_type] = {
+                    "prefix": getattr(unit_assignment, "Prefix", None),
+                    "name": getattr(unit_assignment, "Name", None)
+                }
+            return units
+        return None
+
+    def summarize(self):
+        """
+        Quick summary of model counts.
+        """
+        def count(ifc_type):
+            return len(self.model.by_type(ifc_type))
+
+        return {
+            "projects_count": count("IfcProject"),
+            "sites_count": count("IfcSite"),
+            "buildings_count": count("IfcBuilding"),
+            "storeys_count": count("IfcBuildingStorey"),
+            "elements_count": len(self.model.by_type("IfcProduct")),
+            "spaces_count": count("IfcSpace"),
+            "systems_count": count("IfcSystem"),
+            "types_count": count("IfcTypeObject")
+        }
+
+    # ---------------------
+    # Internal Helper Methods
+    # ---------------------
+
+    def _get_element_by_guid(self, guid, expected_type=None):
+        element = self.model.by_guid(guid)
+        if element and (expected_type is None or element.is_a(expected_type)):
+            return element
+        return None
+
+    def _element_summary(self, element):
+        return {
+            "guid": element.GlobalId,
+            "type": element.is_a(),
+            "name": getattr(element, "Name", None)
+        }
+
+
     
-    return '\n'.join(result)
+#     def start_console(self):
+#         """Start an interactive Python console with the current session available as 'session'"""
+#         console_locals = {
+#             'session': self,
+#             'ifc': self.model,
+#             'ifcopenshell': ifcopenshell,
+#             'api': ifcopenshell.api
+#         }
+        
+#         banner = """
+# IFC Interactive Console
+# ----------------------
+# Available objects:
+# - session: Current IfcSession instance
+# - ifc: Current IFC file
+# - ifcopenshell: IfcOpenShell module
+# - api: IfcOpenShell API module
+
+# Type 'exit()' or Ctrl+D to exit
+# """     
+#         code.InteractiveConsole(console_locals).interact(banner=banner)
+
+
+
+
+
+
+#     def create_new_ifc_project(self, schema: str = "IFC4", path: str = "output.ifc") -> None:
+#         model = ifcopenshell.file(schema=schema)
+#         self.file = model
+
+#         # setup owner history if schema is IFC2X3
+#         if schema == "IFC2X3":
+#             application = ifcopenshell.api.owner.add_application(model)
+#             person = ifcopenshell.api.owner.add_person(model, identification="LPARTEE", family_name="Partee", given_name="Leeable")
+#             organisation = ifcopenshell.api.owner.add_organisation(model, identification="AWB", name="Architects Without Ballpens")
+#             user = ifcopenshell.api.owner.add_person_and_organisation(model, person=person, organisation=organisation)
+#             ifcopenshell.api.owner.settings.get_user = lambda x: user
+#             ifcopenshell.api.owner.settings.get_application = lambda x: application
+
+#         project = model.create_entity("IfcProject", Name="My Project")
+
+#         # Set up units
+#         units = model.create_entity("IfcUnitAssignment")
+#         length_unit = model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE")
+#         units.Units = [length_unit]
+#         project.UnitsInContext = units
+
+#         site = model.create_entity("IfcSite", Name="Site")
+#         building = model.create_entity("IfcBuilding", Name="Building")
+#         storey = model.create_entity("IfcBuildingStorey", Name="Storey")
+
+#         # Setup all the contexts
+#         # If we plan to store 3D geometry in our IFC model, we have to setup a "Model" context.
+#         model3d = ifcopenshell.api.context.add_context(model, context_type="Model")
+#         # And/Or, if we plan to store 2D geometry, we need a "Plan" context
+#         plan = ifcopenshell.api.context.add_context(model, context_type="Plan")
+#         # Now we setup the subcontexts with each of the geometric "purposes"
+#         # we plan to store in our model. "Body" is by far the most important
+#         # and common context, as most IFC models are assumed to be viewable
+#         # in 3D.
+#         body = ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Body", target_view="MODEL_VIEW", parent=model3d)
+
+#         # The 3D Axis subcontext is important if any "axis-based" parametric
+#         # geometry is going to be created. For example, a beam, or column
+#         # may be drawn using a single 3D axis line, and for this we need an
+#         # Axis subcontext.
+#         ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Axis", target_view="GRAPH_VIEW", parent=model3d)
+
+#         # It's also important to have a 2D Axis subcontext for things like
+#         # walls and claddings which can be drawn using a 2D axis line.
+#         ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Axis", target_view="GRAPH_VIEW", parent=plan)
+
+#         # The 3D Box subcontext is useful for clash detection or shape
+#         # analysis, or even lazy-loading of large models.
+#         ifcopenshell.api.context.add_context(model, context_type="Model", context_identifier="Box", target_view="MODEL_VIEW", parent=model3d)
+
+#         # A 2D annotation subcontext for plan views are important for door
+#         # swings, window cuts, and symbols for equipment like GPOs, fire
+#         # extinguishers, and so on.
+#         ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="PLAN_VIEW", parent=plan)
+
+#         # You may also create 2D annotation subcontexts for sections and
+#         # elevation views.
+#         ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="SECTION_VIEW", parent=plan)
+#         ifcopenshell.api.context.add_context(model, context_type="Plan", context_identifier="Annotation", target_view="ELEVATION_VIEW", parent=plan)
+
+#         self.context = model.create_entity(
+#             "IfcGeometricRepresentationContext",
+#             ContextType="Model",
+#             CoordinateSpaceDimension=3,
+#             Precision=0.01,
+#             WorldCoordinateSystem=model.create_entity(
+#                 "IfcAxis2Placement3D",
+#                 Location=model.create_entity("IfcCartesianPoint", Coordinates=(0.0, 0.0, 0.0)),
+#             ),
+#         )
+#         self.model_context = model.create_entity(
+#             "IfcGeometricRepresentationSubContext",
+#             ContextIdentifier="Body",
+#             ContextType="Model",
+#             ParentContext=self.context,
+#             TargetView="MODEL_VIEW",
+#         )
+
+#         # assign spatial containers
+#         ifcopenshell.api.aggregate.assign_object(model, products=[site], relating_object=project)
+#         ifcopenshell.api.aggregate.assign_object(model, products=[building], relating_object=site)
+#         ifcopenshell.api.aggregate.assign_object(model, products=[storey], relating_object=building)
+
+#         model.write(path)
+
+
+    
+#     def load_ifc_project_library(self, path: str) -> None:
+#         self.ifc_project_library = ifcopenshell.open(path)
+    
+#     def load_library_element_by_guid(self, guid: str):
+#         if self.ifc_project_library is None:
+#             return "No IFC project library loaded."
+        
+#         element = self.ifc_project_library.by_guid(guid)
+#         if element is None:
+#             return f"Element with GUID {guid} not found."
+        
+#         # First copy all representation items and their styles
+#         if element.RepresentationMaps:
+#             for rep_map in element.RepresentationMaps:
+#                 # Copy all items in the representation
+#                 for item in rep_map.MappedRepresentation.Items:
+#                     # Copy styles if they exist
+#                     if hasattr(item, 'StyledByItem'):
+#                         for styled_item in item.StyledByItem:
+#                             # Copy the style assignment
+#                             self.file.add(styled_item)
+#                             for style in styled_item.Styles:
+#                                 # Copy the presentation style
+#                                 self.file.add(style)
+#                                 if hasattr(style, 'Styles'):
+#                                     for substyle in style.Styles:
+#                                         # Copy surface styles and colors
+#                                         self.file.add(substyle)
+#                                         if hasattr(substyle, 'SurfaceColour'):
+#                                             self.file.add(substyle.SurfaceColour)
+                
+#         self.file.add(element)
+#         if element.RepresentationMaps:
+#             for rep_map in element.RepresentationMaps:
+#                 self.file.add(rep_map)
+#                 self.file.add(rep_map.MappedRepresentation)
+
+#         return f"Loaded {element.is_a()} \"{element.Name}\" ({element.GlobalId})"
+    
+#     def create_instance(self, type_guid: str, instance_name: str, ifc_class: str):
+#         if self.ifc_project_library is None:
+#             return "No IFC project library loaded."
+        
+#         type_entity = self.ifc_project_library.by_guid(type_guid)
+#         if type_entity is None:
+#             return f"Type with GUID {type_guid} not found."
+        
+#         instance = self.file.create_entity(ifc_class, Name=instance_name)
+#         instance.ObjectType = type_entity.Name
+#         type_relationship = self.file.create_entity("IfcRelDefinesByType", GlobalId=ifcopenshell.guid.new(), RelatedObjects=[instance], RelatingType=type_entity)
+
+#         # Create placement 
+#         storey = self.file.by_type("IfcBuildingStorey")[0]
+#         placement = self.file.create_entity(
+#             "IfcLocalPlacement",
+#             PlacementRelTo=storey.ObjectPlacement,
+#             RelativePlacement=self.file.create_entity(
+#                 "IfcAxis2Placement3D",
+#                 Location=self.file.create_entity(
+#                     "IfcCartesianPoint",
+#                     Coordinates=(0.0, 0.0, 0.0)
+#                 )
+#             )
+#         )
+#         instance.ObjectPlacement = placement
+
+#         ifcopenshell.api.aggregate.assign_object(self.file, relating_object=storey, products=[instance])
+
+#         # Copy representation
+#         if type_entity.RepresentationMaps:
+#             shape = self.file.create_entity(
+#                 "IfcShapeRepresentation",
+#                 ContextOfItems=self.model_context,
+#                 RepresentationIdentifier=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationIdentifier,
+#                 RepresentationType=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationType,
+#             )
+            
+#             # Create mapping
+#             mapped_item = self.file.create_entity(
+#                 "IfcMappedItem",
+#                 MappingSource=type_entity.RepresentationMaps[0],
+#                 MappingTarget=self.file.create_entity(
+#                     "IfcCartesianTransformationOperator3D",
+#                     Axis1=None,
+#                     Axis2=None,
+#                     LocalOrigin=self.file.create_entity(
+#                         "IfcCartesianPoint",
+#                         Coordinates=(0.0, 0.0, 0.0)
+#                     ),
+#                     Scale=1.0,
+#                     Axis3=None
+#                 )
+#             )
+#             shape.Items = [mapped_item]
+            
+#             # Create product definition shape
+#             product_shape = self.file.create_entity(
+#                 "IfcProductDefinitionShape",
+#                 Representations=[shape]
+#             )
+#             instance.Representation = product_shape
+    
+        
+#         return f"Created {instance.is_a()} \"{instance.Name}\" ({instance.GlobalId})"
+    
+
+
+#     def save(self, path: str="output.ifc"):
+#         if self.file is None: return "No IFC project loaded."
+#         self.file.write(path)
+#         print("IFC project saved to", path)
+    
+
