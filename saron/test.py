@@ -5,7 +5,7 @@ import json
 import sys
 from saron.tools import tool
 
-session = IfcSession("/Users/anthonydemattos/auto-bim/next-app/public/sample.ifc")
+session = IfcSession("/Users/anthonydemattos/auto-bim/train/dataset/mechanical.ifc")
 
 
 @tool 
@@ -22,9 +22,21 @@ def get_node_info(guid: str):
     """Returns detailed info about a node (element)."""
     return json.dumps(session.get_node_info(guid), indent=2)
 
+@tool 
+def get_all_ifc_categories():
+    """Returns a list of all the unqiue ifc categories in the model."""
+    return json.dumps(session.list_categories(), indent=2)
+
+@tool
+def get_elements_of_category(ifc_category: str):
+    """Returns a list of all the elements of a given ifc category."""
+    return json.dumps(session.get_elements_of_category(ifc_category), indent=2)
+
 tools = {
     "list_children": list_children,
     "get_node_info": get_node_info,
+    "get_all_ifc_categories": get_all_ifc_categories,
+    "get_elements_of_category": get_elements_of_category,
 }
 
 project = session.list_projects()[0]
@@ -33,7 +45,7 @@ prompt = f"""IFC Project info:
 
 {project}
 
-Use the provided tools to explore the ifc model. Then return a detailed summary of the model."""
+list all the DOAS units in the model and their info"""
 
 messages = [
     {"role": "user", "content": prompt},
@@ -50,7 +62,7 @@ gemini = "gemini/gemini-exp-1206"
 def main():
     while True:
         response = completion(
-            model=claude_sonnet,
+            model=gpt_4o,
             messages=messages,
             temperature=0,
             stream=True,

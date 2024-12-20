@@ -28,6 +28,19 @@ class IfcSession:
         """List top-level projects."""
         projects = self.model.by_type("IfcProject")
         return [self._element_summary(p) for p in projects]
+    
+    def list_categories(self):
+        """List all unique categories of elements in the model."""
+        categories = set()
+        for element in self.model.by_type("IfcProduct"):
+            categories.add(element.is_a())
+        return list(categories)
+    
+    def get_elements_of_category(self, category):
+        """List all elements of a given category."""
+        elements = self.model.by_type(category)
+        return [self._element_summary(e) for e in elements]
+    
 
     def list_children(self, guid, ifc_type=None):
         """
