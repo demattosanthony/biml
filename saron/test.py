@@ -17,15 +17,21 @@ Most elemenet trees beging with the project then a site, then a building, then f
 Provide a ifc_type to filter the children by type. For example, ifc_type=IfcWall will only return children that are walls. Only do this if you know the ifc type of the children you are looking for."""
     return json.dumps(session.list_children(guid, ifc_type=ifc_type), indent=2)
 
+print(list_children.to_dict())
+
 @tool
 def get_node_info(guid: str):
     """Returns detailed info about a node (element)."""
     return json.dumps(session.get_node_info(guid), indent=2)
 
+print(get_node_info.to_dict())
+
 @tool 
 def get_all_ifc_categories():
     """Returns a list of all the unqiue ifc categories in the model."""
     return json.dumps(session.list_categories(), indent=2)
+
+print(get_all_ifc_categories.to_dict())
 
 @tool
 def get_elements_of_category(ifc_category: str):
@@ -76,7 +82,7 @@ claude_sonnet = "claude-3-5-sonnet-20241022"
 o1 = "o1"
 o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
-gemini = "gemini-1.5-pro"
+gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
 
 def main():

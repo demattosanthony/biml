@@ -39,6 +39,9 @@ def tool(func):
     if required:
         parameters["required"] = required
 
+    if properties == {}:
+        parameters = None
+
     # Create a tool object with execute logic
     class ToolWrapper:
         def __init__(self, func, name, description, parameters):
@@ -48,14 +51,16 @@ def tool(func):
             self.parameters = parameters
 
         def to_dict(self):
-            return {
+            function_dict = {
                 "type": "function",
                 "function": {
                     "name": self.name,
                     "description": self.description,
-                    "parameters": self.parameters,
-                },
+                }
             }
+            if self.parameters is not None:
+                function_dict["function"]["parameters"] = self.parameters
+            return function_dict
 
         def execute(self, *args, **kwargs):
             """Execute the tool function with either a dict of parameters or keyword arguments"""
