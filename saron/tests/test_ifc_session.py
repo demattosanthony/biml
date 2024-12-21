@@ -1,20 +1,14 @@
 from saron.ifc_session import IfcSession
+from unittest import TestCase
 
 session = IfcSession()
 session.create_new_ifc_project()
 
-session.load_ifc_project_library("/Users/anthonydemattos/auto-bim/saron/blenderbim-site-library.ifc")
+class TestIfcSession(TestCase):
+    def test_load_ifc_file(self):
+        session.open_ifc_project("/Users/anthonydemattos/auto-bim/train/dataset/aisc.ifc")
+        assert session.file is not None
 
-tree = session.get_ifc_project_library_tree()
-
-print(tree)
-print()
-
-session.load_library_element_by_guid(guid="0FMiZScTPFog7h7dFJ1g95")
-
-session.create_instance(type_guid="0FMiZScTPFog7h7dFJ1g95", instance_name="Copied Crane", ifc_class="IfcBuildingElementProxy")
-
-proj_tree = session.get_geometry_tree()
-print(proj_tree)
-
-session.save()
+    def test_get_geometry_tree(self):
+        tree = session.get_geometry_tree()
+        assert tree is not None

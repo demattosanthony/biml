@@ -1,4 +1,6 @@
 import ifcopenshell
+import io
+import sys
 import ifcopenshell.api
 import ifcopenshell.util.element
 
@@ -117,6 +119,34 @@ class IfcSession:
             "systems_count": count("IfcSystem"),
             "types_count": count("IfcTypeObject")
         }
+    
+    def execute_code(self, code: str):
+        """
+        Execute Python code in the context of the session and return its output.
+        """
+        try:
+            # Create string buffer to capture output
+            output_buffer = io.StringIO()
+            # Redirect stdout to the buffer
+            old_stdout = sys.stdout
+            sys.stdout = output_buffer
+            
+            console_locals = {
+            "session": self,
+            "ifc": self.model,
+            "ifcopenshell": ifcopenshell,
+            "api": ifcopenshell.api
+            }
+            # Execute the code
+            exec(code, console_locals)
+            
+            # Get output and restore stdout
+            output = output_buffer.getvalue()
+            sys.stdout = old_stdout
+            return output
+        except Exception as e:
+            sys.stdout = old_stdout
+            return str(e)
 
     # ---------------------
     # Internal Helper Methods

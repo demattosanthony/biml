@@ -32,11 +32,31 @@ def get_elements_of_category(ifc_category: str):
     """Returns a list of all the elements of a given ifc category."""
     return json.dumps(session.get_elements_of_category(ifc_category), indent=2)
 
+@tool 
+def execute_python_code_against_model(code: str):
+    """Execute python code against the model. This is a powerful tool that allows you to write custom code to interact with the model. Be careful with this tool as it can modify the model. This tool is useful when you need to do something that is not supported by the other tools.
+    
+It leverages the exec function in python and these are the console locals provided: 
+{
+    "session": IfcSession,
+    "ifc": ifcopenshell.file,
+    "ifcopenshell": ifcopenshell,
+    "api": ifcopenshell.api
+}
+
+The output of the code will be returned as a string. Output is captured from stdout and stderr."""
+    try:
+        output = session.execute_code(code)
+        return output
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+
 tools = {
     "list_children": list_children,
     "get_node_info": get_node_info,
     "get_all_ifc_categories": get_all_ifc_categories,
     "get_elements_of_category": get_elements_of_category,
+    "execute_python_code_against_model": execute_python_code_against_model,
 }
 
 project = session.list_projects()[0]
@@ -45,7 +65,7 @@ prompt = f"""IFC Project info:
 
 {project}
 
-list all the DOAS units in the model and their info"""
+find AHU 2 and give me all its info"""
 
 messages = [
     {"role": "user", "content": prompt},
@@ -56,8 +76,8 @@ claude_sonnet = "claude-3-5-sonnet-20241022"
 o1 = "o1"
 o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
-gemini = "gemini/gemini-exp-1206"
-
+gemini = "gemini-1.5-pro"
+gemini_flash = "gemini/gemini-2.0-flash-exp"
 
 def main():
     while True:

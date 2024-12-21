@@ -1251,13 +1251,13 @@ regex = ["regex"]
 
 [[package]]
 name = "litellm"
-version = "1.54.0"
+version = "1.55.7"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.54.0-py3-none-any.whl", hash = "sha256:7e46f03bc101770d206b196394623ed528321d63ec5525072030ec7b850f0431"},
-    {file = "litellm-1.54.0.tar.gz", hash = "sha256:21352295660ac369769a6d021973a34704864b309a4796f0172468b298161d6c"},
+    {file = "litellm-1.55.7-py3-none-any.whl", hash = "sha256:fb447810fa7a9f8d2958e1a91ac5667458d6294d13d342f0a40d892e7e9b2888"},
+    {file = "litellm-1.55.7.tar.gz", hash = "sha256:3b950f36431cfca75b7d764f92695c4087c9c4e5182718f9526066b78d542e0d"},
 ]
 
 [package.dependencies]
@@ -3072,4 +3072,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "==3.11.*"
-content-hash = "4ee63eec7ec53951705f823cb969e47751a8e40473a192ab2092d1f6f78e3f0f"
+content-hash = "10e3d9a3cc9bff6bc875aa89e25e0ca68b8e527b023d5f1a1ace442e1d9b53c2"
