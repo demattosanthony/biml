@@ -3,20 +3,15 @@
 import * as React from "react";
 import {
   AudioWaveform,
-  Book,
-  BookOpen,
-  Bot,
+  Box,
   Command,
   Frame,
   GalleryVerticalEnd,
   Home,
-  Inbox,
   Map,
   PieChart,
   Search,
-  Settings2,
   Sparkles,
-  SquareTerminal,
 } from "lucide-react";
 
 import {
@@ -72,9 +67,9 @@ const data = {
       isActive: true,
     },
     {
-      title: "Projects",
-      url: "/projects",
-      icon: Book,
+      title: "Viewer",
+      url: "/viewer",
+      icon: Box,
     },
   ],
   projects: [

@@ -79,11 +79,26 @@ class IfcSession:
         element = self._get_element_by_guid(guid)
         if not element:
             return None
+        
+        # Get spatial container if available
+        container = None
+        if hasattr(element, "ContainedInStructure"):
+            for rel in element.ContainedInStructure:
+                if rel.RelatingStructure:
+                    container = self._element_summary(rel.RelatingStructure)
+                    break
+
+        # Get type information
+        type = ifcopenshell.util.element.get_type(element)
+        type_info = self._element_summary(type) if type else None
+
         return {
             "guid": element.GlobalId,
-            "type": element.is_a(),
+            "ifc_class": element.is_a(),
             "name": getattr(element, "Name", None),
             "properties": self.get_element_properties(element),
+            "spatial_container": container,
+            "type_object": type_info
         }
 
     def get_units(self):
@@ -147,6 +162,10 @@ class IfcSession:
         except Exception as e:
             sys.stdout = old_stdout
             return str(e)
+        
+    def save(self, path: str="output.ifc"):
+        self.model.write(path)
+        return f"IFC project saved to {path}"
 
     # ---------------------
     # Internal Helper Methods

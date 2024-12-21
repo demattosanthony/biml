@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 
 export default function ChatPage() {
   const router = useRouter();
-  const { theme, systemTheme } = useTheme();
-  const realTheme = theme === "system" ? systemTheme : theme;
+  const { resolvedTheme } = useTheme();
 
   return (
     <div className="flex flex-1 flex-col justify-center items-center">
@@ -18,7 +17,7 @@ export default function ChatPage() {
             height={175}
             width={175}
             src={
-              realTheme === "dark"
+              resolvedTheme === "dark"
                 ? "/rhombicuboctahedron-white.svg"
                 : "/rhombicuboctahedron.svg"
             }

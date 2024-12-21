@@ -86,8 +86,7 @@ interface UploadSectionProps {
 export const UploadSection = ({ onUpload }: UploadSectionProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const { theme, systemTheme } = useTheme();
-  const realTheme = theme === "system" ? systemTheme : theme;
+  const { resolvedTheme } = useTheme();
 
   const handleFileUpload = useCallback((newFiles: FileList | null) => {
     if (newFiles) {
@@ -147,7 +146,7 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
               height={75}
               width={75}
               src={
-                realTheme === "dark"
+                resolvedTheme === "dark"
                   ? "/rhombicuboctahedron-white.svg"
                   : "/rhombicuboctahedron.svg"
               }
