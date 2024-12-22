@@ -1,14 +1,18 @@
-import ifcopenshell
 import io
 import sys
+from typing import Dict, Optional
+import uuid
+import ifcopenshell
 import ifcopenshell.api
 import ifcopenshell.util.element
+
 
 class IfcSession:
     def __init__(self, ifc_file_path: str):
         self.model = ifcopenshell.open(ifc_file_path)
         if not self.model:
             raise FileNotFoundError(f"Could not open IFC file at: {ifc_file_path}")
+        self.session_id: str = str(uuid.uuid4())
 
     def get_metadata(self):
         file_name = self.model.header.file_name
@@ -30,19 +34,18 @@ class IfcSession:
         """List top-level projects."""
         projects = self.model.by_type("IfcProject")
         return [self._element_summary(p) for p in projects]
-    
+
     def list_categories(self):
         """List all unique categories of elements in the model."""
         categories = set()
         for element in self.model.by_type("IfcProduct"):
             categories.add(element.is_a())
         return list(categories)
-    
+
     def get_elements_of_category(self, category):
         """List all elements of a given category."""
         elements = self.model.by_type(category)
         return [self._element_summary(e) for e in elements]
-    
 
     def list_children(self, guid, ifc_type=None):
         """
@@ -79,7 +82,7 @@ class IfcSession:
         element = self._get_element_by_guid(guid)
         if not element:
             return None
-        
+
         # Get spatial container if available
         container = None
         if hasattr(element, "ContainedInStructure"):
@@ -98,7 +101,7 @@ class IfcSession:
             "name": getattr(element, "Name", None),
             "properties": self.get_element_properties(element),
             "spatial_container": container,
-            "type_object": type_info
+            "type_object": type_info,
         }
 
     def get_units(self):
@@ -109,11 +112,8 @@ class IfcSession:
         if project.UnitsInContext:
             units = {}
             for unit_assignment in project.UnitsInContext.Units:
-                unit_type = getattr(unit_assignment, 'UnitType', None)
-                units[unit_type] = {
-                    "prefix": getattr(unit_assignment, "Prefix", None),
-                    "name": getattr(unit_assignment, "Name", None)
-                }
+                unit_type = getattr(unit_assignment, "UnitType", None)
+                units[unit_type] = {"prefix": getattr(unit_assignment, "Prefix", None), "name": getattr(unit_assignment, "Name", None)}
             return units
         return None
 
@@ -121,6 +121,7 @@ class IfcSession:
         """
         Quick summary of model counts.
         """
+
         def count(ifc_type):
             return len(self.model.by_type(ifc_type))
 
@@ -132,9 +133,9 @@ class IfcSession:
             "elements_count": len(self.model.by_type("IfcProduct")),
             "spaces_count": count("IfcSpace"),
             "systems_count": count("IfcSystem"),
-            "types_count": count("IfcTypeObject")
+            "types_count": count("IfcTypeObject"),
         }
-    
+
     def execute_code(self, code: str):
         """
         Execute Python code in the context of the session and return its output.
@@ -145,16 +146,11 @@ class IfcSession:
             # Redirect stdout to the buffer
             old_stdout = sys.stdout
             sys.stdout = output_buffer
-            
-            console_locals = {
-            "session": self,
-            "ifc": self.model,
-            "ifcopenshell": ifcopenshell,
-            "api": ifcopenshell.api
-            }
+
+            console_locals = {"session": self, "ifc": self.model, "ifcopenshell": ifcopenshell, "api": ifcopenshell.api}
             # Execute the code
             exec(code, console_locals)
-            
+
             # Get output and restore stdout
             output = output_buffer.getvalue()
             sys.stdout = old_stdout
@@ -162,8 +158,8 @@ class IfcSession:
         except Exception as e:
             sys.stdout = old_stdout
             return str(e)
-        
-    def save(self, path: str="output.ifc"):
+
+    def save(self, path: str = "output.ifc"):
         self.model.write(path)
         return f"IFC project saved to {path}"
 
@@ -178,14 +174,25 @@ class IfcSession:
         return None
 
     def _element_summary(self, element):
-        return {
-            "guid": element.GlobalId,
-            "type": element.is_a(),
-            "name": getattr(element, "Name", None)
-        }
+        return {"guid": element.GlobalId, "type": element.is_a(), "name": getattr(element, "Name", None)}
 
 
-    
+class IfcSessionManager:
+    def __init__(self):
+        self._sessions: Dict[str, IfcSession] = {}
+
+    def create_session(self, file_path: str) -> str:
+        session = IfcSession(ifc_file_path=file_path)
+        self._sessions[session.session_id] = session
+        return session.session_id
+
+    def get_session(self, session_id: str) -> Optional[IfcSession]:
+        return self._sessions.get(session_id)
+
+    def remove_session(self, session_id: str):
+        self._sessions.pop(session_id, None)
+
+
 #     def start_console(self):
 #         """Start an interactive Python console with the current session available as 'session'"""
 #         console_locals = {
@@ -194,7 +201,7 @@ class IfcSession:
 #             'ifcopenshell': ifcopenshell,
 #             'api': ifcopenshell.api
 #         }
-        
+
 #         banner = """
 # IFC Interactive Console
 # ----------------------
@@ -205,12 +212,8 @@ class IfcSession:
 # - api: IfcOpenShell API module
 
 # Type 'exit()' or Ctrl+D to exit
-# """     
+# """
 #         code.InteractiveConsole(console_locals).interact(banner=banner)
-
-
-
-
 
 
 #     def create_new_ifc_project(self, schema: str = "IFC4", path: str = "output.ifc") -> None:
@@ -299,18 +302,17 @@ class IfcSession:
 #         model.write(path)
 
 
-    
 #     def load_ifc_project_library(self, path: str) -> None:
 #         self.ifc_project_library = ifcopenshell.open(path)
-    
+
 #     def load_library_element_by_guid(self, guid: str):
 #         if self.ifc_project_library is None:
 #             return "No IFC project library loaded."
-        
+
 #         element = self.ifc_project_library.by_guid(guid)
 #         if element is None:
 #             return f"Element with GUID {guid} not found."
-        
+
 #         # First copy all representation items and their styles
 #         if element.RepresentationMaps:
 #             for rep_map in element.RepresentationMaps:
@@ -330,7 +332,7 @@ class IfcSession:
 #                                         self.file.add(substyle)
 #                                         if hasattr(substyle, 'SurfaceColour'):
 #                                             self.file.add(substyle.SurfaceColour)
-                
+
 #         self.file.add(element)
 #         if element.RepresentationMaps:
 #             for rep_map in element.RepresentationMaps:
@@ -338,20 +340,20 @@ class IfcSession:
 #                 self.file.add(rep_map.MappedRepresentation)
 
 #         return f"Loaded {element.is_a()} \"{element.Name}\" ({element.GlobalId})"
-    
+
 #     def create_instance(self, type_guid: str, instance_name: str, ifc_class: str):
 #         if self.ifc_project_library is None:
 #             return "No IFC project library loaded."
-        
+
 #         type_entity = self.ifc_project_library.by_guid(type_guid)
 #         if type_entity is None:
 #             return f"Type with GUID {type_guid} not found."
-        
+
 #         instance = self.file.create_entity(ifc_class, Name=instance_name)
 #         instance.ObjectType = type_entity.Name
 #         type_relationship = self.file.create_entity("IfcRelDefinesByType", GlobalId=ifcopenshell.guid.new(), RelatedObjects=[instance], RelatingType=type_entity)
 
-#         # Create placement 
+#         # Create placement
 #         storey = self.file.by_type("IfcBuildingStorey")[0]
 #         placement = self.file.create_entity(
 #             "IfcLocalPlacement",
@@ -376,7 +378,7 @@ class IfcSession:
 #                 RepresentationIdentifier=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationIdentifier,
 #                 RepresentationType=type_entity.RepresentationMaps[0].MappedRepresentation.RepresentationType,
 #             )
-            
+
 #             # Create mapping
 #             mapped_item = self.file.create_entity(
 #                 "IfcMappedItem",
@@ -394,22 +396,19 @@ class IfcSession:
 #                 )
 #             )
 #             shape.Items = [mapped_item]
-            
+
 #             # Create product definition shape
 #             product_shape = self.file.create_entity(
 #                 "IfcProductDefinitionShape",
 #                 Representations=[shape]
 #             )
 #             instance.Representation = product_shape
-    
-        
+
+
 #         return f"Created {instance.is_a()} \"{instance.Name}\" ({instance.GlobalId})"
-    
 
 
 #     def save(self, path: str="output.ifc"):
 #         if self.file is None: return "No IFC project loaded."
 #         self.file.write(path)
 #         print("IFC project saved to", path)
-    
-

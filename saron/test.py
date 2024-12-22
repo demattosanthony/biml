@@ -8,8 +8,6 @@ from saron.tools import tool
 session = IfcSession("/Users/anthonydemattos/auto-bim/train/dataset/mechanical.ifc")
 
 
-
-
 project = session.list_projects()[0]
 
 prompt = f"""IFC Project info:
@@ -30,6 +28,7 @@ o1_mini = "o1-mini"
 gpt_4o = "gpt-4o"
 gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
+
 
 def main():
     while True:

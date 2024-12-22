@@ -56,7 +56,7 @@ def tool(func):
                 "function": {
                     "name": self.name,
                     "description": self.description,
-                }
+                },
             }
             if self.parameters is not None:
                 function_dict["function"]["parameters"] = self.parameters

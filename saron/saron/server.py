@@ -8,7 +8,8 @@ from dataclasses import dataclass
 
 from saron.agent import Agent
 from saron.tools import tool
-from saron.ifc_session import IfcSession
+from saron.thread import ThreadManager, Message
+from saron.ifc_session import IfcSessionManager
 
 app = FastAPI()
 app.add_middleware(
@@ -19,82 +20,94 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-session = IfcSession(ifc_file_path="/Users/anthonydemattos/auto-bim/next-app/public/sample.ifc")
+thread_manager = ThreadManager()
+ifc_session_manager = IfcSessionManager()
 
-@tool 
+session_id = ifc_session_manager.create_session("/Users/anthonydemattos/auto-bim/next-app/public/sample.ifc")
+session = ifc_session_manager.get_session(session_id)
+
+@tool
 def list_children(guid: str, ifc_type: str | None = None):
     """This tool acts as model browser for the ifc model. You can use it to navigate the element tree of the ifc model. Provide a guid of an element to list its children.
-    
-Most elemenet trees beging with the project then a site, then a building, then floors, then spaces, then elements. You can use this tool to navigate the tree and explore the model.
 
-Provide a ifc_type to filter the children by type. For example, ifc_type=IfcWall will only return children that are walls. Only do this if you know the ifc type of the children you are looking for."""
+    Most elemenet trees beging with the project then a site, then a building, then floors, then spaces, then elements. You can use this tool to navigate the tree and explore the model.
+
+    Provide a ifc_type to filter the children by type. For example, ifc_type=IfcWall will only return children that are walls. Only do this if you know the ifc type of the children you are looking for.
+    """
     return json.dumps(session.list_children(guid, ifc_type=ifc_type), indent=2)
+
 
 @tool
 def get_node_info(guid: str):
     """Returns detailed info about a node (element)."""
     return json.dumps(session.get_node_info(guid), indent=2)
 
-@tool 
+
+@tool
 def get_all_ifc_categories():
     """Returns a list of all the unqiue ifc categories in the model."""
     return json.dumps(session.list_categories(), indent=2)
+
 
 @tool
 def get_elements_of_category(ifc_category: str):
     """Returns a list of all the elements of a given ifc category."""
     return json.dumps(session.get_elements_of_category(ifc_category), indent=2)
 
-@tool 
+
+@tool
 def execute_python_code_against_model(code: str):
     """Execute python code against the model. This is a powerful tool that allows you to write custom code to interact with the model. Be careful with this tool as it can modify the model. This tool is useful when you need to do something that is not supported by the other tools.
-    
-It leverages the exec function in python and these are the console locals provided: 
 
-{
-    "ifc": ifcopenshell.file, # instance of the loaded ifc file
-    "ifcopenshell": ifcopenshell, # ifcopenshell module
-    "api": ifcopenshell.api # ifcopenshell.api module
-}
+    It leverages the exec function in python and these are the console locals provided:
 
-For example: 
+    {
+        "ifc": ifcopenshell.file, # instance of the loaded ifc file
+        "ifcopenshell": ifcopenshell, # ifcopenshell module
+        "api": ifcopenshell.api # ifcopenshell.api module
+    }
 
-```
-import ifcopenshell.util.element
+    For example:
 
-for storey in model.by_type("IfcBuildingStorey"):
-    elements = ifcopenshell.util.element.get_decomposition(storey)
-    print(f"There are {len(elements)} located on storey {storey.Name}, they are:")
-    for element in elements:
-        print(element.Name)
-```
+    ```
+    import ifcopenshell.util.element
 
-```
-import ifcopenshell.util.classification
+    for storey in model.by_type("IfcBuildingStorey"):
+        elements = ifcopenshell.util.element.get_decomposition(storey)
+        print(f"There are {len(elements)} located on storey {storey.Name}, they are:")
+        for element in elements:
+            print(element.Name)
+    ```
 
-wall = model.by_type("IfcWall")[0]
-# Elements may have multiple classification references assigned
-references = ifcopenshell.util.classification.get_references(wall)
-for reference in references:
-    # A reference code might be Pr_30_59_99_02
-    print("The wall has a classification reference of", reference[1])
-    # A system might be Uniclass 2015
-    system = ifcopenshell.util.classification.get_classification(reference)
-    print("This reference is part of the system", system.Name)
-```
+    ```
+    import ifcopenshell.util.classification
 
-The output of the code will be returned as a string. Output is captured from stdout and stderr. This means you need to use the print function to output anything."""
+    wall = model.by_type("IfcWall")[0]
+    # Elements may have multiple classification references assigned
+    references = ifcopenshell.util.classification.get_references(wall)
+    for reference in references:
+        # A reference code might be Pr_30_59_99_02
+        print("The wall has a classification reference of", reference[1])
+        # A system might be Uniclass 2015
+        system = ifcopenshell.util.classification.get_classification(reference)
+        print("This reference is part of the system", system.Name)
+    ```
+
+    The output of the code will be returned as a string. Output is captured from stdout and stderr. This means you need to use the print function to output anything.
+    """
     try:
         output = session.execute_code(code)
         return output
     except Exception as e:
         return f"An error occurred: {str(e)}"
-    
-@tool 
+
+
+@tool
 def save_model():
     """Save the current state of the model."""
     session.save()
     return "Model saved successfully."
+
 
 tools = {
     "list_children": list_children,
@@ -113,30 +126,36 @@ gpt_4o = "gpt-4o"
 gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
 
-agent = Agent(tools=tools, ifc_session=session, model_name=claude_sonnet)
+agent = Agent(tools=tools, model_name=claude_sonnet, thread_manager=thread_manager)
+
 
 @dataclass
 class ChatRequest:
     message: str
 
+thread_id = thread_manager.create_thread()
+thread = thread_manager.get_thread(thread_id)
+
 @app.post("/chat")
-async def chat_endpoint(
-    request: ChatRequest
-) -> StreamingResponse:
-    print(f"User: {request.message}")   
+async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
+    print(f"User: {request.message}")
+    # Add user message to thread
+    user_message = Message(role="user", content=request.message)
+    thread_manager.add_message(thread_id, message=user_message)
+
     def event_stream() -> Generator[str, None, None]:
-        for chunk in agent.send_message(
-            message=request.message
-        ):
+        for chunk in agent.chat(thread_id=thread_id):
             yield f"event: message\ndata: {json.dumps({'chunk': chunk})}\n\n"
 
         yield "event: DONE\ndata: {}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to AI Chat API"}
+
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, reload=True, app="saron.server:app")

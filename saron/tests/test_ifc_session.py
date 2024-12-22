@@ -4,6 +4,7 @@ from unittest import TestCase
 session = IfcSession()
 session.create_new_ifc_project()
 
+
 class TestIfcSession(TestCase):
     def test_load_ifc_file(self):
         session.open_ifc_project("/Users/anthonydemattos/auto-bim/train/dataset/aisc.ifc")

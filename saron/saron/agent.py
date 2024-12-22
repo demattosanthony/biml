@@ -1,78 +1,109 @@
-from typing import Dict, Any
-from litellm import completion, stream_chunk_builder
+from typing import Generator, Any, Dict, Optional
 import json
-
-from saron.ifc_session import IfcSession
+from litellm import completion, stream_chunk_builder
+from .thread import Message, ThreadManager, ToolCall
 
 class Agent:
-    def __init__(self, tools: Dict[str, Any], model_name: str, ifc_session: IfcSession):
+    def __init__(self, tools: Dict[str, Any], model_name: str, thread_manager: ThreadManager):
         self.tools = tools
         self.model_name = model_name
-        self.ifc_session = ifc_session
+        self.thread_manager = thread_manager
 
-        self.messages = []
-    
-    def send_message(self, message):
+    def chat(self, thread_id: str) -> Generator[str, None, None]:
+        thread = self.thread_manager.get_thread(thread_id)
+        if not thread:
+            raise ValueError(f"Thread {thread_id} not found")
+
+        formatted_messages = thread.get_formatted_messages()
+        
         while True:
-            self.messages.append({
-                "role": "user",
-                "content": message
-            })
-            response = completion(
-                model=self.model_name,
-                messages=self.messages,
-                temperature=0,
-                stream=True,
-                tools=[tool.to_dict() for tool in self.tools.values()]
-            )
+            try:
+                response = completion(
+                    model=self.model_name,
+                    messages=formatted_messages,
+                    temperature=0,
+                    stream=True,
+                    tools=[tool.to_dict() for tool in self.tools.values()]
+                )
+                
+                chunks = []
+                current_content = ""
+                for chunk in response:
+                    chunks.append(chunk)
+                    content_delta = chunk.choices[0].delta.content or ""
+                    print(content_delta, flush=True, end="")
+                    current_content += content_delta
+                    yield content_delta
+                
+                model_response = stream_chunk_builder(chunks)
+                response_message = model_response.choices[0].message
+                
+                # Create tool calls list if they exist
+                tool_calls = []
+                if hasattr(response_message, 'tool_calls') and response_message.tool_calls:
+                    for tc in response_message.tool_calls:
+                        try:
+                            tool_calls.append(ToolCall(
+                                id=tc.id,
+                                name=tc.function.name,
+                                arguments=tc.function.arguments
+                            ))
+                        except AttributeError as e:
+                            print(f"Error creating tool call: {e}")
+                            continue
 
-            chunks = []
-            for chunk in response:
-                chunks.append(chunk)
-                yield chunk.choices[0].delta.content or ""
+                # Create and add assistant message
+                assistant_message = Message(
+                    role='assistant',
+                    content=current_content,
+                    tool_calls=tool_calls
+                )
+                self.thread_manager.add_message(thread_id, assistant_message)
+                
+                # Handle tool calls if present
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        print(f"Tool Call: {tool_call.name}")
+                        print(f"Arguments: {tool_call.arguments}")
+                        result = self._execute_tool_call(tool_call)
+                        yield f"\nTool Result: {result}\n"
+                        print(f"Tool Result: {result}")
+                        
+                        tool_message = Message(
+                            role='tool',
+                            content=result,
+                            tool_calls=[tool_call]
+                        )
+                        self.thread_manager.add_message(thread_id, tool_message)
+                        
+                        # Update formatted messages for next iteration
+                        formatted_messages = thread.get_formatted_messages()
+                else:
+                    return
 
-            # Rebuild the model response from the chunks
-            model_response = stream_chunk_builder(chunks)
-
-            # Update the messages
-            self.messages.append(model_response.choices[0].message.model_dump())
-
-            # Check for tool calls
-            tool_calls = model_response.choices[0].message.tool_calls
-            if tool_calls:
-                for tool_call in tool_calls:
-                    tool_call_id = tool_call.id
-                    tool_name = tool_call.function.name
-                    tool_parameters = json.loads(tool_call.function.arguments)
-
-                    print(f"Tool Call: {tool_name}")
-                    for key, value in tool_parameters.items():
-                        print(f"{key}: {value}")
-
-                    result = ""
-                    tool_function = self.tools.get(tool_name)
-                    try:
-                        result = tool_function.execute(tool_parameters)
-                    except Exception as e:
-                        result = f"An error occurred: {str(e)}"
-
-                    self.messages.append(
-                        {
-                            "tool_call_id": tool_call_id,
-                            "role": "tool",
-                            "name": tool_name,
-                            "content": result,
-                        }
-                    )
-                    print("\n\nTool Result:")
-                    print(result)
-                    yield "\n"
-            else:   
-                # No more tool calls, so we can return back to the user
+            except Exception as e:
+                error_msg = f"Error during chat: {str(e)}"
+                print(error_msg)  # Log the error
+                yield error_msg
                 return
 
+    def _execute_tool_call(self, tool_call: ToolCall) -> str:
+        try:
+            tool_name = tool_call.name
+            tool_parameters = json.loads(tool_call.arguments)
+            
+            tool_function = self.tools.get(tool_name)
+            if not tool_function:
+                return f"Tool {tool_name} not found"
+            
+            result = tool_function.execute(tool_parameters)
+            tool_call.result = result
+            return result
+        except Exception as e:
+            error_msg = f"Error executing tool: {str(e)}"
+            print(error_msg)  # Log the error
+            return error_msg
 
-    
 
 # tools = {
 #     "vi_code_editor": vi_code_editor,
