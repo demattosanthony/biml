@@ -7,8 +7,8 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  async generateText(
-    messages: ChatMessage[]
+  async chat(
+    message: string
   ): Promise<
     (
       onMessage: (message: string) => void,
@@ -16,11 +16,11 @@ class ApiClient {
       signal: AbortSignal
     ) => Promise<void>
   > {
-    const url = `${this.baseUrl}/ai/inference`;
+    const url = `${this.baseUrl}/chat`;
 
     console.log("Running thread");
     console.log(url);
-    console.log(messages);
+    console.log(message);
 
     return async (
       onMessage: (message: string) => void,
@@ -33,7 +33,9 @@ class ApiClient {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ messages }),
+          body: JSON.stringify({
+            message: message,
+          }),
           signal,
           onmessage: (event) => {
             if (event.event === "message") {

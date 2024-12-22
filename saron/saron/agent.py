@@ -29,8 +29,7 @@ class Agent:
             chunks = []
             for chunk in response:
                 chunks.append(chunk)
-                if chunk.choices[0].delta.content:
-                    yield chunk.choices[0].delta.content
+                yield chunk.choices[0].delta.content or ""
 
             # Rebuild the model response from the chunks
             model_response = stream_chunk_builder(chunks)
@@ -67,6 +66,7 @@ class Agent:
                     )
                     print("\n\nTool Result:")
                     print(result)
+                    yield "\n"
             else:   
                 # No more tool calls, so we can return back to the user
                 return

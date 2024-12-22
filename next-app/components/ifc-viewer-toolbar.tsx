@@ -141,6 +141,16 @@ export default function Component() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore key presses if the user is typing in an input field
+      const activeElement = document.activeElement;
+      if (
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+
       const mode = cameraModes.find(
         (m) => m.shortcut.toLowerCase() === event.key.toLowerCase()
       );

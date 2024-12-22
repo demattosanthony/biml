@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 import uvicorn
 import json
 from typing import Generator
+from dataclasses import dataclass
 
 from saron.agent import Agent
 from saron.tools import tool
@@ -114,16 +115,20 @@ gemini_flash = "gemini/gemini-2.0-flash-exp"
 
 agent = Agent(tools=tools, ifc_session=session, model_name=claude_sonnet)
 
+@dataclass
+class ChatRequest:
+    message: str
+
 @app.post("/chat")
 async def chat_endpoint(
-    message: str = Body(...),
+    request: ChatRequest
 ) -> StreamingResponse:
-    print(f"User: {message}")   
+    print(f"User: {request.message}")   
     def event_stream() -> Generator[str, None, None]:
         for chunk in agent.send_message(
-            message=message
+            message=request.message
         ):
-            yield f"event: message\ndata: {chunk}\n\n"
+            yield f"event: message\ndata: {json.dumps({'chunk': chunk})}\n\n"
 
         yield "event: DONE\ndata: {}\n\n"
 

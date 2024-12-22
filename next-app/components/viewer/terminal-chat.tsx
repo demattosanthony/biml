@@ -2,14 +2,20 @@ import { MessageRole, useChat } from "@/hooks/useChat";
 import { useState } from "react";
 
 export default function TerminalChat() {
-  const [input, setinput] = useState("");
-  const { messages } = useChat();
+  const { messages, input, setInput, sendMessage, generating } = useChat();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    await sendMessage();
+  };
 
   return (
-    <div className="border-t border-muted">
+    <div className="border-t border-muted h-full w-full flex flex-col">
       <div
         // ref={terminalRef}
-        className="h-[300px] bg-background font-mono text-sm overflow-auto p-4"
+        className="h-full bg-background font-mono text-sm overflow-auto p-4"
       >
         {messages.map((message, i) => (
           <div key={i} className="whitespace-pre-wrap">
@@ -22,18 +28,20 @@ export default function TerminalChat() {
             )}
           </div>
         ))}
-        <form className="flex items-center">
-          <span className="text-primary mr-2">➜</span>
-          <input
-            // ref={inputRef}
-            type="text"
-            value={""}
-            placeholder="Ask DaVinci..."
-            onChange={(e) => setinput(e.target.value)}
-            className="flex-1 bg-transparent text-foreground outline-none"
-            autoFocus
-          />
-        </form>
+        {!generating && (
+          <form className="flex items-center" onSubmit={handleSubmit}>
+            <span className="text-primary mr-2">➜</span>
+            <input
+              // ref={inputRef}
+              type="text"
+              value={input}
+              placeholder="Ask DaVinci..."
+              onChange={(e) => setInput(e.target.value)}
+              className="flex-1 bg-transparent text-foreground outline-none"
+              autoFocus
+            />
+          </form>
+        )}
       </div>
     </div>
   );
