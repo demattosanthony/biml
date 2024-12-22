@@ -1,8 +1,20 @@
 import { MessageRole, useChat } from "@/hooks/useChat";
-import { useState } from "react";
+import { useEffect } from "react";
+import { Button } from "../ui/button";
+import { Plus, X } from "lucide-react";
+import useIfcViewerStore from "@/stores/useIfcViewerStore";
 
 export default function TerminalChat() {
-  const { messages, input, setInput, sendMessage, generating } = useChat();
+  const {
+    messages,
+    input,
+    setInput,
+    sendMessage,
+    generating,
+    createThread,
+    resetChat,
+  } = useChat();
+  const setAiMode = useIfcViewerStore((state) => state.actions.setAiMode);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -11,12 +23,13 @@ export default function TerminalChat() {
     await sendMessage();
   };
 
+  useEffect(() => {
+    createThread();
+  }, []);
+
   return (
-    <div className="border-t border-muted h-full w-full flex flex-col">
-      <div
-        // ref={terminalRef}
-        className="h-full bg-background font-mono text-sm overflow-auto p-4"
-      >
+    <div className="border-t border-muted h-full w-full flex">
+      <div className="h-full bg-background font-mono text-sm overflow-y-auto p-4 w-full">
         {messages.map((message, i) => (
           <div key={i} className="whitespace-pre-wrap">
             {message.role === MessageRole.user ? (
@@ -42,6 +55,31 @@ export default function TerminalChat() {
             />
           </form>
         )}
+      </div>
+
+      <div className="flex justify-end p-1">
+        <Button
+          variant={"ghost"}
+          className="h-6 w-6"
+          size={"icon"}
+          onClick={() => resetChat()}
+        >
+          <Plus />
+        </Button>
+        <Button
+          variant={"ghost"}
+          className="h-6 w-6"
+          size={"icon"}
+          onClick={() => {
+            setAiMode(false);
+            // trigger resize event to update the viewer
+            setTimeout(() => {
+              window.dispatchEvent(new Event("resize"));
+            }, 200);
+          }}
+        >
+          <X />
+        </Button>
       </div>
     </div>
   );

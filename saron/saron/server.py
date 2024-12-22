@@ -50,7 +50,7 @@ async def thread_endpoint(thread_id: str):
     thread = thread_manager.get_thread(thread_id)
     if not thread:
         return {"error": "Thread not found"}
-    return {"thread": thread.to_dict()}
+    return thread.to_dict()
 
 @app.post("/ifc_sessions")
 async def ifc_sessions_endpoint(file: UploadFile = File(...)):
@@ -70,6 +70,11 @@ async def ifc_sessions_endpoint(file: UploadFile = File(...)):
 
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
+    # headers = {
+    #     "Content-Type": "text/event-stream",
+    #     "Cache-Control": "no-cache",
+    #     "Connection": "keep-alive",
+    # }
     print(f"User: {request.message}")
     # Add user message to thread
     user_message = Message(role="user", content=request.message)

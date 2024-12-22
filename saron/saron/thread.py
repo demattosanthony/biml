@@ -83,9 +83,9 @@ class Thread:
     def to_dict(self) -> Dict[str, Any]:
         return {
             'thread_id': self.thread_id,
-            'messages': [msg.to_dict() for msg in self.messages],
             'created_at': self.created_at,
-            'session_id': self.session_id
+            'session_id': self.session_id,
+            'messages': [msg.to_dict() for msg in self.messages]
         }
 
 class ThreadManager:

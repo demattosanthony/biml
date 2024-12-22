@@ -56,6 +56,8 @@ const selectedIfcFileAtom = atom<{
   content: string;
 } | null>(null);
 const artifactModeAtom = atom<"preview" | "file">("file");
+const threadIdAtom = atom<string | null>(null);
+const ifcSessionIdAtom = atom<string | null>(null);
 
 export function useChat() {
   const [messages, setMessages] = useAtom(messagesAtom);
@@ -64,11 +66,20 @@ export function useChat() {
   const [buffer, setBuffer] = useAtom(bufferAtom);
   const [artifactMode, setArtifactMode] = useAtom(artifactModeAtom);
   const [input, setInput] = useAtom(inputAtom);
+  const [threadId, setThreadId] = useAtom(threadIdAtom);
+  const [ifcSessionId, setIfcSessionId] = useAtom(ifcSessionIdAtom);
 
   const [selectedIfcFile, setSelectedIfcFile] = useAtom(selectedIfcFileAtom);
 
   const addMessage = (newMessage: ChatMessage) => {
     setMessages((prevMessages) => [...prevMessages, newMessage]);
+  };
+
+  const createThread = async () => {
+    if (threadId) return;
+    const _threadId = await api.createThread();
+    setThreadId(_threadId);
+    console.log("Thread created:", _threadId);
   };
 
   const handleAbort = () => {
@@ -92,6 +103,11 @@ export function useChat() {
   };
 
   const sendMessage = async () => {
+    console.log("Sending message...");
+    console.log("Input:", input);
+    console.log("ThreadId:", threadId);
+    console.log("IfcSessionId:", ifcSessionId);
+    if (!input || !threadId || !ifcSessionId) return;
     setGenerating(true);
     setBuffer("");
 
@@ -112,7 +128,7 @@ export function useChat() {
     });
 
     try {
-      const gen = await api.chat(input);
+      const gen = await api.chat(input, threadId, ifcSessionId);
       // Clear the input field
       setInput("");
 
@@ -143,9 +159,12 @@ export function useChat() {
     }
   };
 
-  const resetChat = () => {
+  const resetChat = async () => {
     setMessages([]);
     setBuffer("");
+    setInput("");
+    const _threadId = await api.createThread();
+    setThreadId(_threadId);
   };
 
   return {
@@ -162,5 +181,7 @@ export function useChat() {
     sendMessage,
     artifactMode,
     setArtifactMode,
+    setIfcSessionId,
+    createThread,
   };
 }

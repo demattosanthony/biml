@@ -69,7 +69,7 @@ class Agent:
                         print(f"Tool Call: {tool_call.name}")
                         print(f"Arguments: {tool_call.arguments}")
                         result = self._execute_tool_call(tool_call, tools=tools)
-                        yield f"\nTool Result: {result}\n"
+                        # yield f"\nTool Result: {result}\n"
                         print(f"Tool Result: {result}")
                         
                         tool_message = Message(

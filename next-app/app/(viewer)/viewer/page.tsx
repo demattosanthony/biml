@@ -6,9 +6,9 @@ import { ElementDetailsSidebarRight } from "@/components/element-details-sidebar
 import IFCViewer from "@/components/ifc-viewer";
 import { LoadingOverlay } from "@/components/viewer/loading-overlay";
 import { UploadSection } from "@/components/viewer/upload-section";
-import ChatInputForm from "@/components/chat/chat-input-form";
-import ChatMessagesList from "@/components/chat/messages-list";
 import TerminalChat from "@/components/viewer/terminal-chat";
+import api from "@/lib/api";
+import { useChat } from "@/hooks/useChat";
 
 export default function ModelViewerUploadPage() {
   const models = useIfcViewerStore((state) => state.uploadedFiles);
@@ -18,13 +18,21 @@ export default function ModelViewerUploadPage() {
   const selectedElement = useIfcViewerStore((state) => state.selectedElement);
   const loading = useIfcViewerStore((state) => state.loadingModels);
   const aiMode = useIfcViewerStore((state) => state.aiMode);
+  const { setIfcSessionId } = useChat();
+
+  const handleModelUpload = async (files: File[]) => {
+    setModels(files);
+    api.createIfcSession(files[0]).then((sessionId) => {
+      setIfcSessionId(sessionId);
+    });
+  };
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       {loading && <LoadingOverlay />}
 
       {models.length === 0 ? (
-        <UploadSection onUpload={setModels} />
+        <UploadSection onUpload={handleModelUpload} />
       ) : (
         <ViewerLayout
           selectedElement={selectedElement}
