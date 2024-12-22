@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Camera,
   Hand,
@@ -6,6 +7,7 @@ import {
   Box,
   Square,
   PersonStanding,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,9 +48,20 @@ export default function Component() {
   ];
 
   const world = useIfcViewerStore((state) => state.world);
+  const aiMode = useIfcViewerStore((state) => state.aiMode);
+  const setAiMode = useIfcViewerStore((state) => state.actions.setAiMode);
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isOrthographic, setIsOrthographic] = useState(false);
+
+  const toggleAiMode = () => {
+    setAiMode(!aiMode);
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+      // world?.renderer?.resize();
+      // world?.camera?.updateAspect();
+    }, 200);
+  };
 
   const handleCameraModeChange = (mode: CameraMode) => {
     setSelectedMode(mode);
@@ -207,6 +220,17 @@ export default function Component() {
         >
           <Camera className="h-4 w-4" />
           <span className="sr-only">Take screenshot</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          title="Ask DaVinci "
+          onClick={toggleAiMode}
+        >
+          <Bot className="h-4 w-4" />
+          <span className="sr-only">AI Chat</span>
         </Button>
       </div>
     </div>

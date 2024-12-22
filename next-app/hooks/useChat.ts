@@ -39,10 +39,14 @@ export type ToolCall = {
 }[keyof FunctionResultMap];
 
 export const messagesAtom = atom<ChatMessage[]>([
-  //   {
-  //     role: MessageRole.user,
-  //     content: "Welcome to the chat! Ask me anything.",
-  //   },
+  // {
+  //   role: MessageRole.user,
+  //   content: "What are you",
+  // },
+  // {
+  //   role: MessageRole.assistant,
+  //   content: "Hello! How are you doing today?",
+  // },
   //   {
   //     role: MessageRole.assistant,
   //     content: `<thinking> I'll create a simple IFC model representing a cube with dimensions of 1x1x1 meter. The model will include: 1. Basic IFC header information 2. Project context and units 3. Spatial structure (Project -> Site -> Building -> Building Storey) 4. A cube geometry using IfcExtrudedAreaSolid 5. Necessary relationships and placements </thinking>

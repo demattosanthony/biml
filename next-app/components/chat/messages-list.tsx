@@ -128,9 +128,7 @@ export default function ChatMessagesList() {
     <div className="flex-1 w-full overflow-y-auto pt-10">
       <div className="max-w-[900px] mx-auto p-4 w-full">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">No messages yet</div>
-          </div>
+          <div className="flex items-center justify-center h-full"></div>
         ) : (
           <div className="space-y-6">
             {messages.map((message, index) => (

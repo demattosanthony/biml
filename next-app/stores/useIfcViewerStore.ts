@@ -69,6 +69,7 @@ interface IFCViewerState {
   categories: Record<string, IFCCategory>;
   hider: OBC.Hider | null;
   selectedElement: EntityNode | null;
+  aiMode: boolean;
   actions: {
     setLoadingModels: (loading: boolean) => void;
     setWorld: (world: OBC.World) => void;
@@ -84,6 +85,7 @@ interface IFCViewerState {
     setSelectedElement: (element: EntityNode | null) => void;
     setCategories: (categories: Record<string, IFCCategory>) => void;
     setUploadedFiles: (files: File[]) => void;
+    setAiMode: (aiMode: boolean) => void;
   };
 }
 
@@ -102,6 +104,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
   hider: null,
   categories: {},
   selectedElement: null,
+  aiMode: false,
   actions: {
     setLoadingModels: (loading) => set({ loadingModels: loading }),
     setWorld: (world) => set({ world }),
@@ -124,6 +127,7 @@ const useIfcViewerStore = create<IFCViewerState>((set) => ({
     setSelectedElement: (element) => set({ selectedElement: element }),
     setCategories: (categories) => set({ categories }),
     setUploadedFiles: (files) => set({ uploadedFiles: files }),
+    setAiMode: (aiMode) => set({ aiMode }),
   },
 }));
 
