@@ -79,6 +79,14 @@ class Thread:
     
     def get_formatted_messages(self) -> List[Dict[str, Any]]:
         return [msg.to_dict() for msg in self.messages]
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'thread_id': self.thread_id,
+            'messages': [msg.to_dict() for msg in self.messages],
+            'created_at': self.created_at,
+            'session_id': self.session_id
+        }
 
 class ThreadManager:
     def __init__(self):

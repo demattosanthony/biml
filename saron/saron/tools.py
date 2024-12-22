@@ -3,7 +3,6 @@ import subprocess
 import os
 from typing import get_type_hints
 
-
 def tool(func):
     # Extract the name and docstring
     name = func.__name__
@@ -14,10 +13,13 @@ def tool(func):
     hints = get_type_hints(func)
     properties = {}
     required = []
-    for param_name, param in sig.parameters.items():
-        if param_name == "self":
-            # skip 'self' for class methods
-            continue
+    
+    # Skip 'self' parameter if this is an instance method
+    parameters_to_check = sig.parameters.items()
+    if 'self' in sig.parameters:
+        parameters_to_check = [(name, param) for name, param in parameters_to_check if name != 'self']
+    
+    for param_name, param in parameters_to_check:
         prop = {"type": "string"}  # default type
         if param_name in hints:
             # Simple type mapping if available
@@ -42,7 +44,22 @@ def tool(func):
     if properties == {}:
         parameters = None
 
-    # Create a tool object with execute logic
+    class BoundToolWrapper:
+        def __init__(self, wrapper, instance):
+            self.wrapper = wrapper
+            self.instance = instance
+            
+        def __call__(self, *args, **kwargs):
+            return self.wrapper.execute(self.instance, *args, **kwargs)
+            
+        def to_dict(self):
+            return self.wrapper.to_dict()
+            
+        def execute(self, *args, **kwargs):
+            if len(args) == 1 and isinstance(args[0], dict):
+                return self.wrapper.execute(self.instance, **args[0])
+            return self.wrapper.execute(self.instance, *args, **kwargs)
+
     class ToolWrapper:
         def __init__(self, func, name, description, parameters):
             self.func = func
@@ -68,7 +85,17 @@ def tool(func):
                 # Handle dictionary input
                 return self.func(**args[0])
             # Handle keyword arguments
-            return self.func(**kwargs)
+            return self.func(*args, **kwargs)
+
+        def __call__(self, *args, **kwargs):
+            """Make the tool callable like the original function"""
+            return self.execute(*args, **kwargs)
+
+        def __get__(self, obj, objtype=None):
+            """Support instance method binding"""
+            if obj is None:
+                return self
+            return BoundToolWrapper(self, obj)
 
     return ToolWrapper(func, name, description, parameters)
 
