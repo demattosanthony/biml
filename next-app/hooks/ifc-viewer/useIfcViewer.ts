@@ -16,7 +16,7 @@ const highlighterAtom = atom<OBCF.Highlighter | null>(null);
 const plansAtom = atom<OBCF.Plans | null>(null);
 const modelsAtom = atom<IFCModel[]>([]);
 const categoriesAtom = atom<Record<string, IFCCategory>>({});
-const hiderAtom = atom<OBC.Hider | null>(null);
+export const hiderAtom = atom<OBC.Hider | null>(null);
 const selectedElementAtom = atom<EntityNode | null>(null);
 const aiModeAtom = atom<boolean>(false);
 

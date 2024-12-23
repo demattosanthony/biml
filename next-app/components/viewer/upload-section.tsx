@@ -72,13 +72,11 @@ export const DropZone = ({
   </div>
 );
 
-// components/upload/UploadSection.tsx
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useCallback } from "react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
-
 interface UploadSectionProps {
   onUpload: (files: File[]) => void;
 }
@@ -94,7 +92,7 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
       const validFiles = Array.from(newFiles).filter((file) =>
         file.name.endsWith(".ifc")
       );
-      setFiles((prev) => [...prev, ...Array.from(validFiles)]);
+      setFiles((prev) => [...prev, ...validFiles]);
     }
   }, []);
 
@@ -129,6 +127,9 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
             type: "application/ifc",
           });
           onUpload([file]);
+        })
+        .catch((error) => {
+          console.error("Error loading sample model:", error);
         });
     },
   };
@@ -136,35 +137,33 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
   return (
     <div className="flex flex-col h-full">
       <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
-        <div className="space-y-7 max-w-[600px] mx-auto">
-          <Badge variant="secondary" className="font-bold text-lg bg-secondary">
-            Introducing
-          </Badge>
-
-          <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="space-y-8 max-w-[600px] mx-auto">
+          <div className="flex flex-col items-center justify-center gap-1 max-w-[600px]">
             <Image
-              height={75}
-              width={75}
+              height={175}
+              width={175}
               src={
                 resolvedTheme === "dark"
                   ? "/rhombicuboctahedron-white.svg"
                   : "/rhombicuboctahedron.svg"
               }
               alt="Logo"
-              className="h-[75px]"
+              className="h-[175px]"
             />
-            <h1 className="text-6xl font-bold tracking-tighter">
-              DaVinci Viewer
-            </h1>
-          </div>
+            <div className="space-y-1 text-center">
+              <h1 className="text-6xl font-bold tracking-tighter">
+                DaVinci Viewer
+              </h1>
+            </div>
 
-          <div className="space-y-1">
-            <h2 className="text-xl text-muted-foreground font-normal sm:text-2xl">
-              Next Generation BIM Platform
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              View and analyze your BIM files in seconds
-            </p>
+            <div className="space-y-1 mt-2">
+              <h2 className="text-xl text-muted-foreground font-normal sm:text-2xl">
+                Next Generation BIM Platform
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                View and analyze your BIM files in seconds
+              </p>
+            </div>
           </div>
 
           <div>
@@ -203,7 +202,7 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
               </Button>
               <Button
                 size="lg"
-                variant={"ghost"}
+                variant="ghost"
                 className="w-[175px]"
                 onClick={handlers.loadSampleModel}
               >

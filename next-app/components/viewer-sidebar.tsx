@@ -40,7 +40,7 @@ import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { EntityNode } from "@/types/ifc";
 
 export function IFCViewerSidebar() {
-  const { models, setUploadedFiles, highlighter, categories } = useIfcViewer();
+  const { models, categories, setUploadedFiles, highlighter } = useIfcViewer();
   const { theme, systemTheme } = useTheme();
   const realTheme = theme === "system" ? systemTheme : theme;
 
@@ -104,7 +104,6 @@ export function IFCViewerSidebar() {
                       key={index}
                       node={model.tree}
                       model={model.fragmentsGroup}
-                      level={0} // Initialize level at 0
                     />
                   )
               )}
@@ -204,7 +203,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
     e.stopPropagation();
     setIsHidden(!isHidden);
     const fragMap = model.getFragmentMap([node.expressID]);
-    hider?.set(!isHidden, fragMap); // Fixed logic to set based on new state
+    hider?.set(isHidden, fragMap);
   };
 
   return (
@@ -253,15 +252,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   );
 }
 
-function Tree({
-  node,
-  model,
-  level,
-}: {
-  node: EntityNode;
-  model: FragmentsGroup;
-  level: number; // Add level prop
-}) {
+function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name, children } = node;
   const { hider, highlighter } = useIfcViewer();
   const [isHidden, setIsHidden] = useState(false);
@@ -283,7 +274,7 @@ function Tree({
     setIsHidden(!isHidden);
     const ids = getAllExpressIDs(node);
     const fragMap = model.getFragmentMap(ids);
-    hider?.set(!isHidden, fragMap); // Fixed logic to set based on new state
+    hider?.set(isHidden, fragMap);
   };
 
   // For leaf nodes (files)
@@ -295,7 +286,10 @@ function Tree({
   return (
     <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>
       <Collapsible
-        defaultOpen={level < 2} // Expand by default if level is 0 or 1
+        defaultOpen={
+          node.ifcClass.toLowerCase() === "ifcproject" ||
+          node.ifcClass.toLowerCase() === "ifcsite"
+        }
         className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
       >
         <CollapsibleTrigger asChild>
@@ -336,12 +330,7 @@ function Tree({
           <CollapsibleContent>
             <div className="pl-3">
               {children.map((childNode, index) => (
-                <Tree
-                  key={index}
-                  node={childNode}
-                  model={model}
-                  level={level + 1} // Increment level for children
-                />
+                <Tree key={index} node={childNode} model={model} />
               ))}
             </div>
           </CollapsibleContent>
