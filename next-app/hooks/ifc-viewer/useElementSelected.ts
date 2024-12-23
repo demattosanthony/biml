@@ -1,5 +1,5 @@
 // Imports
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "@thatopen/fragments";
@@ -11,8 +11,10 @@ import {
   Property,
   PropertySet,
   QuantitySet,
+  IFCModel,
 } from "@/types/ifc";
 import { useIfcViewer } from "./useIfcViewer";
+import { FragmentIdMap, FragmentsGroup } from "@thatopen/fragments";
 
 // Constants for unit mappings
 const UNIT_TYPE_MAP: Record<string, string> = {
@@ -41,35 +43,68 @@ export function useElementSelected() {
   const { highlighter, models, components, setSelectedElement } =
     useIfcViewer();
 
+  // Assume only one model is loaded
+  const model: IFCModel | null = useMemo(
+    () => (models.length > 0 ? models[0] : null),
+    [models]
+  );
+
+  // Cache unit mappings to avoid redundant fetching
+  const unitCache = useMemo(
+    () => new Map<string, { symbol: string; digits: number }>(),
+    []
+  );
+
   // Fetch unit symbol and digits based on model and type
   const getModelUnit = useCallback(
-    async (model: FRAGS.FragmentsGroup, type: string) => {
-      const unitsAssignment = await model.getAllPropertiesOfType(
-        WEBIFC.IFCUNITASSIGNMENT
-      );
-      const units = unitsAssignment
-        ? Object.values(unitsAssignment)[0].Units
-        : [];
+    async (type: string): Promise<{ symbol: string; digits: number }> => {
+      if (!model) return { symbol: "", digits: 0 };
 
-      for (const handle of units) {
-        const unitAttrs = await model.getProperties(handle.value);
-        if (unitAttrs && unitAttrs.UnitType?.value === UNIT_TYPE_MAP[type]) {
-          const prefix = unitAttrs.Prefix?.value || "";
-          const name = unitAttrs.Name?.value || "";
-          const unitKey = `${prefix}${name}`.toUpperCase();
-
-          return IFC_UNIT_SYMBOLS[unitKey] || { symbol: "", digits: 0 };
-        }
+      // Check cache first
+      if (unitCache.has(type)) {
+        return unitCache.get(type)!;
       }
-      return { symbol: "", digits: 0 };
+
+      try {
+        const unitsAssignment =
+          await model.fragmentsGroup.getAllPropertiesOfType(
+            WEBIFC.IFCUNITASSIGNMENT
+          );
+        const units = unitsAssignment
+          ? Object.values(unitsAssignment)[0]?.Units || []
+          : [];
+
+        for (const handle of units) {
+          const unitAttrs = await model.fragmentsGroup.getProperties(
+            handle.value
+          );
+          if (unitAttrs && unitAttrs.UnitType?.value === UNIT_TYPE_MAP[type]) {
+            const prefix = unitAttrs.Prefix?.value || "";
+            const name = unitAttrs.Name?.value || "";
+            const unitKey = `${prefix}${name}`.toUpperCase();
+
+            const unitInfo = IFC_UNIT_SYMBOLS[unitKey] || {
+              symbol: "",
+              digits: 0,
+            };
+            unitCache.set(type, unitInfo);
+            return unitInfo;
+          }
+        }
+
+        unitCache.set(type, { symbol: "", digits: 0 });
+        return { symbol: "", digits: 0 };
+      } catch (error) {
+        console.error("Error fetching unit information:", error);
+        return { symbol: "", digits: 0 };
+      }
     },
-    []
+    [model, unitCache]
   );
 
   // Process property or quantity value with unit handling
   const processPropertyValue = useCallback(
     async (
-      model: FRAGS.FragmentsGroup,
       propAttrs: any,
       displayUnits: boolean = true
     ): Promise<Property | null> => {
@@ -84,7 +119,7 @@ export function useElementSelected() {
 
       if (displayUnits) {
         const typeName = propAttrs[valueKey].name;
-        const unitInfo = await getModelUnit(model, typeName);
+        const unitInfo = await getModelUnit(typeName);
         unit = unitInfo.symbol;
 
         if (typeof value === "number" && unitInfo.digits !== undefined) {
@@ -106,177 +141,204 @@ export function useElementSelected() {
   // Fetch property sets and quantity sets
   const getPropertyAndQuantitySets = useCallback(
     async (
-      model: FRAGS.FragmentsGroup,
-      components: OBC.Components,
       expressID: number
     ): Promise<{
       propertySets: PropertySet[];
       quantitySets: QuantitySet[];
     }> => {
+      if (!model || !components) return { propertySets: [], quantitySets: [] };
+
       const propertySets: PropertySet[] = [];
       const quantitySets: QuantitySet[] = [];
-      const indexer = components.get(OBC.IfcRelationsIndexer);
-
-      const definedByRelations = indexer.getEntityRelations(
-        model,
-        expressID,
-        "IsDefinedBy"
+      const indexer = components.get<OBC.IfcRelationsIndexer>(
+        OBC.IfcRelationsIndexer
       );
 
-      if (!definedByRelations) return { propertySets, quantitySets };
+      if (!indexer) {
+        console.error("IfcRelationsIndexer component not found.");
+        return { propertySets, quantitySets };
+      }
 
-      const relations = await Promise.all(
-        definedByRelations.map((relationId) => model.getProperties(relationId))
-      );
+      try {
+        const definedByRelations = indexer.getEntityRelations(
+          model.fragmentsGroup,
+          expressID,
+          "IsDefinedBy"
+        );
 
-      await Promise.all(
-        relations.map(async (relation) => {
-          if (!relation) return;
+        if (!definedByRelations) return { propertySets, quantitySets };
 
-          if (relation.type === WEBIFC.IFCPROPERTYSET) {
-            const properties = await Promise.all(
-              (relation.HasProperties || []).map(async (propHandle: any) => {
-                const propAttrs = await model.getProperties(propHandle.value);
-                return propAttrs
-                  ? await processPropertyValue(model, propAttrs)
-                  : null;
-              })
-            );
+        // Batch fetch all relations
+        const relations = await Promise.all(
+          definedByRelations.map((relationId: number) =>
+            model.fragmentsGroup.getProperties(relationId)
+          )
+        );
 
-            const validProperties = properties.filter(
-              (prop): prop is Property => prop !== null
-            );
+        // Process all relations concurrently
+        await Promise.all(
+          relations.map(async (relation) => {
+            if (!relation) return;
 
-            if (validProperties.length > 0) {
-              propertySets.push({
-                name: relation.Name?.value || "Unnamed PropertySet",
-                properties: validProperties,
-              });
+            if (relation.type === WEBIFC.IFCPROPERTYSET) {
+              const properties = await Promise.all(
+                (relation.HasProperties || []).map(async (propHandle: any) => {
+                  const propAttrs = await model.fragmentsGroup.getProperties(
+                    propHandle.value
+                  );
+                  return propAttrs
+                    ? await processPropertyValue(propAttrs)
+                    : null;
+                })
+              );
+
+              const validProperties = properties.filter(
+                (prop): prop is Property => prop !== null
+              );
+
+              if (validProperties.length > 0) {
+                propertySets.push({
+                  name: relation.Name?.value || "Unnamed PropertySet",
+                  properties: validProperties,
+                });
+              }
+            } else if (relation.type === WEBIFC.IFCELEMENTQUANTITY) {
+              const quantities = await Promise.all(
+                (relation.Quantities || []).map(async (qtoHandle: any) => {
+                  const propAttrs = await model.fragmentsGroup.getProperties(
+                    qtoHandle.value
+                  );
+                  return propAttrs
+                    ? await processPropertyValue(propAttrs)
+                    : null;
+                })
+              );
+
+              const validQuantities = quantities.filter(
+                (qto): qto is Property => qto !== null
+              );
+
+              if (validQuantities.length > 0) {
+                quantitySets.push({
+                  name: relation.Name?.value || "Unnamed QuantitySet",
+                  quantities: validQuantities,
+                });
+              }
             }
-          } else if (relation.type === WEBIFC.IFCELEMENTQUANTITY) {
-            const quantities = await Promise.all(
-              (relation.Quantities || []).map(async (qtoHandle: any) => {
-                const propAttrs = await model.getProperties(qtoHandle.value);
-                return propAttrs
-                  ? await processPropertyValue(model, propAttrs)
-                  : null;
-              })
-            );
+          })
+        );
 
-            const validQuantities = quantities.filter(
-              (qto): qto is Property => qto !== null
-            );
-
-            if (validQuantities.length > 0) {
-              quantitySets.push({
-                name: relation.Name?.value || "Unnamed QuantitySet",
-                quantities: validQuantities,
-              });
-            }
-          }
-        })
-      );
-
-      return { propertySets, quantitySets };
+        return { propertySets, quantitySets };
+      } catch (error) {
+        console.error("Error fetching property and quantity sets:", error);
+        return { propertySets: [], quantitySets: [] };
+      }
     },
-    [processPropertyValue]
+    [model, components, processPropertyValue]
   );
 
   // Fetch material data
   const getMaterialData = useCallback(
-    async (
-      model: FRAGS.FragmentsGroup,
-      components: OBC.Components,
-      expressID: number
-    ): Promise<MaterialData[]> => {
+    async (expressID: number): Promise<MaterialData[]> => {
+      if (!model || !components) return [];
+
       const materials: MaterialData[] = [];
-      const indexer = components.get(OBC.IfcRelationsIndexer);
-
-      const associateRelations = indexer.getEntityRelations(
-        model,
-        expressID,
-        "HasAssociations"
+      const indexer = components.get<OBC.IfcRelationsIndexer>(
+        OBC.IfcRelationsIndexer
       );
 
-      if (!associateRelations) return materials;
+      if (!indexer) {
+        console.error("IfcRelationsIndexer component not found.");
+        return materials;
+      }
 
-      const materialRelations = await Promise.all(
-        associateRelations.map((assocId) => model.getProperties(assocId))
-      );
+      try {
+        const associateRelations = indexer.getEntityRelations(
+          model.fragmentsGroup,
+          expressID,
+          "HasAssociations"
+        );
 
-      materialRelations.forEach((material) => {
-        if (!material) return;
+        if (!associateRelations) return materials;
 
-        switch (material.type) {
-          case WEBIFC.IFCMATERIALLAYERSETUSAGE:
-            const layers: MaterialLayer[] = (material.MaterialLayers || [])
-              .map((layerHandle: any) => ({
-                thickness: layerHandle.LayerThickness?.value || 0,
-                materialName: layerHandle.Material?.Name?.value || "",
-              }))
-              .filter((layer: MaterialLayer) => layer.materialName);
+        // Batch fetch all material relations
+        const materialRelations = await Promise.all(
+          associateRelations.map((assocId: number) =>
+            model.fragmentsGroup.getProperties(assocId)
+          )
+        );
 
-            if (layers.length > 0) {
+        // Process all material relations concurrently
+        materialRelations.forEach((material) => {
+          if (!material) return;
+
+          switch (material.type) {
+            case WEBIFC.IFCMATERIALLAYERSETUSAGE:
+              const layers: MaterialLayer[] = (material.MaterialLayers || [])
+                .map((layerHandle: any) => ({
+                  thickness: layerHandle.LayerThickness?.value || 0,
+                  materialName: layerHandle.Material?.Name?.value || "",
+                }))
+                .filter((layer: MaterialLayer) => layer.materialName);
+
+              if (layers.length > 0) {
+                materials.push({
+                  type: "layerset",
+                  layers,
+                });
+              }
+              break;
+
+            case WEBIFC.IFCMATERIALLIST:
+              const materialNames: string[] = (material.Materials || [])
+                .map((matHandle: any) => matHandle.Name?.value || "")
+                .filter((name: string) => name);
+
+              if (materialNames.length > 0) {
+                materials.push({
+                  type: "list",
+                  materials: materialNames,
+                });
+              }
+              break;
+
+            case WEBIFC.IFCMATERIAL:
               materials.push({
-                type: "layerset",
-                layers,
+                type: "single",
+                name: material.Name?.value || "Unnamed Material",
               });
-            }
-            break;
+              break;
 
-          case WEBIFC.IFCMATERIALLIST:
-            const materialNames: string[] = (material.Materials || [])
-              .map((matHandle: any) => matHandle.Name?.value || "")
-              .filter((name: string) => name);
+            default:
+              break;
+          }
+        });
 
-            if (materialNames.length > 0) {
-              materials.push({
-                type: "list",
-                materials: materialNames,
-              });
-            }
-            break;
-
-          case WEBIFC.IFCMATERIAL:
-            materials.push({
-              type: "single",
-              name: material.Name?.value || "Unnamed Material",
-            });
-            break;
-
-          default:
-            break;
-        }
-      });
-
-      return materials;
+        return materials;
+      } catch (error) {
+        console.error("Error fetching material data:", error);
+        return [];
+      }
     },
-    []
+    [model, components]
   );
 
-  // Process entity attributes recursively
+  // Process entity attributes (limited to one level of children to prevent performance issues)
   const processEntityAttributes = useCallback(
-    async (
-      components: OBC.Components,
-      model: FRAGS.FragmentsGroup,
-      expressID: number,
-      editable: boolean = false,
-      processedIds: Set<number> = new Set()
-    ): Promise<EntityNode | null> => {
-      if (processedIds.has(expressID)) return null; // Prevent circular references
-      processedIds.add(expressID);
+    async (expressID: number): Promise<EntityNode | null> => {
+      if (!model) return null;
 
-      const attributes = await model.getProperties(expressID);
-      if (!attributes) return null;
+      try {
+        const attributes = await model.fragmentsGroup.getProperties(expressID);
+        if (!attributes) return null;
 
-      const { type, Name } = attributes;
-      const ifcClass = OBC.IfcCategoryMap[type] || "Unknown";
-      const name = Name?.value || "Unnamed Element";
+        const { type, Name } = attributes;
+        const ifcClass = OBC.IfcCategoryMap[type] || "Unknown";
+        const name = Name?.value || "Unnamed Element";
 
-      // Process attributes
-      const elementAttributes: ElementAttributes = {};
-      await Promise.all(
-        Object.entries(attributes).map(async ([key, attr]) => {
+        // Process attributes
+        const elementAttributes: ElementAttributes = {};
+        Object.entries(attributes).forEach(([key, attr]) => {
           if (key.startsWith("_") || typeof attr === "function") return;
 
           if (attr && typeof attr === "object" && "value" in attr) {
@@ -284,68 +346,75 @@ export function useElementSelected() {
               value: attr.value,
               type: attr.type,
               valueType: attr.valueType,
+              unit: attr.unit, // Ensure 'unit' is part of the attribute if available
             };
           } else if (attr !== undefined && attr !== null) {
             elementAttributes[key] = { value: attr };
           }
-        })
-      );
+        });
 
-      // Fetch property sets and quantity sets
-      const { propertySets, quantitySets } = await getPropertyAndQuantitySets(
-        model,
-        components,
-        expressID
-      );
+        // Fetch property sets and quantity sets
+        const { propertySets, quantitySets } = await getPropertyAndQuantitySets(
+          expressID
+        );
 
-      // Fetch materials
-      const materials = await getMaterialData(model, components, expressID);
+        // Fetch materials
+        const materials = await getMaterialData(expressID);
 
-      // Fetch related children recursively
-      const indexer = components.get(OBC.IfcRelationsIndexer);
-      const relatedRelations = indexer.getEntityRelations(
-        model,
-        expressID,
-        "Decomposes" // Use a valid relation type
-      );
+        // Fetch children (limited to one level)
+        const indexer = components?.get<OBC.IfcRelationsIndexer>(
+          OBC.IfcRelationsIndexer
+        );
+        let children: EntityNode[] = [];
 
-      let children: EntityNode[] = [];
-      if (relatedRelations) {
-        const childElements = await Promise.all(
-          relatedRelations.map(async (childId) => {
-            if (typeof childId !== "number") return null; // Ensure childId is number
-            return await processEntityAttributes(
-              components,
-              model,
-              childId,
-              editable,
-              processedIds
+        if (indexer) {
+          const relatedRelations = indexer.getEntityRelations(
+            model.fragmentsGroup,
+            expressID,
+            "Decomposes"
+          );
+
+          if (relatedRelations && relatedRelations.length > 0) {
+            const childNodes = await Promise.all(
+              relatedRelations.map(async (childId: number) => {
+                if (typeof childId !== "number") return null;
+                return await processEntityAttributes(childId);
+              })
             );
-          })
-        );
-        children = childElements.filter(
-          (child): child is EntityNode => child !== null
-        );
-      }
 
-      return {
-        expressID,
-        name,
-        ifcClass,
-        attributes: elementAttributes,
-        psets: propertySets,
-        qsets: quantitySets,
-        materials,
-        children,
-      };
+            children = childNodes.filter(
+              (child): child is EntityNode => child !== null
+            );
+          }
+        }
+
+        return {
+          expressID,
+          name,
+          ifcClass,
+          attributes: elementAttributes,
+          psets: propertySets,
+          qsets: quantitySets,
+          materials,
+          children,
+        };
+      } catch (error) {
+        console.error("Error processing entity attributes:", error);
+        return null;
+      }
     },
-    [getMaterialData, getPropertyAndQuantitySets]
+    [model, components, getPropertyAndQuantitySets, getMaterialData]
   );
 
   // Selection Callback
   const onSelection = useCallback(
-    async (fragmentIdMap: FRAGS.FragmentIdMap) => {
+    async (fragmentIdMap: FragmentIdMap) => {
       console.log("Element selected", fragmentIdMap);
+
+      if (!model) {
+        setSelectedElement(null);
+        return;
+      }
 
       // Extract the first fragment ID
       const fragmentIdEntry = Object.values(fragmentIdMap)[0];
@@ -354,7 +423,8 @@ export function useElementSelected() {
         return;
       }
 
-      const fragmentId = fragmentIdEntry.values().next().value;
+      const iterator = fragmentIdEntry.values();
+      const fragmentId = iterator.next().value;
       if (typeof fragmentId !== "number") {
         console.error("Selected fragment ID is not a number:", fragmentId);
         setSelectedElement(null);
@@ -362,51 +432,22 @@ export function useElementSelected() {
       }
       console.log("Selected fragment ID:", fragmentId);
 
-      if (!components) {
-        console.error("Components are null.");
-        setSelectedElement(null);
-        return;
-      }
+      try {
+        // Process the selected element
+        const selectedElement = await processEntityAttributes(fragmentId);
 
-      // Process all models in parallel
-      const selectedElements = await Promise.all(
-        models.map(async (model) => {
-          const entityAttrs = await model.fragmentsGroup.getProperties(
-            fragmentId
-          );
-          if (!entityAttrs) return null;
-
-          return await processEntityAttributes(
-            components,
-            model.fragmentsGroup,
-            fragmentId
-          );
-        })
-      );
-
-      // Filter out null results
-      const validSelectedElements = selectedElements.filter(
-        (element): element is EntityNode => element !== null
-      );
-
-      if (validSelectedElements.length === 1) {
-        setSelectedElement(validSelectedElements[0]);
-      } else if (validSelectedElements.length > 1) {
-        // Handle multiple selected elements by creating a root node
-        setSelectedElement({
-          expressID: -1, // Special ID for root
-          name: "Multiple Selected Elements",
-          ifcClass: "Multiple",
-          children: validSelectedElements,
-          psets: [],
-          qsets: [],
-          materials: [],
-        });
-      } else {
+        // Handle multiple elements if necessary (assuming single model, this should be one)
+        if (selectedElement) {
+          setSelectedElement(selectedElement);
+        } else {
+          setSelectedElement(null);
+        }
+      } catch (error) {
+        console.error("Error during element selection:", error);
         setSelectedElement(null);
       }
     },
-    [components, models, processEntityAttributes, setSelectedElement]
+    [model, processEntityAttributes, setSelectedElement]
   );
 
   // Deselection Callback
