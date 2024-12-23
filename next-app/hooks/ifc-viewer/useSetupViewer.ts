@@ -121,7 +121,7 @@ export function useSetup(files: File[]) {
     // Culler
     const cullers = components.get(OBC.Cullers);
     const culler = cullers.create(world);
-    culler.config.threshold = 10;
+    culler.config.threshold = 5; // Lower threshold means more aggressive culling
 
     // Classifier
     const classifier = components.get(OBC.Classifier);
@@ -137,30 +137,30 @@ export function useSetup(files: File[]) {
       );
 
       // Save all ifc categories
-      classifier.byEntity(model);
-      const entities = classifier.list["entities"];
+      // classifier.byEntity(model);
+      // const entities = classifier.list["entities"];
 
-      const newCategories: Record<string, IFCCategory> = {
-        ...loadedCategories,
-      };
+      // const newCategories: Record<string, IFCCategory> = {
+      //   ...loadedCategories,
+      // };
 
-      // Iterate through each entity group
-      Object.entries(entities).forEach(([groupName, entityData]) => {
-        const categoryName = entityData.name;
+      // // Iterate through each entity group
+      // Object.entries(entities).forEach(([groupName, entityData]) => {
+      //   const categoryName = entityData.name;
 
-        // If category doesn't exist, create it
-        if (!newCategories[categoryName]) {
-          newCategories[categoryName] = {
-            name: categoryName,
-            fragIds: {},
-          };
-        }
+      //   // If category doesn't exist, create it
+      //   if (!newCategories[categoryName]) {
+      //     newCategories[categoryName] = {
+      //       name: categoryName,
+      //       fragIds: {},
+      //     };
+      //   }
 
-        // Update fragment IDs for this category
-        // The map property from entities contains the fragment IDs for the current model
-        newCategories[categoryName].fragIds[model.id] = entityData.map;
-      });
-      setCategories(newCategories);
+      //   // Update fragment IDs for this category
+      //   // The map property from entities contains the fragment IDs for the current model
+      //   newCategories[categoryName].fragIds[model.id] = entityData.map;
+      // });
+      // setCategories(newCategories);
     }
 
     culler.needsUpdate = true;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
@@ -7,11 +7,20 @@ import { FragmentsGroup } from "@thatopen/fragments";
 import { EntityNode } from "@/types/ifc";
 import { useIfcViewer } from "./useIfcViewer";
 
+// Define a type for the memoization cache
+type DecompositionCache = Map<number, EntityNode>;
+
 export function useIfcLoader() {
   const [loadingModel, setLoadingModel] = useState(false);
   const { addModel, setPlans } = useIfcViewer();
 
-  // Helper function to recursively build the decomposition tree
+  // Use a ref to store the cache to persist across re-renders without causing re-renders
+  const decompositionCache = useRef<DecompositionCache>(new Map());
+
+  /**
+   * Recursively builds the decomposition tree for a given expressID.
+   * Utilizes memoization to cache and reuse already processed nodes.
+   */
   const getDecompositionTree = useCallback(
     async (
       components: OBC.Components,
@@ -19,47 +28,84 @@ export function useIfcLoader() {
       expressID: number,
       inverseAttributes: OBC.InverseAttribute[]
     ): Promise<EntityNode | null> => {
+      // Check if the node is already cached
+      if (decompositionCache.current.has(expressID)) {
+        return decompositionCache.current.get(expressID)!;
+      }
+
       const indexer = components.get(OBC.IfcRelationsIndexer);
 
       const entityAttrs = await model.getProperties(expressID);
-
       if (!entityAttrs) return null;
 
       const { type, Name } = entityAttrs;
       const entityNode: EntityNode = {
         expressID,
-        ifcClass: OBC.IfcCategoryMap[type], // Store the IFC class here
+        ifcClass: OBC.IfcCategoryMap[type], // Store the IFC class
         name: Name?.value || "",
         children: [],
       };
 
-      for (const attrName of inverseAttributes) {
+      // Cache the current node to prevent redundant processing
+      decompositionCache.current.set(expressID, entityNode);
+
+      // Collect all relations for parallel processing
+      const relationPromises = inverseAttributes.map(async (attrName) => {
         const relations = indexer.getEntityRelations(
           model,
           expressID,
           attrName
         );
-        if (!relations) continue;
+        if (!relations) return [];
 
-        for (const id of relations) {
-          const childNode = await getDecompositionTree(
-            components,
-            model,
-            id,
-            inverseAttributes
-          );
+        // Group children by their IFC class
+        const entityGroups: Record<string, EntityNode[]> = {};
+
+        // Initiate parallel processing of child nodes
+        const childNodes = await Promise.all(
+          relations.map(async (childId) => {
+            const childNode = await getDecompositionTree(
+              components,
+              model,
+              childId,
+              inverseAttributes
+            );
+            return childNode;
+          })
+        );
+
+        // Organize children by their IFC class
+        childNodes.forEach((childNode) => {
           if (childNode) {
-            entityNode.children.push(childNode);
+            const entity = childNode.ifcClass;
+            if (!entityGroups[entity]) {
+              entityGroups[entity] = [];
+            }
+            entityGroups[entity].push(childNode);
           }
+        });
+
+        return entityGroups;
+      });
+
+      // Wait for all relation promises to resolve
+      const allEntityGroups = await Promise.all(relationPromises);
+
+      // Merge all grouped children into the current node
+      allEntityGroups.forEach((entityGroups) => {
+        for (const [entity, children] of Object.entries(entityGroups)) {
+          entityNode.children.push(...children);
         }
-      }
+      });
 
       return entityNode;
     },
     []
   );
 
-  // Function to compute the model tree starting from the root element
+  /**
+   * Computes the model tree starting from the root element.
+   */
   const computeModelTree = useCallback(
     async (
       components: OBC.Components,
@@ -80,6 +126,9 @@ export function useIfcLoader() {
         rootExpressID = projectValues[0].expressID;
       }
 
+      // Reset the cache before building a new tree
+      decompositionCache.current.clear();
+
       const tree = await getDecompositionTree(
         components,
         model,
@@ -92,6 +141,9 @@ export function useIfcLoader() {
     [getDecompositionTree]
   );
 
+  /**
+   * Loads an IFC file, processes it, and adds it to the scene.
+   */
   const loadIfcFile = useCallback(
     async (
       world: OBC.World | null,
@@ -100,8 +152,9 @@ export function useIfcLoader() {
       components: OBC.Components,
       culler?: OBC.MeshCullerRenderer
     ): Promise<FragmentsGroup> => {
-      if (!world || !fragmentIfcLoader)
+      if (!world || !fragmentIfcLoader) {
         throw new Error("World or loader not set");
+      }
 
       setLoadingModel(true);
       try {
@@ -112,15 +165,15 @@ export function useIfcLoader() {
 
         world.scene.three.add(model);
 
-        // Add instanced meshes to the culler
+        // Add instanced meshes to the culler if necessary
         const FILE_SIZE_THRESHOLD_FOR_CULLING = 100 * 1024 * 1024; // 100MB
         const fileSizeInBytes = file.size;
         if (culler && fileSizeInBytes > FILE_SIZE_THRESHOLD_FOR_CULLING) {
-          for (const child of model.children) {
+          model.traverse((child) => {
             if (child instanceof THREE.InstancedMesh) {
               culler.add(child);
             }
-          }
+          });
         }
 
         const fragmentBbox = components.get(OBC.BoundingBoxer);
@@ -130,7 +183,9 @@ export function useIfcLoader() {
         world.camera.controls?.fitToSphere(bbox, true);
 
         const indexer = components.get(OBC.IfcRelationsIndexer);
-        await indexer.process(model);
+        if (model.hasProperties) {
+          await indexer.process(model);
+        }
 
         // Define the inverse attributes to traverse
         const inverseAttributes: OBC.InverseAttribute[] = [
@@ -145,14 +200,16 @@ export function useIfcLoader() {
           inverseAttributes
         );
 
-        console.log("Model tree:", modelTree);
-        addModel({
-          fragmentsGroup: model,
-          name: file.name,
-          content: file,
-          tree: modelTree,
-        });
+        if (modelTree) {
+          addModel({
+            fragmentsGroup: model,
+            name: file.name,
+            content: file,
+            tree: modelTree,
+          });
+        }
 
+        // Generate floor plans
         const plans = components.get(OBCF.Plans);
         plans.world = world;
         try {
@@ -170,7 +227,7 @@ export function useIfcLoader() {
         setLoadingModel(false);
       }
     },
-    [addModel]
+    [addModel, computeModelTree, setPlans]
   );
 
   return { loadIfcFile, loadingModel };

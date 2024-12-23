@@ -7,9 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
-  SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import {
@@ -27,13 +25,14 @@ import {
 } from "./ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
-import { Property } from "@/types/ifc";
+import { Property, ElementAttributes } from "@/types/ifc";
 
-export function ElementDetailsSidebarRight({}: React.ComponentProps<
-  typeof Sidebar
->) {
+export function ElementDetailsSidebarRight({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const { selectedElement, setSelectedElement } = useIfcViewer();
 
+  // Helper function to format property values
   const formatPropertyValue = (prop: Property) => {
     if (prop.value === null || prop.value === undefined) return "N/A";
 
@@ -44,6 +43,7 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
     return prop.value.toString();
   };
 
+  // Helper function to render material content based on material type
   const renderMaterialContent = (material: any) => {
     switch (material.type) {
       case "layerset":
@@ -102,20 +102,55 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
     }
   };
 
+  // Helper function to render attributes
+  const renderAttributes = (attributes: ElementAttributes) => {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Attribute</TableHead>
+            <TableHead>Value</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Object.entries(attributes).map(([key, attr], index) => (
+            <TableRow key={`attribute-${key}-${index}`}>
+              <TableCell className="font-medium capitalize">{key}</TableCell>
+              <TableCell>
+                {attr.value === null || attr.value === undefined
+                  ? "N/A"
+                  : typeof attr.value === "boolean"
+                  ? attr.value
+                    ? "Yes"
+                    : "No"
+                  : typeof attr.value === "number"
+                  ? attr.unit
+                    ? `${attr.value} ${attr.unit}`
+                    : attr.value.toString()
+                  : attr.value.toString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
   return (
-    <Sidebar side="right">
+    <Sidebar side="right" {...props}>
       <SidebarHeader>
         <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-          {selectedElement?.name}
+          {selectedElement?.name || "No Element Selected"}
         </h4>
         <p className="text-sm text-muted-foreground">
-          {selectedElement?.ifcClass}
+          {selectedElement?.ifcClass || "Unknown Class"}
         </p>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            {selectedElement?.psets && selectedElement.psets.length > 0 ? (
+            {/* Property Sets Section */}
+            {selectedElement?.psets && selectedElement.psets.length > 0 && (
               <Collapsible
                 className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
                 defaultOpen
@@ -151,18 +186,16 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {Object.entries(pset.properties).map(
-                                  ([key, prop], propIndex) => (
-                                    <TableRow key={`${key}-${propIndex}`}>
-                                      <TableCell className="font-medium">
-                                        {prop.name}
-                                      </TableCell>
-                                      <TableCell>
-                                        {formatPropertyValue(prop)}
-                                      </TableCell>
-                                    </TableRow>
-                                  )
-                                )}
+                                {pset.properties.map((prop, propIndex) => (
+                                  <TableRow key={`${prop.name}-${propIndex}`}>
+                                    <TableCell className="font-medium">
+                                      {prop.name}
+                                    </TableCell>
+                                    <TableCell>
+                                      {formatPropertyValue(prop)}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
                               </TableBody>
                             </Table>
                           </div>
@@ -172,55 +205,126 @@ export function ElementDetailsSidebarRight({}: React.ComponentProps<
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            ) : (
-              <p className="text-sm text-muted-foreground p-4">
-                No property sets available for this element
-              </p>
             )}
+
+            {/* Quantity Sets Section */}
+            {selectedElement?.qsets && selectedElement.qsets.length > 0 && (
+              <Collapsible
+                className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                defaultOpen
+              >
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton>
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+                    Quantity Sets
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-2">
+                    {selectedElement.qsets.map((qset, index) => (
+                      <Collapsible
+                        key={`${qset.name}-${index}`}
+                        className="pl-3 group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                      >
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton>
+                            <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+                            {qset.name}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-2">
+                          <div className="rounded-md border">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-1/2">
+                                    Quantity
+                                  </TableHead>
+                                  <TableHead className="w-1/2">Value</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {qset.quantities.map((quantity, qtyIndex) => (
+                                  <TableRow
+                                    key={`${quantity.name}-${qtyIndex}`}
+                                  >
+                                    <TableCell className="font-medium">
+                                      {quantity.name}
+                                    </TableCell>
+                                    <TableCell>
+                                      {formatPropertyValue(quantity)}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Attributes Section */}
+            {selectedElement?.attributes &&
+              Object.keys(selectedElement.attributes).length > 0 && (
+                <Collapsible className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90">
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+                      Attributes
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="p-2 rounded-md border">
+                      {renderAttributes(selectedElement.attributes)}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
             {/* Materials Section */}
             {selectedElement?.materials &&
               selectedElement.materials.length > 0 && (
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <Collapsible
-                      className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-                      defaultOpen
-                    >
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
-                          <ChevronRight className="h-4 w-4 transition-transform duration-200" />
-                          Materials
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="space-y-2">
-                          {selectedElement.materials.map((material, index) => (
-                            <Collapsible
-                              key={`material-${index}`}
-                              className="pl-3 group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-                            >
-                              <CollapsibleTrigger asChild>
-                                <SidebarMenuButton>
-                                  <ChevronRight className="h-4 w-4 transition-transform duration-200" />
-                                  {material.type === "layerset"
-                                    ? "Material Layer Set"
-                                    : material.type === "list"
-                                    ? "Material List"
-                                    : "Material"}
-                                </SidebarMenuButton>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="p-2">
-                                <div className="rounded-md border">
-                                  {renderMaterialContent(material)}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </SidebarMenuItem>
-                </SidebarMenu>
+                <Collapsible
+                  className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                  defaultOpen
+                >
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+                      Materials
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2">
+                      {selectedElement.materials.map((material, index) => (
+                        <Collapsible
+                          key={`material-${index}`}
+                          className="pl-3 group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+                        >
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton>
+                              <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+                              {material.type === "layerset"
+                                ? "Material Layer Set"
+                                : material.type === "list"
+                                ? "Material List"
+                                : "Material"}
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="p-2">
+                            <div className="rounded-md border">
+                              {renderMaterialContent(material)}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
           </SidebarGroupContent>
         </SidebarGroup>
