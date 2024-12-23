@@ -32,7 +32,8 @@ gpt_4o = "gpt-4o"
 gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
 
-agent = Agent(model_name=claude_sonnet, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
+agent = Agent(model_name=claude_haiku, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
+
 
 @dataclass
 class ChatRequest:
@@ -40,10 +41,12 @@ class ChatRequest:
     thread_id: str
     ifc_session_id: str
 
+
 @app.post("/threads")
 async def threads_endpoint():
     thread_id = thread_manager.create_thread()
     return {"thread_id": thread_id}
+
 
 @app.get("/threads/{thread_id}")
 async def thread_endpoint(thread_id: str):
@@ -52,36 +55,32 @@ async def thread_endpoint(thread_id: str):
         return {"error": "Thread not found"}
     return thread.to_dict()
 
+
 @app.post("/ifc_sessions")
 async def ifc_sessions_endpoint(file: UploadFile = File(...)):
     # Create uploads directory if it doesn't exist
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
-    
+
     # Save the uploaded file
     file_path = os.path.join(upload_dir, file.filename)
     with open(file_path, "wb") as f:
         contents = await file.read()
         f.write(contents)
-    
+
     # Create IFC session with saved file
     session_id = ifc_session_manager.create_session(file_path)
     return {"session_id": session_id}
 
+
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
-    # headers = {
-    #     "Content-Type": "text/event-stream",
-    #     "Cache-Control": "no-cache",
-    #     "Connection": "keep-alive",
-    # }
-    print(f"User: {request.message}")
     # Add user message to thread
     user_message = Message(role="user", content=request.message)
     thread_manager.add_message(request.thread_id, message=user_message)
 
     def event_stream() -> Generator[str, None, None]:
-        for chunk in agent.chat(thread_id=request.thread_id, ifc_session_id=request.ifc_session_id):
+        for chunk in agent.chat(thread_id=request.thread_id, ifc_session_id=request.ifc_session_id, verbose=True):
             yield f"event: message\ndata: {json.dumps({'chunk': chunk})}\n\n"
 
         yield "event: DONE\ndata: {}\n\n"
@@ -92,6 +91,7 @@ async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
 @app.get("/")
 async def root():
     return {"message": "Welcome to AI Chat API"}
+
 
 if __name__ == "__main__":
     uvicorn.run(host="0.0.0.0", port=8000, reload=True, app="saron.server:app")

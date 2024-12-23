@@ -3,22 +3,23 @@ import subprocess
 import os
 from typing import get_type_hints
 
+
 def tool(func):
     # Extract the name and docstring
     name = func.__name__
-    description = inspect.getdoc(func) or ""
+    description = inspect.getdoc(func).strip() or ""
 
     # Extract parameters
     sig = inspect.signature(func)
     hints = get_type_hints(func)
     properties = {}
     required = []
-    
+
     # Skip 'self' parameter if this is an instance method
     parameters_to_check = sig.parameters.items()
-    if 'self' in sig.parameters:
-        parameters_to_check = [(name, param) for name, param in parameters_to_check if name != 'self']
-    
+    if "self" in sig.parameters:
+        parameters_to_check = [(name, param) for name, param in parameters_to_check if name != "self"]
+
     for param_name, param in parameters_to_check:
         prop = {"type": "string"}  # default type
         if param_name in hints:
@@ -48,13 +49,13 @@ def tool(func):
         def __init__(self, wrapper, instance):
             self.wrapper = wrapper
             self.instance = instance
-            
+
         def __call__(self, *args, **kwargs):
             return self.wrapper.execute(self.instance, *args, **kwargs)
-            
+
         def to_dict(self):
             return self.wrapper.to_dict()
-            
+
         def execute(self, *args, **kwargs):
             if len(args) == 1 and isinstance(args[0], dict):
                 return self.wrapper.execute(self.instance, **args[0])

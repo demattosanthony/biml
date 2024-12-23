@@ -9,6 +9,7 @@ import json
 
 from saron.tools import tool
 
+
 class IfcSession:
     def __init__(self, ifc_file_path: str):
         self.model = ifcopenshell.open(ifc_file_path)
@@ -177,7 +178,6 @@ class IfcSession:
 
     def _element_summary(self, element):
         return {"guid": element.GlobalId, "type": element.is_a(), "name": getattr(element, "Name", None)}
-    
 
     # ---------------------
     # Define tools for LLM
@@ -186,86 +186,74 @@ class IfcSession:
     def list_children_of_element(self, guid: str, ifc_type: str | None = None):
         """This tool acts as model browser for the ifc model. You can use it to navigate the element tree of the ifc model. Provide a guid of an element to list its children.
 
-Most elemenet trees beging with the project then a site, then a building, then floors, then spaces, then elements. You can use this tool to navigate the tree and explore the model.
+        Most elemenet trees beging with the project then a site, then a building, then floors, then spaces, then elements. You can use this tool to navigate the tree and explore the model.
 
-Provide a ifc_type to filter the children by type. For example, ifc_type=IfcWall will only return children that are walls. Only do this if you know the ifc type of the children you are looking for.
-"""
+        Provide a ifc_type to filter the children by type. For example, ifc_type=IfcWall will only return children that are walls. Only do this if you know the ifc type of the children you are looking for.
+        """
         return json.dumps(self.list_children(guid, ifc_type=ifc_type), indent=2)
-
 
     @tool
     def get_node_information(self, guid: str):
         """Returns detailed info about a node (element)."""
         return json.dumps(self.get_node_info(guid), indent=2)
 
-
     @tool
     def get_all_ifc_categories(self):
         """Returns a list of all the unqiue ifc categories in the model."""
         return json.dumps(self.list_categories(), indent=2)
-
 
     @tool
     def get_elements_of_a_category(self, ifc_category: str):
         """Returns a list of all the elements of a given ifc category."""
         return json.dumps(self.get_elements_of_category(ifc_category), indent=2)
 
-
     @tool
     def execute_python_code_against_model(self, code: str):
         """Execute python code against the model. This is a powerful tool that allows you to write custom code to interact with the model. Be careful with this tool as it can modify the model. This tool is useful when you need to do something that is not supported by the other tools.
 
-It leverages the exec function in python and these are the console locals provided:
+        It leverages the exec function in python and these are the console locals provided:
 
-{
-    "ifc": ifcopenshell.file, # instance of the loaded ifc file
-    "ifcopenshell": ifcopenshell, # ifcopenshell module
-    "api": ifcopenshell.api # ifcopenshell.api module
-}
+        {
+            "ifc": ifcopenshell.file, # instance of the loaded ifc file
+            "ifcopenshell": ifcopenshell, # ifcopenshell module
+            "api": ifcopenshell.api # ifcopenshell.api module
+        }
 
-For example:
+        For example:
 
-```
-import ifcopenshell.util.element
+        ```
+        import ifcopenshell.util.element
 
-for storey in model.by_type("IfcBuildingStorey"):
-    elements = ifcopenshell.util.element.get_decomposition(storey)
-    print(f"There are {len(elements)} located on storey {storey.Name}, they are:")
-    for element in elements:
-        print(element.Name)
-```
+        for storey in model.by_type("IfcBuildingStorey"):
+            elements = ifcopenshell.util.element.get_decomposition(storey)
+            print(f"There are {len(elements)} located on storey {storey.Name}, they are:")
+            for element in elements:
+                print(element.Name)
+        ```
 
-```
-import ifcopenshell.util.classification
-
-wall = model.by_type("IfcWall")[0]
-# Elements may have multiple classification references assigned
-references = ifcopenshell.util.classification.get_references(wall)
-for reference in references:
-    # A reference code might be Pr_30_59_99_02
-    print("The wall has a classification reference of", reference[1])
-    # A system might be Uniclass 2015
-    system = ifcopenshell.util.classification.get_classification(reference)
-    print("This reference is part of the system", system.Name)
-```
-
-The output of the code will be returned as a string. Output is captured from stdout and stderr. This means you need to use the print function to output anything.
-"""
+        The output of the code will be returned as a string. Output is captured from stdout and stderr. This means you need to use the print function to output anything.
+        """
         try:
             output = self.execute_code(code)
             return output
         except Exception as e:
             return f"An error occurred: {str(e)}"
 
-
     @tool
     def save_model(self):
         """Save the current state of the model."""
         self.save()
         return "Model saved successfully."
-    
+
+    @tool
+    def get_project_info(self):
+        """Get metadata about the IFC project."""
+        project = self.list_projects()[0]
+        return json.dumps(project, indent=2)
+
     def get_tools(self):
         return {
+            "get_project_info": self.get_project_info,
             "list_children": self.list_children_of_element,
             "get_node_info": self.get_node_information,
             "get_all_ifc_categories": self.get_all_ifc_categories,
@@ -273,7 +261,6 @@ The output of the code will be returned as a string. Output is captured from std
             "execute_python_code_against_model": self.execute_python_code_against_model,
             "save_model": self.save_model,
         }
-
 
 
 class IfcSessionManager:
