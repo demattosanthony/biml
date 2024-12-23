@@ -104,6 +104,7 @@ export function IFCViewerSidebar() {
                       key={index}
                       node={model.tree}
                       model={model.fragmentsGroup}
+                      level={0} // Initialize level at 0
                     />
                   )
               )}
@@ -203,7 +204,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
     e.stopPropagation();
     setIsHidden(!isHidden);
     const fragMap = model.getFragmentMap([node.expressID]);
-    hider?.set(isHidden, fragMap);
+    hider?.set(!isHidden, fragMap); // Fixed logic to set based on new state
   };
 
   return (
@@ -252,7 +253,15 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   );
 }
 
-function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
+function Tree({
+  node,
+  model,
+  level,
+}: {
+  node: EntityNode;
+  model: FragmentsGroup;
+  level: number; // Add level prop
+}) {
   const { ifcClass, name, children } = node;
   const { hider, highlighter } = useIfcViewer();
   const [isHidden, setIsHidden] = useState(false);
@@ -274,7 +283,7 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
     setIsHidden(!isHidden);
     const ids = getAllExpressIDs(node);
     const fragMap = model.getFragmentMap(ids);
-    hider?.set(isHidden, fragMap);
+    hider?.set(!isHidden, fragMap); // Fixed logic to set based on new state
   };
 
   // For leaf nodes (files)
@@ -286,7 +295,7 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   return (
     <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>
       <Collapsible
-        defaultOpen={false}
+        defaultOpen={level < 2} // Expand by default if level is 0 or 1
         className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
       >
         <CollapsibleTrigger asChild>
@@ -327,7 +336,12 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
           <CollapsibleContent>
             <div className="pl-3">
               {children.map((childNode, index) => (
-                <Tree key={index} node={childNode} model={model} />
+                <Tree
+                  key={index}
+                  node={childNode}
+                  model={model}
+                  level={level + 1} // Increment level for children
+                />
               ))}
             </div>
           </CollapsibleContent>
