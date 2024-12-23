@@ -1,8 +1,9 @@
-import { MessageRole, useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
-import useIfcViewerStore from "@/stores/useIfcViewerStore";
+import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
+import { MessageRole } from "@/types/message";
 
 export default function TerminalChat() {
   const {
@@ -14,7 +15,7 @@ export default function TerminalChat() {
     createThread,
     resetChat,
   } = useChat();
-  const setAiMode = useIfcViewerStore((state) => state.actions.setAiMode);
+  const { setAiMode } = useIfcViewer();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

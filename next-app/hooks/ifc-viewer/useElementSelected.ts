@@ -1,14 +1,15 @@
-import useIfcViewerStore, {
+import { useCallback } from "react";
+import * as OBC from "@thatopen/components";
+import * as WEBIFC from "web-ifc";
+import * as FRAGS from "@thatopen/fragments";
+import {
   MaterialData,
   MaterialLayer,
   Property,
   PropertySet,
   QuantitySet,
-} from "@/stores/useIfcViewerStore";
-import { useCallback } from "react";
-import * as OBC from "@thatopen/components";
-import * as WEBIFC from "web-ifc";
-import * as FRAGS from "@thatopen/fragments";
+} from "@/types/ifc";
+import { useIfcViewer } from "./useIfcViewer";
 
 interface ElementAttributes {
   [key: string]: {
@@ -19,12 +20,8 @@ interface ElementAttributes {
 }
 
 export function useElementSelected() {
-  const highlighter = useIfcViewerStore((state) => state.highlighter);
-  const models = useIfcViewerStore((state) => state.models);
-  const setSelectedElement = useIfcViewerStore(
-    (state) => state.actions.setSelectedElement
-  );
-  const components = useIfcViewerStore((state) => state.components);
+  const { highlighter, models, components, setSelectedElement } =
+    useIfcViewer();
 
   const onSelection = useCallback(
     async (fragmentIdMap: FRAGS.FragmentIdMap) => {

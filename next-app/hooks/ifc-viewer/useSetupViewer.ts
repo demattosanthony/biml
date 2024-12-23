@@ -3,35 +3,34 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import useIfcViewerStore, { IFCCategory } from "@/stores/useIfcViewerStore";
 import { useIfcLoader } from "./useIfcLoader";
 import { useElementSelected } from "./useElementSelected";
 import { useMouseControls } from "./useMouseControls";
 import Stats from "stats.js";
 import { OrientationGizmo } from "@/components/oritentation-gizmo";
+import { IFCCategory } from "@/types/ifc";
+import { useIfcViewer } from "./useIfcViewer";
 
 // This hook sets up the IFC viewer with the given files
 // It loads the world, fragments, highlighter, culler, and other components
 // It sets up the callback events for element selection
 export function useSetup(files: File[]) {
   const { loadIfcFile } = useIfcLoader();
-  const setWorld = useIfcViewerStore((state) => state.actions.setWorld);
-  const setFragments = useIfcViewerStore((state) => state.actions.setFragments);
-  const setHighlighter = useIfcViewerStore(
-    (state) => state.actions.setHighlighter
-  );
-  const setHider = useIfcViewerStore((state) => state.actions.setHider);
-  const setLoadingModels = useIfcViewerStore(
-    (state) => state.actions.setLoadingModels
-  );
-  const highlighter = useIfcViewerStore((state) => state.highlighter);
-  const setComponents = useIfcViewerStore(
-    (state) => state.actions.setComponents
-  );
-  const setCamera = useIfcViewerStore((state) => state.actions.setCamera);
-  const setCategories = useIfcViewerStore(
-    (state) => state.actions.setCategories
-  );
+  const {
+    setWorld,
+    setFragments,
+    setHighlighter,
+    setHider,
+    setLoadingModels,
+    highlighter,
+    setComponents,
+    setCamera,
+    setCategories,
+    categories: loadedCategories,
+    fragments,
+    clearModels,
+  } = useIfcViewer();
+
   const { onSelection, onDeselection } = useElementSelected();
 
   const { handleMouseDown, handleMouseUp, handleMouseMove } =
@@ -141,8 +140,6 @@ export function useSetup(files: File[]) {
       classifier.byEntity(model);
       const entities = classifier.list["entities"];
 
-      const loadedCategories = useIfcViewerStore.getState().categories;
-
       const newCategories: Record<string, IFCCategory> = {
         ...loadedCategories,
       };
@@ -228,12 +225,10 @@ export function useSetup(files: File[]) {
         world.camera?.dispose();
       }
 
-      const fragments = useIfcViewerStore.getState().fragments;
       if (fragments) {
         fragments.dispose();
       }
 
-      const highlighter = useIfcViewerStore.getState().highlighter;
       if (highlighter) {
         highlighter.events.select?.onHighlight.remove(onSelection);
         highlighter.events.select?.onClear.remove(onDeselection);
@@ -241,15 +236,13 @@ export function useSetup(files: File[]) {
       }
 
       // Clear the store
-      useIfcViewerStore.getState().actions.clearModels();
+      clearModels();
     };
   }, [files, setupWorld]);
 }
 
 export function useCameraFocus() {
-  const world = useIfcViewerStore((state) => state.world);
-  const models = useIfcViewerStore((state) => state.models);
-  const components = useIfcViewerStore((state) => state.components);
+  const { world, models, components } = useIfcViewer();
 
   const focusOnModels = useCallback(() => {
     if (!world || !components || models.length === 0) return;

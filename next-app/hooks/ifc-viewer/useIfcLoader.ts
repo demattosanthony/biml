@@ -3,13 +3,13 @@ import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
 import * as THREE from "three";
-import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
+import { EntityNode } from "@/types/ifc";
+import { useIfcViewer } from "./useIfcViewer";
 
 export function useIfcLoader() {
   const [loadingModel, setLoadingModel] = useState(false);
-  const addModel = useIfcViewerStore((state) => state.actions.addModel);
-  const setPlans = useIfcViewerStore((state) => state.actions.setPlans);
+  const { addModel, setPlans } = useIfcViewer();
 
   // Helper function to recursively build the decomposition tree
   const getDecompositionTree = useCallback(

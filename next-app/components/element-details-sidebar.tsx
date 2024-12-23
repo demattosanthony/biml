@@ -20,21 +20,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import useIfcViewerStore, { Property } from "@/stores/useIfcViewerStore";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { ChevronRight } from "lucide-react";
+import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
+import { Property } from "@/types/ifc";
 
 export function ElementDetailsSidebarRight({}: React.ComponentProps<
   typeof Sidebar
 >) {
-  const selectedElement = useIfcViewerStore((state) => state.selectedElement);
-  const setSelectedElement = useIfcViewerStore(
-    (state) => state.actions.setSelectedElement
-  );
+  const { selectedElement, setSelectedElement } = useIfcViewer();
 
   const formatPropertyValue = (prop: Property) => {
     if (prop.value === null || prop.value === undefined) return "N/A";

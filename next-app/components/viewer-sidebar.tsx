@@ -26,7 +26,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import useIfcViewerStore, { EntityNode } from "@/stores/useIfcViewerStore";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Button } from "./ui/button";
 import {
@@ -37,14 +36,11 @@ import {
 } from "./ui/dropdown-menu";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
+import { EntityNode } from "@/types/ifc";
 
 export function IFCViewerSidebar() {
-  const models = useIfcViewerStore((state) => state.models);
-  const setModels = useIfcViewerStore(
-    (state) => state.actions.setUploadedFiles
-  );
-  const highlighter = useIfcViewerStore((state) => state.highlighter);
-  const categories = useIfcViewerStore((state) => state.categories);
+  const { models, setUploadedFiles, highlighter, categories } = useIfcViewer();
   const { theme, systemTheme } = useTheme();
   const realTheme = theme === "system" ? systemTheme : theme;
 
@@ -82,7 +78,7 @@ export function IFCViewerSidebar() {
                 <DropdownMenuItem
                   className="gap-2 p-2"
                   onClick={() => {
-                    setModels([]);
+                    setUploadedFiles([]);
                   }}
                 >
                   <div className="font-medium text-muted-foreground">
@@ -162,7 +158,7 @@ export function IFCViewerSidebar() {
 }
 
 function FloorPlans() {
-  const plans = useIfcViewerStore((state) => state.plans);
+  const { plans } = useIfcViewer();
   const [activeFloor, setActiveFloor] = useState<string | null>(null);
 
   return (
@@ -199,8 +195,7 @@ function FloorPlans() {
 
 function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name } = node;
-  const highlighter = useIfcViewerStore((state) => state.highlighter);
-  const hider = useIfcViewerStore((state) => state.hider);
+  const { hider, highlighter } = useIfcViewer();
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -259,8 +254,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 
 function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name, children } = node;
-  const hider = useIfcViewerStore((state) => state.hider);
-  const highlighter = useIfcViewerStore((state) => state.highlighter);
+  const { hider, highlighter } = useIfcViewer();
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 
