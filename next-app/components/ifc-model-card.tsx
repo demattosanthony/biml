@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
 import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
-import { TypographyH3 } from "./typography";
+import { TypographyH3 } from "./typography-new";
 
 export default function IFCModelCard() {
   const { models, plans, hider, culler } = useIfcViewer();
