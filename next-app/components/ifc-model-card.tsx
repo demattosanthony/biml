@@ -4,9 +4,9 @@ import { FileBox } from "lucide-react";
 import * as FRAGS from "@thatopen/fragments";
 import { useState } from "react";
 import { Switch } from "./ui/switch";
-import { TypographyH3 } from "./typography";
 import { Button } from "./ui/button";
 import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
+import { TypographyH3 } from "./typography";
 
 export default function IFCModelCard() {
   const { models, plans, hider, culler } = useIfcViewer();
