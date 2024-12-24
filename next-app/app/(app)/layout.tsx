@@ -9,11 +9,11 @@ export default function RootLayout({
 }>) {
   return (
     <SidebarProvider name="main-app-sidebar">
-      <AppSidebar />
+      {/* <AppSidebar />
       <SidebarInset>
-        <Header />
-        {children}
-      </SidebarInset>
+        <Header /> */}
+      {children}
+      {/* </SidebarInset> */}
     </SidebarProvider>
   );
 }

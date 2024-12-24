@@ -93,6 +93,7 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
         file.name.endsWith(".ifc")
       );
       setFiles((prev) => [...prev, ...validFiles]);
+      onUpload(validFiles);
     }
   }, []);
 
@@ -158,10 +159,10 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
 
             <div className="space-y-1 mt-2">
               <h2 className="text-xl text-muted-foreground font-normal sm:text-2xl">
-                Next Generation BIM Platform
+                Next Generation BIM Software
               </h2>
               <p className="text-sm text-muted-foreground">
-                View and analyze your BIM files in seconds
+                View, edit, collaborate on IFC files in real-time
               </p>
             </div>
           </div>
@@ -177,13 +178,13 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
               aria-label="Upload IFC file"
             />
 
-            <DropZone
+            {/* <DropZone
               isDragging={isDragging}
               onDragOver={handlers.dragOver}
               onDragLeave={handlers.dragLeave}
               onDrop={handlers.drop}
               onClick={() => document.getElementById("file-upload")?.click()}
-            />
+            />  */}
 
             <div className="flex-1 max-h-[400px] overflow-y-auto">
               {files.map((file, index) => (
@@ -197,8 +198,12 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
             </div>
 
             <div className="flex flex-col items-center justify-center mt-4 gap-3">
-              <Button size="lg" className="w-[175px]" onClick={handlers.upload}>
-                Launch Viewer
+              <Button
+                size="lg"
+                className="w-[175px]"
+                onClick={() => document.getElementById("file-upload")?.click()}
+              >
+                Open IFC File
               </Button>
               <Button
                 size="lg"

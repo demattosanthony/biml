@@ -1,18 +1,27 @@
 version: "3.6"
 services:
-  blender:
-    image: lscr.io/linuxserver/blender:latest
-    container_name: blender
+  api:
+    build:
+      context: ./saron
+      dockerfile: Dockerfile
+    container_name: saron
     ports:
-      - 3000:3000
-      - 3001:3001
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-    restart: unless-stopped
-    volumes:
-      - /Users/anthonydemattos/Library/Application Support/Blender/4.3:/config
+      - 8000:8000
+    platform: linux/amd64
+
+  # blender:
+  #   image: lscr.io/linuxserver/blender:latest
+  #   container_name: blender
+  #   ports:
+  #     - 3000:3000
+  #     - 3001:3001
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /Users/anthonydemattos/Library/Application Support/Blender/4.3:/config
 
   # pg:
   #   build:
