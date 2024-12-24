@@ -5,14 +5,11 @@ import * as FRAGS from "@thatopen/fragments";
 import { useState } from "react";
 import { Switch } from "./ui/switch";
 import { TypographyH3 } from "./typography";
-import useIfcViewerStore from "@/stores/useIfcViewerStore";
 import { Button } from "./ui/button";
+import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 
 export default function IFCModelCard() {
-  const models = useIfcViewerStore((state) => state.models);
-  const hider = useIfcViewerStore((state) => state.hider);
-  const plans = useIfcViewerStore((state) => state.plans);
-  const culler = useIfcViewerStore((state) => state.culler);
+  const { models, plans, hider, culler } = useIfcViewer();
 
   const [visibility, setVisibility] = useState<{ [key: number]: boolean }>({});
 

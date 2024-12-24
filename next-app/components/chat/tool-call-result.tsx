@@ -1,4 +1,4 @@
-import { ToolCall } from "@/hooks/useChat";
+import { ToolCall } from "@/types/message";
 import { Check, Loader2 } from "lucide-react";
 
 export default function ToolCallResultComponent({

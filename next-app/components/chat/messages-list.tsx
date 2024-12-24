@@ -1,9 +1,10 @@
 "use client";
-import { MessageRole, useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 import { Bot, FileBox, User } from "lucide-react";
 import MarkdownViewer from "../markdown-viewer";
 import { Button } from "../ui/button";
 import { useEffect } from "react";
+import { MessageRole } from "@/types/message";
 
 type ContentPart = {
   type: "text" | "ifc" | "partial-ifc";

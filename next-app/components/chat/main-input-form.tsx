@@ -2,14 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageRole, useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function MainInputForm() {
   const {
-    generateText,
+    // generateText,
     // initializeChat,
     addMessage,
   } = useChat();
@@ -38,22 +38,22 @@ export default function MainInputForm() {
     e.preventDefault();
     router.push(`/chat`);
 
-    addMessage({
-      role: MessageRole.user,
-      content: input,
-    });
+    // addMessage({
+    //   role: MessageRole.user,
+    //   content: input,
+    // });
 
-    addMessage({
-      role: MessageRole.assistant,
-      content: "",
-    });
+    // addMessage({
+    //   role: MessageRole.assistant,
+    //   content: "",
+    // });
 
-    await generateText([
-      {
-        role: MessageRole.user,
-        content: input,
-      },
-    ]);
+    // await generateText([
+    //   {
+    //     role: MessageRole.user,
+    //     content: input,
+    //   },
+    // ]);
 
     setInput("");
   };
