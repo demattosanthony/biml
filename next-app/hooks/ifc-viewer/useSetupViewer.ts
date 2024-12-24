@@ -213,7 +213,7 @@ export function useSetup(files: File[]) {
 
   // Run setup on component mount
   useEffect(() => {
-    setupWorld();
+    // setupWorld();
 
     return () => {
       console.log("Cleanup");
@@ -237,8 +237,21 @@ export function useSetup(files: File[]) {
 
       // Clear the store
       clearModels();
+
+      // reset states
+      setWorld(null);
+      setFragments(null);
+      setHighlighter(null);
+      setHider(null);
+      setComponents(null);
+      setCamera(null);
+      setCategories({});
+      componentsRef.current = null;
+      worldRef.current = null;
     };
-  }, [files, setupWorld]);
+  }, [files]);
+
+  return { setupWorld };
 }
 
 export function useCameraFocus() {

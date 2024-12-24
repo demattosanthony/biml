@@ -1,4 +1,3 @@
-import { ChatMessage } from "@/hooks/useChat";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 class ApiClient {
   private baseUrl: string;
@@ -7,8 +6,8 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  async createThread(): Promise<string> {
-    const url = `${this.baseUrl}/threads`;
+  async createThread(ifc_session_id: string): Promise<string> {
+    const url = `${this.baseUrl}/threads/${ifc_session_id}`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -67,8 +66,7 @@ class ApiClient {
 
   async chat(
     message: string,
-    threadId: string,
-    ifcSessionId: string
+    threadId: string
   ): Promise<
     (
       onMessage: (message: string) => void,
@@ -93,7 +91,6 @@ class ApiClient {
           body: JSON.stringify({
             message: message,
             thread_id: threadId,
-            ifc_session_id: ifcSessionId,
           }),
           signal,
           onmessage: (event) => {

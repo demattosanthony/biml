@@ -42,7 +42,7 @@ export function useChat() {
 
   const createThread = async () => {
     if (threadId) return;
-    const _threadId = await api.createThread();
+    const _threadId = await api.createThread(ifcSessionId || "");
     setThreadId(_threadId);
     console.log("Thread created:", _threadId);
   };
@@ -93,7 +93,7 @@ export function useChat() {
     });
 
     try {
-      const gen = await api.chat(input, threadId, ifcSessionId);
+      const gen = await api.chat(input, threadId);
       // Clear the input field
       setInput("");
 
@@ -128,8 +128,10 @@ export function useChat() {
     setMessages([]);
     setBuffer("");
     setInput("");
-    const _threadId = await api.createThread();
-    setThreadId(_threadId);
+    if (ifcSessionId) {
+      const _threadId = await api.createThread(ifcSessionId);
+      setThreadId(_threadId);
+    }
   };
 
   return {

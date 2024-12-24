@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Dict, Optional, List, Any
 import uuid
 
+from .ifc_session import IfcSessionManager
+
 
 @dataclass
 class ToolCall:
@@ -54,11 +56,11 @@ class Message:
 
 @dataclass
 class Thread:
+    session_id: str 
     thread_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     messages: List[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
-    session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-
+    
     def add_message(self, message: Message) -> None:
         self.messages.append(message)
 
@@ -68,18 +70,22 @@ class Thread:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "thread_id": self.thread_id,
-            "created_at": self.created_at,
+            "created_at": self.created_at.isoformat(),
             "session_id": self.session_id,
             "messages": [msg.to_dict() for msg in self.messages],
         }
 
 
-class ThreadManager:
-    def __init__(self):
-        self._threads: Dict[str, Thread] = {}
 
-    def create_thread(self) -> str:
-        thread = Thread()
+class ThreadManager:
+    def __init__(self, session_manager: IfcSessionManager):
+        self._threads: Dict[str, Thread] = {}
+        self._session_manager = session_manager 
+
+    def create_thread(self, session_id: str) -> str:
+        if not self._session_manager.get_session(session_id):
+            raise ValueError(f"Session {session_id} does not exist")
+        thread = Thread(session_id=session_id)
         self._threads[thread.thread_id] = thread
         return thread.thread_id
 
@@ -97,3 +103,8 @@ class ThreadManager:
         if not thread:
             raise ValueError(f"Thread {thread_id} not found")
         return thread.messages
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "threads": [thread.to_dict() for thread in self._threads.values()]
+        }

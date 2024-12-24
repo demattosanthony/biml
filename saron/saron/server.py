@@ -21,8 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-thread_manager = ThreadManager()
+
 ifc_session_manager = IfcSessionManager()
+thread_manager = ThreadManager(session_manager=ifc_session_manager)
 
 claude_haiku = "claude-3-5-haiku-20241022"
 claude_sonnet = "claude-3-5-sonnet-20241022"
@@ -39,12 +40,11 @@ agent = Agent(model_name=claude_haiku, thread_manager=thread_manager, ifc_sessio
 class ChatRequest:
     message: str
     thread_id: str
-    ifc_session_id: str
 
 
-@app.post("/threads")
-async def threads_endpoint():
-    thread_id = thread_manager.create_thread()
+@app.post("/threads/{ifc_session_id}")  
+async def threads_endpoint(ifc_session_id: str):
+    thread_id = thread_manager.create_thread(session_id=ifc_session_id)
     return {"thread_id": thread_id}
 
 
@@ -80,7 +80,7 @@ async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
     thread_manager.add_message(request.thread_id, message=user_message)
 
     def event_stream() -> Generator[str, None, None]:
-        for chunk in agent.chat(thread_id=request.thread_id, ifc_session_id=request.ifc_session_id, verbose=True):
+        for chunk in agent.chat(thread_id=request.thread_id, verbose=True):
             yield f"event: message\ndata: {json.dumps({'chunk': chunk})}\n\n"
 
         yield "event: DONE\ndata: {}\n\n"

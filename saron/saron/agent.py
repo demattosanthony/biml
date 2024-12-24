@@ -11,9 +11,9 @@ class Agent:
         self.thread_manager = thread_manager
         self.ifc_session_manager = ifc_session_manager
 
-    def chat(self, thread_id: str, ifc_session_id: str, verbose=False) -> Generator[str, None, None]:
-        ifc_session = self.ifc_session_manager.get_session(ifc_session_id)
+    def chat(self, thread_id: str, verbose=False) -> Generator[str, None, None]:
         thread = self.thread_manager.get_thread(thread_id)
+        ifc_session = self.ifc_session_manager.get_session(session_id=thread.session_id)
         if not thread or not ifc_session:
             raise ValueError(f"Thread {thread_id} not found")
 
