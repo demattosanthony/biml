@@ -4,43 +4,74 @@ import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
 import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { MessageRole, ToolCall } from "@/types/message";
-
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+  Loader2,
+  CheckCircle,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { useState } from "react";
 
-function ToolCallAccordion({ toolCalls }: { toolCalls: ToolCall[] }) {
+export function ToolStateDisplay({ toolData }: { toolData: ToolCall }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getStatusIcon = () => {
+    switch (toolData.status) {
+      case "pending":
+        return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+      case "completed":
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "failed":
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <Accordion type="single" collapsible className="w-min">
-      {toolCalls.map((toolCall, idx) => (
-        <AccordionItem key={idx} value={`toolCall-${idx}`}>
-          <AccordionTrigger>
-            <div className="flex items-center space-x-2 ">
-              <span>{toolCall.function.name.toUpperCase()}</span>
+    <div className="w-full max-w-sm rounded-md">
+      <button
+        className="w-full flex items-center justify-between p-2 text-sm"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{toolData.function.name || "No tool selected"}</span>
+        <div className="flex items-center space-x-2">
+          {getStatusIcon()}
+          {isOpen ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </div>
+      </button>
+      {isOpen && (
+        <div className="p-2 text-sm border-t border-gray-200">
+          {toolData.function.arguments && (
+            <div className="mb-2">
+              <strong>Parameters:</strong>
+              <pre className="mt-1 text-xs overflow-x-auto">
+                {toolData.function.arguments}
+              </pre>
             </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="p-4">
-              <p>
-                <strong>Arguments:</strong>
-                <code>{toolCall.function.arguments}</code>
-              </p>
-              {toolCall.status === "completed" && (
-                <div>
-                  <p>
-                    <strong>Result:</strong>
-                  </p>
-                  <pre className="bg-muted p-2 rounded">{toolCall.result}</pre>
-                </div>
-              )}
+          )}
+          {toolData.result && (
+            <div className="mb-2">
+              <strong>Response:</strong>
+              <pre className="mt-1 text-xs overflow-x-auto">
+                {toolData.result}
+              </pre>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+          )}
+          {/* {toolData. && (
+            <div>
+              <strong>Error:</strong>
+              <p className="mt-1 text-xs text-red-500">{toolData.error}</p>
+            </div>
+          )} */}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -86,7 +117,11 @@ export default function TerminalChat() {
               <div key={i} className="whitespace-pre-wrap mb-2 text-foreground">
                 {/* If there are any tool calls, show them underneath */}
                 {message.toolCalls && message.toolCalls.length > 0 && (
-                  <ToolCallAccordion toolCalls={message.toolCalls} />
+                  <div className="mb-2">
+                    {message.toolCalls.map((toolCall, j) => (
+                      <ToolStateDisplay key={j} toolData={toolCall} />
+                    ))}
+                  </div>
                 )}
 
                 {/* The main assistant text */}
