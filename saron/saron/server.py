@@ -33,7 +33,7 @@ gpt_4o = "gpt-4o"
 gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
 
-agent = Agent(model_name=claude_haiku, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
+agent = Agent(model_name=claude_sonnet, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
 
 
 @dataclass

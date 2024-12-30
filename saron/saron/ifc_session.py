@@ -254,10 +254,10 @@ class IfcSession:
     def get_tools(self):
         return {
             "get_project_info": self.get_project_info,
-            "list_children": self.list_children_of_element,
-            "get_node_info": self.get_node_information,
+            "list_children_of_element": self.list_children_of_element,
+            "get_node_information": self.get_node_information,
             "get_all_ifc_categories": self.get_all_ifc_categories,
-            "get_elements_of_category": self.get_elements_of_a_category,
+            "get_elements_of_a_category": self.get_elements_of_a_category,
             "execute_python_code_against_model": self.execute_python_code_against_model,
             "save_model": self.save_model,
         }

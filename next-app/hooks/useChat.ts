@@ -41,7 +41,6 @@ export function useChat() {
   };
 
   const createThread = async () => {
-    if (threadId) return;
     const _threadId = await api.createThread(ifcSessionId || "");
     setThreadId(_threadId);
     console.log("Thread created:", _threadId);
@@ -137,6 +136,7 @@ export function useChat() {
   return {
     input,
     setInput,
+    ifcSessionId,
     messages,
     handleAbort,
     generating,

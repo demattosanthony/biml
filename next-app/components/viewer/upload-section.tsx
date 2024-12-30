@@ -203,7 +203,7 @@ export const UploadSection = ({ onUpload }: UploadSectionProps) => {
                 className="w-[175px]"
                 onClick={() => document.getElementById("file-upload")?.click()}
               >
-                Open IFC File
+                Load IFC Model
               </Button>
               <Button
                 size="lg"

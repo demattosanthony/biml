@@ -85,8 +85,13 @@ class ThreadManager:
     def create_thread(self, session_id: str) -> str:
         if not self._session_manager.get_session(session_id):
             raise ValueError(f"Session {session_id} does not exist")
+        session = self._session_manager.get_session(session_id)
+        project = session.list_projects()[0]
+        prompt =  f"""IFC Project info:
+        {project}""" 
         thread = Thread(session_id=session_id)
         self._threads[thread.thread_id] = thread
+        thread.add_message(Message(role="user", content=prompt))
         return thread.thread_id
 
     def get_thread(self, thread_id: str) -> Optional[Thread]:

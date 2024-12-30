@@ -14,6 +14,7 @@ export default function TerminalChat() {
     generating,
     createThread,
     resetChat,
+    ifcSessionId,
   } = useChat();
   const { setAiMode } = useIfcViewer();
 
@@ -26,7 +27,7 @@ export default function TerminalChat() {
 
   useEffect(() => {
     createThread();
-  }, []);
+  }, [ifcSessionId]);
 
   return (
     <div className="border-t border-muted h-full w-full flex">
