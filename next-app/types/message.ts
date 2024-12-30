@@ -1,27 +1,22 @@
-// Enum to define the roles in the chat
 export enum MessageRole {
   system = "system",
   user = "user",
   assistant = "assistant",
 }
 
-// Type definition for a chat message
 export type ChatMessage = {
   role: MessageRole;
   content: string | null;
   id?: string;
-  ifcFileContent?: string;
-  isStreamingIfc?: boolean;
+  toolCalls?: ToolCall[];
 };
 
-export type TestToolResult = Array<{
-  content: string;
-  metadata: Record<string, any>;
-  id: number;
-}>;
+export type ExecutePythonCodeResilt = {
+  output: string;
+};
 
 type FunctionResultMap = {
-  testTool: TestToolResult;
+  execute_python_code_against_model: ExecutePythonCodeResilt;
 };
 
 export type ToolCall = {
@@ -30,6 +25,6 @@ export type ToolCall = {
     type: "function";
     function: { name: K; arguments: string };
     status: "pending" | "completed" | "failed";
-    result?: FunctionResultMap[K];
+    result?: string;
   };
 }[keyof FunctionResultMap];

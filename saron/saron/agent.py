@@ -34,13 +34,13 @@ class Agent:
                     if verbose:
                         print(content_delta, flush=True, end="")
                     current_content += content_delta
-                    yield content_delta
+                    yield "event: message\ndata: " + json.dumps({"chunk": content_delta}) + "\n\n"
 
                 model_response = stream_chunk_builder(chunks)
                 response_message = model_response.choices[0].message
 
                 # Create tool calls list if they exist
-                tool_calls = []
+                tool_calls: list[ToolCall] = []
                 if hasattr(response_message, "tool_calls") and response_message.tool_calls:
                     for tc in response_message.tool_calls:
                         try:
@@ -60,8 +60,9 @@ class Agent:
                             print(f"Tool Call: {tool_call.name}")
                         if verbose:
                             print(f"Arguments: {tool_call.arguments}")
+                        yield "event: tool_selected\ndata: " + json.dumps({"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}) + "\n\n"
                         result = self._execute_tool_call(tool_call, tools=tools)
-                        # yield f"\nTool Result: {result}\n"
+                        yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": result}) + "\n\n"
                         if verbose:
                             print(f"Tool Result: {result}")
 
@@ -76,8 +77,8 @@ class Agent:
             except Exception as e:
                 error_msg = f"Error during chat: {str(e)}"
                 print(error_msg)  # Log the error
-                yield error_msg
-                return
+                # yield f"event: error\ndata: {json.dumps({'error': error_msg})}\n\n"
+                raise e
 
     def _execute_tool_call(self, tool_call: ToolCall, tools) -> str:
         try:

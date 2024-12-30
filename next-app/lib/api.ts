@@ -1,4 +1,7 @@
-import { fetchEventSource } from "@microsoft/fetch-event-source";
+import {
+  EventSourceMessage,
+  fetchEventSource,
+} from "@microsoft/fetch-event-source";
 class ApiClient {
   private baseUrl: string;
 
@@ -69,7 +72,7 @@ class ApiClient {
     threadId: string
   ): Promise<
     (
-      onMessage: (message: string) => void,
+      onMessage: (message: EventSourceMessage) => void,
       onDone: () => void,
       signal: AbortSignal
     ) => Promise<void>
@@ -77,7 +80,7 @@ class ApiClient {
     const url = `${this.baseUrl}/chat`;
 
     return async (
-      onMessage: (message: string) => void,
+      onMessage: (message: EventSourceMessage) => void,
       onDone: () => void,
       signal: AbortSignal
     ) => {
@@ -94,15 +97,7 @@ class ApiClient {
           }),
           signal,
           onmessage: (event) => {
-            if (event.event === "message") {
-              const parsedData = JSON.parse(event.data);
-              const { chunk } = parsedData;
-              onMessage(chunk);
-            }
-
-            if (event.event === "DONE") {
-              onDone();
-            }
+            onMessage(event);
           },
           onclose: () => {
             // Handle close event if needed

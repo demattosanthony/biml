@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import uvicorn
@@ -75,17 +75,20 @@ async def ifc_sessions_endpoint(file: UploadFile = File(...)):
 
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
-    # Add user message to thread
-    user_message = Message(role="user", content=request.message)
-    thread_manager.add_message(request.thread_id, message=user_message)
+    try:
+        # Add user message to thread
+        user_message = Message(role="user", content=request.message)
+        thread_manager.add_message(request.thread_id, message=user_message)
 
-    def event_stream() -> Generator[str, None, None]:
-        for chunk in agent.chat(thread_id=request.thread_id, verbose=True):
-            yield f"event: message\ndata: {json.dumps({'chunk': chunk})}\n\n"
+        def event_stream() -> Generator[str, None, None]:
+            for chunk in agent.chat(thread_id=request.thread_id, verbose=True):
+                yield chunk
 
-        yield "event: DONE\ndata: {}\n\n"
+            yield "event: DONE\ndata: {}\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/")

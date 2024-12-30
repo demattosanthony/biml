@@ -1,5 +1,6 @@
 import api from "@/lib/api";
 import { ChatMessage, MessageRole } from "@/types/message";
+import { EventSourceMessage } from "@microsoft/fetch-event-source";
 import { atom, useAtom } from "jotai";
 
 export const messagesAtom = atom<ChatMessage[]>([
@@ -66,53 +67,115 @@ export function useChat() {
     });
   };
 
+  const handleMessagesDone = () => {
+    if (buffer) {
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages];
+        const lastMessage = {
+          ...updatedMessages[updatedMessages.length - 1],
+        };
+        lastMessage.content = (lastMessage.content || "") + buffer;
+        updatedMessages[updatedMessages.length - 1] = lastMessage;
+        return updatedMessages;
+      });
+      setBuffer("");
+    }
+
+    setGenerating(false);
+  };
+
   const sendMessage = async () => {
-    console.log("Sending message...");
-    console.log("Input:", input);
-    console.log("ThreadId:", threadId);
-    console.log("IfcSessionId:", ifcSessionId);
     if (!input || !threadId || !ifcSessionId) return;
+
     setGenerating(true);
     setBuffer("");
 
-    const messageHandler = (message: string) => {
-      updateLatestAssistantMessage(message);
-    };
-
-    // Add user input to the chat
+    // 1) Add user's message
     addMessage({
       role: MessageRole.user,
       content: input,
     });
 
-    // Add empty message to the chat for the assistant to fill
+    // 2) Create an empty assistant message to be filled with streamed text
     addMessage({
       role: MessageRole.assistant,
       content: "",
+      toolCalls: [],
     });
 
     try {
       const gen = await api.chat(input, threadId);
-      // Clear the input field
       setInput("");
 
       await gen(
-        messageHandler,
-        () => {
-          if (buffer) {
-            setMessages((prevMessages) => {
-              const updatedMessages = [...prevMessages];
-              const lastMessage = {
-                ...updatedMessages[updatedMessages.length - 1],
-              };
-              lastMessage.content = (lastMessage.content || "") + buffer;
-              updatedMessages[updatedMessages.length - 1] = lastMessage;
-              return updatedMessages;
+        (event: EventSourceMessage) => {
+          const { event: eventType, data } = event;
+
+          if (eventType === "message") {
+            // 3) Normal LLM text streaming
+            const { chunk } = JSON.parse(data);
+            updateLatestAssistantMessage(chunk);
+          } else if (eventType === "tool_selected") {
+            // 4) LLM decides to call a tool
+            const parsedData = JSON.parse(data);
+            const { id, name, arguments: args } = parsedData;
+
+            // Insert a new ToolCall into the last assistant message
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (
+                lastIdx >= 0 &&
+                updated[lastIdx].role === MessageRole.assistant
+              ) {
+                const lastAssistant = updated[lastIdx];
+                // Initialize if not defined
+                if (!lastAssistant.toolCalls) {
+                  lastAssistant.toolCalls = [];
+                }
+                lastAssistant.toolCalls.push({
+                  id,
+                  type: "function",
+                  function: { name, arguments: args },
+                  status: "pending",
+                });
+              }
+              return updated;
             });
-            setBuffer("");
+          } else if (eventType === "tool_result") {
+            // 5) Tool execution completed
+            const parsedData = JSON.parse(data);
+            const { id, result } = parsedData;
+
+            // Find the matching tool call in the last assistant message and update it
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (
+                lastIdx >= 0 &&
+                updated[lastIdx].role === MessageRole.assistant
+              ) {
+                const lastAssistant = updated[lastIdx];
+                if (lastAssistant.toolCalls) {
+                  const toolCallIndex = lastAssistant.toolCalls.findIndex(
+                    (call) => call.id === id
+                  );
+                  if (toolCallIndex !== -1) {
+                    lastAssistant.toolCalls[toolCallIndex] = {
+                      ...lastAssistant.toolCalls[toolCallIndex],
+                      status: "completed",
+                      result,
+                    };
+                  }
+                }
+              }
+              return updated;
+            });
+          } else if (eventType === "DONE") {
+            handleMessagesDone();
           }
-          setGenerating(false);
         },
+        handleMessagesDone,
         abortController.signal
       );
     } catch (error) {
