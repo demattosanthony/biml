@@ -228,7 +228,7 @@ export function IFCViewerSidebar() {
       </SidebarContent>
 
       <SidebarFooter />
-      <SidebarRail onClick={() => setSelectedElement(null)} />
+      <SidebarRail />
     </Sidebar>
   );
 }
@@ -245,18 +245,18 @@ function SelectedElementDetails({ element }: { element: any }) {
   };
 
   const renderAttributes = (attributes: ElementAttributes) => (
-    <Table>
+    <Table className="text-xs">
       <TableHeader>
         <TableRow>
-          <TableHead>Attribute</TableHead>
-          <TableHead>Value</TableHead>
+          <TableHead className="p-1">Attribute</TableHead>
+          <TableHead className="p-1">Value</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {Object.entries(attributes).map(([key, val], i) => (
-          <TableRow key={`${key}-${i}`}>
-            <TableCell className="font-medium capitalize">{key}</TableCell>
-            <TableCell>
+          <TableRow key={`${key}-${i}`} className="p-1">
+            <TableCell className="font-medium capitalize p-1">{key}</TableCell>
+            <TableCell className="p-1">
               {val.value === null || val.value === undefined
                 ? "N/A"
                 : typeof val.value === "boolean"
@@ -278,20 +278,20 @@ function SelectedElementDetails({ element }: { element: any }) {
   const renderMaterialContent = (m: MaterialData) => {
     if (m.type === "layerset") {
       return (
-        <Table>
+        <Table className="text-xs">
           <TableHeader>
             <TableRow>
-              <TableHead>Layer</TableHead>
-              <TableHead>Thickness</TableHead>
-              <TableHead>Material</TableHead>
+              <TableHead className="p-1">Layer</TableHead>
+              <TableHead className="p-1">Thickness</TableHead>
+              <TableHead className="p-1">Material</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {m.layers?.map((layer, i) => (
               <TableRow key={i}>
-                <TableCell>{`Layer ${i + 1}`}</TableCell>
-                <TableCell>{layer.thickness} mm</TableCell>
-                <TableCell>{layer.materialName}</TableCell>
+                <TableCell className="p-1">{`Layer ${i + 1}`}</TableCell>
+                <TableCell className="p-1">{layer.thickness} mm</TableCell>
+                <TableCell className="p-1">{layer.materialName}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -300,16 +300,16 @@ function SelectedElementDetails({ element }: { element: any }) {
     }
     if (m.type === "list") {
       return (
-        <Table>
+        <Table className="text-xs">
           <TableHeader>
             <TableRow>
-              <TableHead>Material</TableHead>
+              <TableHead className="p-1">Material</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {m.materials?.map((mat: string, i: number) => (
               <TableRow key={i}>
-                <TableCell>{mat}</TableCell>
+                <TableCell className="p-1">{mat}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -318,10 +318,10 @@ function SelectedElementDetails({ element }: { element: any }) {
     }
     if (m.type === "single") {
       return (
-        <Table>
+        <Table className="text-xs">
           <TableBody>
             <TableRow>
-              <TableCell>{m.name}</TableCell>
+              <TableCell className="p-1">{m.name}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -336,18 +336,20 @@ function SelectedElementDetails({ element }: { element: any }) {
         <SimpleCollapsible label="Property Sets" defaultOpen>
           {element.psets.map((pset: any, i: number) => (
             <SimpleCollapsible key={i} label={pset.name}>
-              <Table>
+              <Table className="text-xs">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Value</TableHead>
+                    <TableHead className="p-1">Property</TableHead>
+                    <TableHead className="p-1">Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pset.properties.map((p: Property, idx: number) => (
                     <TableRow key={idx}>
-                      <TableCell>{p.name}</TableCell>
-                      <TableCell>{formatPropValue(p)}</TableCell>
+                      <TableCell className="p-1">{p.name}</TableCell>
+                      <TableCell className="p-1">
+                        {formatPropValue(p)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -361,18 +363,20 @@ function SelectedElementDetails({ element }: { element: any }) {
         <SimpleCollapsible label="Quantity Sets" defaultOpen>
           {element.qsets.map((qset: any, i: number) => (
             <SimpleCollapsible key={i} label={qset.name}>
-              <Table>
+              <Table className="text-xs">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Value</TableHead>
+                    <TableHead className="p-1">Quantity</TableHead>
+                    <TableHead className="p-1">Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {qset.quantities.map((q: Property, idx: number) => (
                     <TableRow key={idx}>
-                      <TableCell>{q.name}</TableCell>
-                      <TableCell>{formatPropValue(q)}</TableCell>
+                      <TableCell className="p-1">{q.name}</TableCell>
+                      <TableCell className="p-1">
+                        {formatPropValue(q)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -459,8 +463,9 @@ function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
     hider?.set(!isHidden, fragMap);
   };
 
-  if (!node.children || node.children.length === 0)
+  if (!node.children || node.children.length === 0) {
     return <Node node={node} model={model} />;
+  }
 
   return (
     <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>

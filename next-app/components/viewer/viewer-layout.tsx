@@ -56,10 +56,7 @@ export const ViewerLayout = ({
     </div> */}
 
     {/* Terminal chat */}
-    <div
-      className="transition-[width] duration-300 ease-in-out overflow-hidden"
-      //   style={{ width: terminalChat ? "365px" : "0" }}
-    >
+    <div className="transition-[width] duration-300 ease-in-out overflow-hidden">
       <SidebarProvider
         name="ifc-terminal-chat"
         className="h-full overflow-hidden relative"
