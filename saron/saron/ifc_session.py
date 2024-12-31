@@ -96,7 +96,7 @@ class IfcSession:
 
         # Get type information
         type = ifcopenshell.util.element.get_type(element)
-        type_info = self
+        type_info = self._element_summary(type) if type else None
 
         return {
             "guid": element.GlobalId,

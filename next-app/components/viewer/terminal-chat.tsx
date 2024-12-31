@@ -99,7 +99,7 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex flex-col ">
+    <div className="border-t border-muted h-full w-full flex flex-col">
       <div className="flex justify-end pr-1 pt-1">
         <Button
           variant={"ghost"}
@@ -163,7 +163,7 @@ export default function TerminalChat() {
         })}
 
         {!generating && (
-          <form className="flex" onSubmit={handleSubmit}>
+          <form className="flex mb-4" onSubmit={handleSubmit}>
             <span className="text-primary mr-2 mt-auto">➜</span>
             <textarea
               value={input}

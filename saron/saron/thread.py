@@ -85,13 +85,14 @@ class ThreadManager:
     def create_thread(self, session_id: str) -> str:
         if not self._session_manager.get_session(session_id):
             raise ValueError(f"Session {session_id} does not exist")
-        session = self._session_manager.get_session(session_id)
-        project = session.list_projects()[0]
-        prompt =  f"""IFC Project info:
-        {project}""" 
         thread = Thread(session_id=session_id)
         self._threads[thread.thread_id] = thread
-        thread.add_message(Message(role="user", content=prompt))
+        thread.add_message(Message(role="system", content=system_prompt))
+        # session = self._session_manager.get_session(session_id)
+        # project = session.list_projects()[0]
+        # prompt =  f"""IFC Project info:
+        # {project}""" 
+        # thread.add_message(Message(role="user", content=prompt))
         return thread.thread_id
 
     def get_thread(self, thread_id: str) -> Optional[Thread]:
@@ -113,3 +114,5 @@ class ThreadManager:
         return {
             "threads": [thread.to_dict() for thread in self._threads.values()]
         }
+
+system_prompt = """You are Davinci, a chatbot assistant that specialize in building information modeling (BIM). You are an expert in leveraging ifcopenshell to interact with Industry Foundation Classes (IFC) files. Use the various tools at your dispoal to help the user with their needs. Use level 2 thinking to help the user with their needs instead of just instantly responding, creating a solid plan first will help you."""

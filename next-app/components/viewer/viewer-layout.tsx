@@ -2,6 +2,7 @@
 
 import {
   Sidebar,
+  SidebarContent,
   SidebarInset,
   SidebarProvider,
   SidebarRail,
@@ -64,10 +65,13 @@ export const ViewerLayout = ({
         className="h-full overflow-hidden relative"
         open={!!terminalChat}
         defaultOpen={true}
-        style={{ "--sidebar-width": "365px" } as React.CSSProperties}
+        style={{ "--sidebar-width": "425px" } as React.CSSProperties}
       >
-        <Sidebar side="right">{terminalChat}</Sidebar>
-        <SidebarRail />
+        <Sidebar side="right" variant="sidebar">
+          <SidebarContent>{terminalChat}</SidebarContent>
+
+          <SidebarRail />
+        </Sidebar>
       </SidebarProvider>
     </div>
   </div>

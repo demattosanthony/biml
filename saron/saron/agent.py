@@ -23,7 +23,7 @@ class Agent:
         while True:
             try:
                 response = completion(
-                    model=self.model_name, messages=formatted_messages, temperature=0, stream=True, tools=[tool.to_dict() for tool in tools.values()]
+                    model=self.model_name, messages=formatted_messages, temperature=0, stream=True, tools=[tool.to_dict() for tool in tools.values()], 
                 )
 
                 chunks = []
@@ -96,3 +96,5 @@ class Agent:
             error_msg = f"Error executing tool: {str(e)}"
             print(error_msg)  # Log the error
             return error_msg
+
+
