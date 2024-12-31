@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, MouseEvent } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,29 +20,54 @@ import {
   Eye,
   EyeOff,
   LayoutDashboard,
+  X,
 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "./ui/collapsible";
-import { FragmentsGroup } from "@thatopen/fragments";
-import { Button } from "./ui/button";
+} from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
-import { EntityNode } from "@/types/ifc";
+import {
+  EntityNode,
+  Property,
+  ElementAttributes,
+  MaterialData,
+} from "@/types/ifc";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { FragmentsGroup } from "@thatopen/fragments";
 
 export function IFCViewerSidebar() {
-  const { models, categories, setUploadedFiles, highlighter } = useIfcViewer();
+  const {
+    models,
+    categories,
+    plans,
+    setUploadedFiles,
+    highlighter,
+    hider,
+    selectedElement,
+    setSelectedElement,
+  } = useIfcViewer();
+
   const { theme, systemTheme } = useTheme();
   const realTheme = theme === "system" ? systemTheme : theme;
+  const [activeFloor, setActiveFloor] = useState<string | null>(null);
 
   return (
     <Sidebar side="left" variant="sidebar">
@@ -52,7 +77,7 @@ export function IFCViewerSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="w-fit px-1.5">
-                  <div className="flex aspect-square items-center justify-center rounded-md ">
+                  <div className="flex aspect-square items-center justify-center rounded-md">
                     <Image
                       height={30}
                       width={30}
@@ -77,9 +102,7 @@ export function IFCViewerSidebar() {
               >
                 <DropdownMenuItem
                   className="gap-2 p-2"
-                  onClick={() => {
-                    setUploadedFiles([]);
-                  }}
+                  onClick={() => setUploadedFiles([])}
                 >
                   <div className="font-medium text-muted-foreground">
                     Back to Home
@@ -90,29 +113,85 @@ export function IFCViewerSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
+      {/* ---- MAIN CONTENT ---- */}
       <SidebarContent>
+        {/* SELECTED ELEMENT DETAILS */}
+        {selectedElement && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="font-semibold flex justify-between items-center">
+              {"Selected Element"}
+              <button
+                onClick={() => setSelectedElement(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </SidebarGroupLabel>
+            <SidebarGroupContent className="ml-2 gap-1 flex flex-col">
+              <h4 className="scroll-m-20 text-lg font-medium tracking-tight">
+                {selectedElement?.name || "No Element Selected"}
+              </h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                {selectedElement.ifcClass || "Unknown Class"}
+              </p>
+              <SelectedElementDetails element={selectedElement} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* MODEL BROWSER */}
         <SidebarGroup>
           <SidebarGroupLabel className="font-semibold">
             Model Browser
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {models.map(
-                (model, index) =>
-                  model.tree && (
-                    <Tree
-                      key={index}
-                      node={model.tree}
-                      model={model.fragmentsGroup}
-                    />
-                  )
+              {models.map((model, i) =>
+                model.tree ? (
+                  <Tree
+                    key={i}
+                    node={model.tree}
+                    model={model.fragmentsGroup}
+                  />
+                ) : null
               )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <FloorPlans />
+        {/* FLOOR PLANS */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-semibold">
+            2D Plans
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {plans?.list.map((floor) => (
+                <SidebarMenuItem key={floor.id}>
+                  <Button
+                    variant={activeFloor === floor.id ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => {
+                      if (activeFloor === floor.id) {
+                        setActiveFloor(null);
+                        plans.exitPlanView();
+                      } else {
+                        setActiveFloor(floor.id);
+                        plans.goTo(floor.id);
+                      }
+                    }}
+                  >
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    {floor.name}
+                  </Button>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
+        {/* CATEGORIES */}
         <SidebarGroup>
           <SidebarGroupLabel className="font-semibold">
             Categories
@@ -120,26 +199,22 @@ export function IFCViewerSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {categories &&
-                Object.keys(categories).map((category, index) => (
+                Object.keys(categories).map((category, i) => (
                   <SidebarMenuItem
-                    key={index}
-                    onMouseEnter={(e) => {
+                    key={i}
+                    onMouseEnter={(e: MouseEvent) => {
                       e.stopPropagation();
-
-                      const thisCat = categories[category];
-
-                      Object.entries(thisCat.fragIds).map(
-                        ([modelId, fragMap]) => {
-                          highlighter?.highlightByID(
-                            "hover",
-                            fragMap,
-                            true,
-                            false
-                          );
-                        }
-                      );
+                      const cat = categories[category];
+                      Object.entries(cat.fragIds).forEach(([_, fragMap]) => {
+                        highlighter?.highlightByID(
+                          "hover",
+                          fragMap,
+                          true,
+                          false
+                        );
+                      });
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={(e: MouseEvent) => {
                       e.stopPropagation();
                       highlighter?.clear("hover");
                     }}
@@ -151,59 +226,314 @@ export function IFCViewerSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter />
-      <SidebarRail />
+      <SidebarRail onClick={() => setSelectedElement(null)} />
     </Sidebar>
   );
 }
 
-function FloorPlans() {
-  const { plans } = useIfcViewer();
-  const [activeFloor, setActiveFloor] = useState<string | null>(null);
+/* -------------------- Selected Element Details -------------------- */
+function SelectedElementDetails({ element }: { element: any }) {
+  // Minimal helpers
+  const formatPropValue = (prop: Property) => {
+    if (prop.value === null || prop.value === undefined) return "N/A";
+    if (typeof prop.value === "boolean") return prop.value ? "Yes" : "No";
+    if (typeof prop.value === "number")
+      return prop.unit ? `${prop.value} ${prop.unit}` : `${prop.value}`;
+    return prop.value.toString();
+  };
+
+  const renderAttributes = (attributes: ElementAttributes) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Attribute</TableHead>
+          <TableHead>Value</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Object.entries(attributes).map(([key, val], i) => (
+          <TableRow key={`${key}-${i}`}>
+            <TableCell className="font-medium capitalize">{key}</TableCell>
+            <TableCell>
+              {val.value === null || val.value === undefined
+                ? "N/A"
+                : typeof val.value === "boolean"
+                ? val.value
+                  ? "Yes"
+                  : "No"
+                : typeof val.value === "number"
+                ? val.unit
+                  ? `${val.value} ${val.unit}`
+                  : val.value
+                : val.value}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  const renderMaterialContent = (m: MaterialData) => {
+    if (m.type === "layerset") {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Layer</TableHead>
+              <TableHead>Thickness</TableHead>
+              <TableHead>Material</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {m.layers?.map((layer, i) => (
+              <TableRow key={i}>
+                <TableCell>{`Layer ${i + 1}`}</TableCell>
+                <TableCell>{layer.thickness} mm</TableCell>
+                <TableCell>{layer.materialName}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (m.type === "list") {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Material</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {m.materials?.map((mat: string, i: number) => (
+              <TableRow key={i}>
+                <TableCell>{mat}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (m.type === "single") {
+      return (
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell>{m.name}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+    }
+    return null;
+  };
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="font-semibold">2D Plans</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {plans?.list.map((floor) => (
-            <SidebarMenuItem key={floor.id}>
-              <Button
-                variant={activeFloor === floor.id ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => {
-                  if (activeFloor === floor.id) {
-                    setActiveFloor(null);
-                    plans?.exitPlanView();
-                    return;
-                  }
+    <div className="space-y-2">
+      {element?.psets?.length > 0 && (
+        <SimpleCollapsible label="Property Sets" defaultOpen>
+          {element.psets.map((pset: any, i: number) => (
+            <SimpleCollapsible key={i} label={pset.name}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Property</TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pset.properties.map((p: Property, idx: number) => (
+                    <TableRow key={idx}>
+                      <TableCell>{p.name}</TableCell>
+                      <TableCell>{formatPropValue(p)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </SimpleCollapsible>
+          ))}
+        </SimpleCollapsible>
+      )}
 
-                  setActiveFloor(activeFloor === floor.id ? null : floor.id);
-                  plans?.goTo(floor.id);
+      {element?.qsets?.length > 0 && (
+        <SimpleCollapsible label="Quantity Sets" defaultOpen>
+          {element.qsets.map((qset: any, i: number) => (
+            <SimpleCollapsible key={i} label={qset.name}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qset.quantities.map((q: Property, idx: number) => (
+                    <TableRow key={idx}>
+                      <TableCell>{q.name}</TableCell>
+                      <TableCell>{formatPropValue(q)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </SimpleCollapsible>
+          ))}
+        </SimpleCollapsible>
+      )}
+
+      {element?.attributes && Object.keys(element.attributes).length > 0 && (
+        <SimpleCollapsible label="Attributes">
+          <div className="p-2 rounded-md border">
+            {renderAttributes(element.attributes)}
+          </div>
+        </SimpleCollapsible>
+      )}
+
+      {element?.materials?.length > 0 && (
+        <SimpleCollapsible label="Materials" defaultOpen>
+          {element.materials.map((mat: any, i: number) => (
+            <SimpleCollapsible
+              key={i}
+              label={
+                mat.type === "layerset"
+                  ? "Material Layer Set"
+                  : mat.type === "list"
+                  ? "Material List"
+                  : "Material"
+              }
+            >
+              <div className="p-2 rounded-md border">
+                {renderMaterialContent(mat)}
+              </div>
+            </SimpleCollapsible>
+          ))}
+        </SimpleCollapsible>
+      )}
+    </div>
+  );
+}
+
+/* -------------------- Reusable Minimal Collapsible -------------------- */
+function SimpleCollapsible({
+  label,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <Collapsible
+      className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90 pl-3"
+      defaultOpen={defaultOpen}
+    >
+      <CollapsibleTrigger asChild>
+        <SidebarMenuButton className="h-auto text-xs hover:bg-secondary relative flex items-center justify-start">
+          <ChevronRight className="mr-1 h-4 w-4 transition-transform" />
+          {label}
+        </SidebarMenuButton>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="ml-3 mt-2">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/* -------------------- Entity Tree Components -------------------- */
+function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
+  const { highlighter, hider } = useIfcViewer();
+  const [isHidden, setIsHidden] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const getAllIds = (n: EntityNode): number[] => {
+    let ids = [n.expressID];
+    if (n.children) n.children.forEach((c) => (ids = ids.concat(getAllIds(c))));
+    return ids;
+  };
+
+  const toggleVisibility = (e: MouseEvent) => {
+    e.stopPropagation();
+    setIsHidden((prev) => !prev);
+    const fragMap = model.getFragmentMap(getAllIds(node));
+    hider?.set(!isHidden, fragMap);
+  };
+
+  if (!node.children || node.children.length === 0)
+    return <Node node={node} model={model} />;
+
+  return (
+    <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>
+      <Collapsible
+        defaultOpen={
+          node.ifcClass.toLowerCase() === "ifcproject" ||
+          node.ifcClass.toLowerCase() === "ifcsite"
+        }
+        className="[&[data-state=open]>button>svg:first-child]:rotate-90"
+      >
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton
+            className="text-xs relative flex items-center justify-between hover:bg-secondary h-auto"
+            onMouseEnter={(e) => {
+              e.stopPropagation();
+              setHovered(true);
+              highlighter?.highlightByID(
+                "hover",
+                model.getFragmentMap(getAllIds(node)),
+                true,
+                false
+              );
+            }}
+            onMouseLeave={(e) => {
+              e.stopPropagation();
+              setHovered(false);
+              highlighter?.clear("hover");
+            }}
+          >
+            <ChevronRight className="transition-transform mr-1 flex-shrink-0" />
+            <div className="flex flex-col flex-1">
+              <div className="text-md font-semibold">{node.ifcClass}</div>
+              <p className="text-sm text-muted-foreground truncate">
+                {node.name}
+              </p>
+            </div>
+            {hovered && (
+              <button
+                className="opacity-100"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleVisibility(e);
                 }}
               >
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                {floor.name}
-              </Button>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+                {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            )}
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        {!isHidden && (
+          <CollapsibleContent>
+            <div className="pl-3">
+              {node.children.map((child, i) => (
+                <Tree key={i} node={child} model={model} />
+              ))}
+            </div>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    </SidebarMenuItem>
   );
 }
 
 function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
-  const { ifcClass, name } = node;
-  const { hider, highlighter } = useIfcViewer();
+  const { highlighter, hider } = useIfcViewer();
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const handleToggleVisibility = (e: React.MouseEvent) => {
+  const toggleVisibility = (e: MouseEvent) => {
     e.stopPropagation();
-    setIsHidden(!isHidden);
+    setIsHidden((prev) => !prev);
     const fragMap = model.getFragmentMap([node.expressID]);
-    hider?.set(isHidden, fragMap);
+    hider?.set(!isHidden, fragMap);
   };
 
   return (
@@ -213,12 +543,16 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
       } hover:bg-secondary`}
       onClick={async () => {
         if (!isHidden) {
-          const fragMap = model.getFragmentMap([node.expressID]);
-          await highlighter?.highlightByID("select", fragMap, true, true);
+          await highlighter?.highlightByID(
+            "select",
+            model.getFragmentMap([node.expressID]),
+            true,
+            true
+          );
         }
       }}
       onMouseEnter={(e) => {
-        e.stopPropagation(); // Prevent event bubble up to parent
+        e.stopPropagation();
         setHovered(true);
         highlighter?.highlightByID(
           "hover",
@@ -228,114 +562,24 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
         );
       }}
       onMouseLeave={(e) => {
-        e.stopPropagation(); // Prevent event bubble up to parent
+        e.stopPropagation();
         setHovered(false);
         highlighter?.clear("hover");
       }}
     >
-      {/* <File className="mr-2 flex-shrink-0" /> */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className="text-md font-semibold truncate max-w-[calc(100%-2rem)]">
-          {ifcClass}
+          {node.ifcClass}
         </div>
         <p className="text-sm text-muted-foreground truncate max-w-[calc(100%-2rem)]">
-          {name}
+          {node.name}
         </p>
       </div>
-
       {hovered && (
-        <button className="opacity-100" onClick={handleToggleVisibility}>
+        <button className="opacity-100" onClick={toggleVisibility}>
           {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       )}
     </SidebarMenuButton>
-  );
-}
-
-function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
-  const { ifcClass, name, children } = node;
-  const { hider, highlighter } = useIfcViewer();
-  const [isHidden, setIsHidden] = useState(false);
-  const [hovered, setHovered] = useState(false);
-
-  function getAllExpressIDs(node: EntityNode): number[] {
-    let ids = [node.expressID];
-    if (node.children) {
-      node.children.forEach((child) => {
-        ids = ids.concat(getAllExpressIDs(child));
-      });
-    }
-    return ids;
-  }
-
-  const handleToggleVisibility = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIsHidden(!isHidden);
-    const ids = getAllExpressIDs(node);
-    const fragMap = model.getFragmentMap(ids);
-    hider?.set(isHidden, fragMap);
-  };
-
-  // For leaf nodes (files)
-  if (!children || children.length === 0) {
-    return <Node node={node} model={model} />;
-  }
-
-  // For nodes with children (folders)
-  return (
-    <SidebarMenuItem className={`pl-3 ${isHidden ? "opacity-50" : ""}`}>
-      <Collapsible
-        defaultOpen={
-          node.ifcClass.toLowerCase() === "ifcproject" ||
-          node.ifcClass.toLowerCase() === "ifcsite"
-        }
-        className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-      >
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton
-            className="text-xs relative flex items-center justify-between hover:bg-secondary h-auto"
-            onMouseEnter={(e) => {
-              e.stopPropagation(); // Prevent event bubble up
-              setHovered(true);
-              const ids = getAllExpressIDs(node);
-              highlighter?.highlightByID(
-                "hover",
-                model.getFragmentMap(ids),
-                true,
-                false
-              );
-            }}
-            onMouseLeave={(e) => {
-              e.stopPropagation(); // Prevent event bubble up
-              setHovered(false);
-              highlighter?.clear("hover");
-            }}
-          >
-            <ChevronRight className="transition-transform mr-1 flex-shrink-0" />
-            {/* <Folder className="mr-2 flex-shrink-0" /> */}
-            <div className="flex flex-col flex-1">
-              <div className="text-md font-semibold">{ifcClass}</div>
-              <p className="text-sm text-muted-foreground truncate">{name}</p>
-            </div>
-
-            {hovered && (
-              <button className="opacity-100" onClick={handleToggleVisibility}>
-                {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            )}
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        {!isHidden && (
-          <CollapsibleContent>
-            <div className="pl-3">
-              {children.map((childNode, index) => (
-                <Tree key={index} node={childNode} model={model} />
-              ))}
-            </div>
-          </CollapsibleContent>
-        )}
-      </Collapsible>
-    </SidebarMenuItem>
   );
 }

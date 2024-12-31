@@ -139,6 +139,13 @@ export default function Component() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Add AI chat toggle shortcut (CMD + L)
+      if (event.key.toLowerCase() === "l" && event.metaKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleAiMode();
+      }
+
       // Ignore key presses if the user is typing in an input field
       const activeElement = document.activeElement;
       if (

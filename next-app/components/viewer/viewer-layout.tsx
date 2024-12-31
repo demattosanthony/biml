@@ -38,7 +38,7 @@ export const ViewerLayout = ({
     </div>
 
     {/* Element details sidebar */}
-    <div
+    {/* <div
       className="transition-[width] duration-300 ease-in-out overflow-hidden"
       style={{ width: selectedElement ? "20rem" : "0" }}
     >
@@ -53,7 +53,7 @@ export const ViewerLayout = ({
           {rightSidebar}
         </SidebarProvider>
       </div>
-    </div>
+    </div> */}
 
     {/* Terminal chat */}
     <div

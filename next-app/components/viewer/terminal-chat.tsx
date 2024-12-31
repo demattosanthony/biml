@@ -167,7 +167,7 @@ export default function TerminalChat() {
             <span className="text-primary mr-2 mt-auto">➜</span>
             <textarea
               value={input}
-              placeholder="Ask DaVinci..."
+              placeholder="Ask DaVinci (⌘L)"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
