@@ -12,8 +12,8 @@ export default function IFCViewer({ files }: { files: File[] }) {
   }, [setupWorld]);
 
   return (
-    <div className="flex flex-1 relative h-full bg-secondary">
-      <div id="ifc-viewer" className="flex flex-1 relative" />
+    <div className="relative h-full bg-secondary">
+      <div id="ifc-viewer" className="relative h-full w-full" />
       <IFCViewerToolbar />
     </div>
   );

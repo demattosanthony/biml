@@ -99,8 +99,32 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex">
-      <div className="h-full bg-background font-mono text-sm overflow-y-auto p-4 w-full">
+    <div className="border-t border-muted h-full w-full flex flex-col ">
+      <div className="flex justify-end pr-1 pt-1">
+        <Button
+          variant={"ghost"}
+          className="h-6 w-6"
+          size={"icon"}
+          onClick={() => resetChat()}
+        >
+          <Plus />
+        </Button>
+        <Button
+          variant={"ghost"}
+          className="h-6 w-6"
+          size={"icon"}
+          onClick={() => {
+            setAiMode(false);
+            // trigger resize event to update the viewer
+            setTimeout(() => {
+              window.dispatchEvent(new Event("resize"));
+            }, 200);
+          }}
+        >
+          <X />
+        </Button>
+      </div>
+      <div className="h-full font-mono text-sm overflow-y-auto p-2 w-full">
         {messages.map((message, i) => {
           // User messages
           if (message.role === MessageRole.user) {
@@ -139,42 +163,29 @@ export default function TerminalChat() {
         })}
 
         {!generating && (
-          <form className="flex items-center" onSubmit={handleSubmit}>
-            <span className="text-primary mr-2">➜</span>
-            <input
-              type="text"
+          <form className="flex" onSubmit={handleSubmit}>
+            <span className="text-primary mr-2 mt-auto">➜</span>
+            <textarea
               value={input}
               placeholder="Ask DaVinci..."
               onChange={(e) => setInput(e.target.value)}
-              className="flex-1 bg-transparent text-foreground outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+              className="flex-1 bg-transparent text-foreground outline-none resize-none w-full"
+              rows={1}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = "auto";
+                target.style.height = `${target.scrollHeight}px`;
+              }}
               autoFocus
             />
           </form>
         )}
-      </div>
-      <div className="flex justify-end p-1">
-        <Button
-          variant={"ghost"}
-          className="h-6 w-6"
-          size={"icon"}
-          onClick={() => resetChat()}
-        >
-          <Plus />
-        </Button>
-        <Button
-          variant={"ghost"}
-          className="h-6 w-6"
-          size={"icon"}
-          onClick={() => {
-            setAiMode(false);
-            // trigger resize event to update the viewer
-            setTimeout(() => {
-              window.dispatchEvent(new Event("resize"));
-            }, 200);
-          }}
-        >
-          <X />
-        </Button>
       </div>
     </div>
   );

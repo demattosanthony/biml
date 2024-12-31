@@ -45,7 +45,7 @@ export function IFCViewerSidebar() {
   const realTheme = theme === "system" ? systemTheme : theme;
 
   return (
-    <Sidebar side="left">
+    <Sidebar side="left" variant="sidebar">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

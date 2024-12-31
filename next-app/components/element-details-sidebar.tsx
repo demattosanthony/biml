@@ -137,7 +137,7 @@ export function ElementDetailsSidebarRight({
   };
 
   return (
-    <Sidebar side="right" {...props}>
+    <Sidebar side="right" {...props} className="absolute top-0 bottom-0">
       <SidebarHeader>
         <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
           {selectedElement?.name || "No Element Selected"}

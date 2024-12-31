@@ -35,7 +35,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className="w-full flex items-center justify-center mx-auto p-2 pt-1 pb-4">
+      <div className="w-full flex items-center justify-center mx-auto p-2 pt-1 pb-4 max-w-[750px]">
         <ChatInputForm
           onSubmit={() => {
             router.push(`/chat/test`);

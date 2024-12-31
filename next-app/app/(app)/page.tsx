@@ -38,22 +38,11 @@ export default function ModelViewerUploadPage() {
         <ViewerLayout
           selectedElement={selectedElement}
           rightSidebar={<ElementDetailsSidebarRight />}
+          terminalChat={aiMode && <TerminalChat />}
         >
-          <div className="w-full h-full flex flex-1 flex-col transition-all duration-300">
-            <div
-              className={`${
-                aiMode ? "h-[50%]" : "flex-1"
-              } transition-all duration-300`}
-            >
+          <div className="w-full h-full flex flex-row transition-all duration-300">
+            <div className="h-full transition-all duration-300 relative w-full">
               <IFCViewer files={uploadedFiles} />
-            </div>
-            {/* Wrap in a container div that always exists */}
-            <div
-              className={`overflow-hidden transition-all duration-300 ${
-                aiMode ? "h-[50%]" : "h-0"
-              }`}
-            >
-              {aiMode && <TerminalChat />}
             </div>
           </div>
         </ViewerLayout>

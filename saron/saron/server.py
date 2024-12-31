@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import uvicorn
-import json
 from typing import Generator
 from dataclasses import dataclass
 from fastapi import UploadFile, File
