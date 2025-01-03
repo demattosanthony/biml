@@ -1,5 +1,5 @@
 import { useViewerStore } from "@/store/useViewerStore";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import * as OBC from "@thatopen/components";
 import {
   createWorld,
@@ -10,7 +10,6 @@ import {
   setupStats,
 } from "@/lib/viewer";
 import { OrientationGizmo } from "@/components/oritentation-gizmo";
-import { useElementSelected } from "./useElementSelected";
 
 export function useViewer(containerId: string) {
   const setWorld = useViewerStore((state) => state.setWorld);
@@ -22,8 +21,6 @@ export function useViewer(containerId: string) {
   const setHider = useViewerStore((state) => state.setHider);
   const setLoading = useViewerStore((state) => state.setLoading);
   const reset = useViewerStore((state) => state.reset);
-  //   const highlighter = useViewerStore((state) => state.highlighter);
-  //   const { onSelection, onDeselection } = useElementSelected();
 
   const initializeViewer = useCallback(async () => {
     const container = document.getElementById(containerId);
@@ -35,7 +32,7 @@ export function useViewer(containerId: string) {
       const components = new OBC.Components();
       const world = createWorld(components, container);
       const fragments = await setupFragments(components);
-      //   const highlighter = setupHighlighter(world, components);
+      const highlighter = setupHighlighter(world, components);
       const culler = setupCuller(world, components);
       const hider = setupHider(components);
       setupStats(world, container);
@@ -43,7 +40,7 @@ export function useViewer(containerId: string) {
       setComponents(components);
       setWorld(world);
       setFragments(fragments);
-      //  setHighlighter(highlighter);
+      setHighlighter(highlighter);
       setCamera(world.camera);
       setCuller(culler);
       setHider(hider);
@@ -67,7 +64,7 @@ export function useViewer(containerId: string) {
       return () => {
         world?.dispose();
         fragments?.dispose();
-        // highlighter?.dispose();
+        highlighter?.dispose();
         components?.dispose();
         culler?.dispose();
         reset();

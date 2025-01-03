@@ -49,17 +49,15 @@ async function setupFragments(components: OBC.Components) {
 function setupHighlighter(world: OBC.World, components: OBC.Components) {
   try {
     const highlighter = components.get(OBCF.Highlighter);
-    if (!highlighter.isSetup) {
-      // Add a flag to prevent re-setup
-      highlighter.setup({
-        world,
-        hoverColor: new THREE.Color(0x0b99ff),
-        selectionColor: new THREE.Color(0x0b99ff),
-        //   selectName: Date.now().toString() + "select",
-        //   hoverName: Date.now().toString() + "hover",
-      });
-      highlighter.zoomToSelection = false;
-    }
+    // Add a flag to prevent re-setup
+    highlighter.setup({
+      world,
+      hoverColor: new THREE.Color(0x0b99ff),
+      selectionColor: new THREE.Color(0x0b99ff),
+      //   selectName: Date.now().toString() + "select",
+      //   hoverName: Date.now().toString() + "hover",
+    });
+    highlighter.zoomToSelection = false;
     return highlighter;
   } catch (err) {
     throw new Error("Failed to setup highlighter: " + err);

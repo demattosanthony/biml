@@ -6,6 +6,7 @@ import { useViewer } from "@/hooks/ifc-viewer/useViewer";
 import { useIfcLoader } from "@/hooks/ifc-viewer/useIfcLoader";
 import api from "@/lib/api";
 import { useChat } from "@/hooks/useChat";
+import { Button } from "./ui/button";
 
 export default function IFCViewer({ files }: { files: File[] }) {
   const { initializeViewer } = useViewer("ifc-viewer");
@@ -53,12 +54,9 @@ export default function IFCViewer({ files }: { files: File[] }) {
     <div className="flex flex-1 relative h-full bg-secondary">
       {/* Upload button */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        <button
-          onClick={() => document.getElementById("file-upload")?.click()}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md"
-        >
-          Upload IFC Model
-        </button>
+        <Button onClick={() => document.getElementById("file-upload")?.click()}>
+          Upload your own ifc model
+        </Button>
         <input
           id="file-upload"
           type="file"

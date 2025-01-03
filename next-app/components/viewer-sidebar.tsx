@@ -45,7 +45,7 @@ export function IFCViewerSidebar() {
 
   return (
     <Sidebar side="left">
-      <SidebarHeader>
+      {/* <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -88,7 +88,7 @@ export function IFCViewerSidebar() {
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
+      </SidebarHeader> */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="font-semibold">

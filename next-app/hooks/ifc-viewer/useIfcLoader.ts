@@ -23,7 +23,6 @@ export function useIfcLoader() {
   const setCategories = useViewerStore((state) => state.setCategories);
   const models = useViewerStore((state) => state.models);
   const clearModels = useViewerStore((state) => state.clearModels);
-  const setHighlighter = useViewerStore((state) => state.setHighlighter);
   const highlighter = useViewerStore((state) => state.highlighter);
   const plans = useViewerStore((state) => state.plans);
 
@@ -265,9 +264,6 @@ export function useIfcLoader() {
         });
         setCategories(newCategories);
 
-        // const newHighlighter = setupHighlighter(world, components);
-        // setHighlighter(newHighlighter);
-
         return model;
       } catch (error) {
         console.error("Error loading IFC file:", error);
@@ -283,6 +279,7 @@ export function useIfcLoader() {
       world,
       components,
       culler,
+      highlighter,
       setupHighlighter,
     ]
   );
@@ -296,23 +293,9 @@ export function useIfcLoader() {
     setLoading(true);
 
     try {
-      // 1. Clear all event listeners
-      if (highlighter) {
-        //    highlighter.events.select?.onHighlight.removeAll();
-        //    highlighter.events.select?.onClear.removeAll();
-      }
-
-      // 2. Dispose of plans
       if (plans) {
         plans.dispose();
         setPlans(null);
-      }
-
-      // 3. Clear highlighter
-      if (highlighter) {
-        highlighter.clear();
-        // highlighter.dispose();
-        // setHighlighter(null);
       }
 
       // 4. Remove models from scene and dispose
@@ -329,30 +312,11 @@ export function useIfcLoader() {
         // Remove from scene
         world.scene?.three.remove(fragmentsGroup);
 
-        // Dispose of geometries and materials
-        fragmentsGroup.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry?.dispose();
-            if (Array.isArray(child.material)) {
-              child.material.forEach((mat) => mat.dispose());
-            } else {
-              child.material?.dispose();
-            }
-          }
-        });
-
-        // Dispose of the fragment group
-        fragmentsGroup.dispose();
+        // // Dispose of the fragment group
+        fragmentsGroup.clear();
       }
 
-      // 5. Clear categories and other state
-      setCategories({});
       clearModels();
-
-      // 6. Force garbage collection if available
-      if (window.gc) {
-        window.gc();
-      }
     } catch (error) {
       console.error("Failed to unload IFC models:", error);
     } finally {
@@ -360,18 +324,18 @@ export function useIfcLoader() {
     }
   }, [world, components, models, culler, highlighter, plans]);
 
-  // Highlighter and on select element event
-  //   useEffect(() => {
-  //     if (!highlighter) return;
+  //   Highlighter and on select element event
+  useEffect(() => {
+    if (!highlighter) return;
 
-  //     highlighter?.events.select?.onHighlight.add(onSelection);
-  //     highlighter?.events.select?.onClear.add(onDeselection);
+    highlighter?.events.select?.onHighlight.add(onSelection);
+    highlighter?.events.select?.onClear.add(onDeselection);
 
-  //     return () => {
-  //       highlighter?.events.select?.onHighlight.remove(onSelection);
-  //       highlighter?.events.select?.onClear.remove(onDeselection);
-  //     };
-  //   }, [onSelection, highlighter, onDeselection]);
+    return () => {
+      highlighter?.events.select?.onHighlight.remove(onSelection);
+      highlighter?.events.select?.onClear.remove(onDeselection);
+    };
+  }, [onSelection, highlighter, onDeselection]);
 
   return { loadIfcFile, unloadAllIfcFiles };
 }

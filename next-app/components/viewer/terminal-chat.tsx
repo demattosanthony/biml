@@ -98,8 +98,8 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex">
-      <div className="h-full bg-background font-mono text-sm overflow-y-auto p-4 w-full">
+    <div className="border-t border-muted h-full w-full flex bg-sidebar">
+      <div className="h-full bg-sidebar font-mono text-sm overflow-y-auto p-4 w-full">
         {messages.map((message, i) => {
           // User messages
           if (message.role === MessageRole.user) {
