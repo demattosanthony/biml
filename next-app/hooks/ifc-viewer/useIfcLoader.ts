@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
@@ -6,6 +6,8 @@ import * as THREE from "three";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { EntityNode, IFCCategory } from "@/types/ifc";
 import { useViewerStore } from "@/store/useViewerStore";
+import { setupHighlighter } from "@/lib/viewer";
+import { useElementSelected } from "./useElementSelected";
 
 // Define a type for the memoization cache
 type DecompositionCache = Map<number, EntityNode>;
@@ -19,6 +21,13 @@ export function useIfcLoader() {
   const addModel = useViewerStore((state) => state.addModel);
   const categories = useViewerStore((state) => state.categories);
   const setCategories = useViewerStore((state) => state.setCategories);
+  const models = useViewerStore((state) => state.models);
+  const clearModels = useViewerStore((state) => state.clearModels);
+  const setHighlighter = useViewerStore((state) => state.setHighlighter);
+  const highlighter = useViewerStore((state) => state.highlighter);
+  const plans = useViewerStore((state) => state.plans);
+
+  const { onSelection, onDeselection } = useElementSelected();
 
   // Use a ref to store the cache to persist across re-renders without causing re-renders
   const decompositionCache = useRef<DecompositionCache>(new Map());
@@ -213,12 +222,18 @@ export function useIfcLoader() {
 
         // Generate floor plans
         const plans = components.get(OBCF.Plans);
-        plans.world = world;
-        try {
-          await plans.generate(model);
-          setPlans(plans);
-        } catch (error) {
-          console.error("Error generating floor plans:", error);
+        if (plans) {
+          // Clear existing plans
+          plans.dispose();
+          // Reinitialize the plans with the new world
+          plans.world = world;
+          try {
+            await plans.generate(model);
+            setPlans(plans);
+          } catch (error) {
+            console.error("Error generating floor plans:", error);
+            setPlans(null);
+          }
         }
 
         // Extract all the categories
@@ -250,6 +265,9 @@ export function useIfcLoader() {
         });
         setCategories(newCategories);
 
+        // const newHighlighter = setupHighlighter(world, components);
+        // setHighlighter(newHighlighter);
+
         return model;
       } catch (error) {
         console.error("Error loading IFC file:", error);
@@ -258,10 +276,104 @@ export function useIfcLoader() {
         setLoading(false);
       }
     },
-    [addModel, computeModelTree, setPlans, world, components, culler]
+    [
+      addModel,
+      computeModelTree,
+      setPlans,
+      world,
+      components,
+      culler,
+      setupHighlighter,
+    ]
   );
 
-  return { loadIfcFile };
+  /**
+   * Completely unload and clear all IFC models from scene and store.
+   */
+  const unloadAllIfcFiles = useCallback(async () => {
+    if (!world || !components) return;
+
+    setLoading(true);
+
+    try {
+      // 1. Clear all event listeners
+      if (highlighter) {
+        //    highlighter.events.select?.onHighlight.removeAll();
+        //    highlighter.events.select?.onClear.removeAll();
+      }
+
+      // 2. Dispose of plans
+      if (plans) {
+        plans.dispose();
+        setPlans(null);
+      }
+
+      // 3. Clear highlighter
+      if (highlighter) {
+        highlighter.clear();
+        // highlighter.dispose();
+        // setHighlighter(null);
+      }
+
+      // 4. Remove models from scene and dispose
+      for (const { fragmentsGroup } of models) {
+        // Remove from culler first
+        if (culler) {
+          fragmentsGroup.traverse((child) => {
+            if (child instanceof THREE.InstancedMesh) {
+              culler.remove(child);
+            }
+          });
+        }
+
+        // Remove from scene
+        world.scene?.three.remove(fragmentsGroup);
+
+        // Dispose of geometries and materials
+        fragmentsGroup.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry?.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material?.dispose();
+            }
+          }
+        });
+
+        // Dispose of the fragment group
+        fragmentsGroup.dispose();
+      }
+
+      // 5. Clear categories and other state
+      setCategories({});
+      clearModels();
+
+      // 6. Force garbage collection if available
+      if (window.gc) {
+        window.gc();
+      }
+    } catch (error) {
+      console.error("Failed to unload IFC models:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [world, components, models, culler, highlighter, plans]);
+
+  // Highlighter and on select element event
+  //   useEffect(() => {
+  //     if (!highlighter) return;
+
+  //     highlighter?.events.select?.onHighlight.add(onSelection);
+  //     highlighter?.events.select?.onClear.add(onDeselection);
+
+  //     return () => {
+  //       highlighter?.events.select?.onHighlight.remove(onSelection);
+  //       highlighter?.events.select?.onClear.remove(onDeselection);
+  //     };
+  //   }, [onSelection, highlighter, onDeselection]);
+
+  return { loadIfcFile, unloadAllIfcFiles };
 }
 
 // Load IFC model

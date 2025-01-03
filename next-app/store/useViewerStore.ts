@@ -24,7 +24,6 @@ interface ViewerState {
   setFragments: (fragments: OBC.FragmentsManager | null) => void;
   setHighlighter: (highlighter: OBCF.Highlighter | null) => void;
   addModel: (model: IFCModel) => void;
-  clearModels: () => void;
   setCategories: (categories: Record<string, IFCCategory>) => void;
   setSelectedElement: (element: EntityNode | null) => void;
   setLoading: (isLoading: boolean) => void;
@@ -33,6 +32,7 @@ interface ViewerState {
   setHider: (hider: OBC.Hider | null) => void;
   setAiMode: (aiMode: boolean) => void;
   setCuller: (culler: OBC.MeshCullerRenderer | null) => void;
+  clearModels: () => void;
 }
 
 const initialState = {
@@ -63,7 +63,6 @@ export const useViewerStore = create<ViewerState>((set) => ({
     set((state) => ({
       models: [...state.models.map((m) => ({ ...m })), { ...model }],
     })),
-  clearModels: () => set({ models: [] }),
   setCategories: (categories) => set({ categories }),
   setSelectedElement: (element) => set({ selectedElement: element }),
   setLoading: (isLoading) => set({ isLoading }),
@@ -72,4 +71,13 @@ export const useViewerStore = create<ViewerState>((set) => ({
   setCuller: (culler) => set({ culler }),
   setAiMode: (aiMode) => set({ aiMode }),
   reset: () => set(initialState),
+  clearModels: () =>
+    set((state) => {
+      return {
+        ...state,
+        models: [],
+        categories: {},
+        selectedElement: null,
+      };
+    }),
 }));

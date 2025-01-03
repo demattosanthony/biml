@@ -13,19 +13,17 @@ import { OrientationGizmo } from "@/components/oritentation-gizmo";
 import { useElementSelected } from "./useElementSelected";
 
 export function useViewer(containerId: string) {
-  const {
-    setWorld,
-    setCamera,
-    setComponents,
-    setFragments,
-    setCuller,
-    setHighlighter,
-    setHider,
-    setLoading,
-    reset,
-    highlighter,
-  } = useViewerStore();
-  const { onSelection, onDeselection } = useElementSelected();
+  const setWorld = useViewerStore((state) => state.setWorld);
+  const setCamera = useViewerStore((state) => state.setCamera);
+  const setComponents = useViewerStore((state) => state.setComponents);
+  const setFragments = useViewerStore((state) => state.setFragments);
+  const setCuller = useViewerStore((state) => state.setCuller);
+  const setHighlighter = useViewerStore((state) => state.setHighlighter);
+  const setHider = useViewerStore((state) => state.setHider);
+  const setLoading = useViewerStore((state) => state.setLoading);
+  const reset = useViewerStore((state) => state.reset);
+  //   const highlighter = useViewerStore((state) => state.highlighter);
+  //   const { onSelection, onDeselection } = useElementSelected();
 
   const initializeViewer = useCallback(async () => {
     const container = document.getElementById(containerId);
@@ -37,7 +35,7 @@ export function useViewer(containerId: string) {
       const components = new OBC.Components();
       const world = createWorld(components, container);
       const fragments = await setupFragments(components);
-      const highlighter = setupHighlighter(world, components);
+      //   const highlighter = setupHighlighter(world, components);
       const culler = setupCuller(world, components);
       const hider = setupHider(components);
       setupStats(world, container);
@@ -45,7 +43,7 @@ export function useViewer(containerId: string) {
       setComponents(components);
       setWorld(world);
       setFragments(fragments);
-      setHighlighter(highlighter);
+      //  setHighlighter(highlighter);
       setCamera(world.camera);
       setCuller(culler);
       setHider(hider);
@@ -69,7 +67,7 @@ export function useViewer(containerId: string) {
       return () => {
         world?.dispose();
         fragments?.dispose();
-        highlighter?.dispose();
+        // highlighter?.dispose();
         components?.dispose();
         culler?.dispose();
         reset();
@@ -80,19 +78,6 @@ export function useViewer(containerId: string) {
       setLoading(false);
     }
   }, [containerId]);
-
-  // Highlighter and on select element event
-  useEffect(() => {
-    if (!highlighter) return;
-
-    highlighter?.events.select?.onHighlight.add(onSelection);
-    highlighter?.events.select?.onClear.add(onDeselection);
-
-    return () => {
-      highlighter?.events.select?.onHighlight.remove(onSelection);
-      highlighter?.events.select?.onClear.remove(onDeselection);
-    };
-  }, [onSelection, highlighter]);
 
   return { initializeViewer };
 }

@@ -1,4 +1,3 @@
-// Imports
 import { useCallback, useMemo } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
@@ -44,6 +43,7 @@ export function useElementSelected() {
   const setSelectedElement = useViewerStore(
     (state) => state.setSelectedElement
   );
+  const highlighter = useViewerStore((state) => state.highlighter);
 
   // Assume only one model is loaded
   const model: IFCModel | null = useMemo(
@@ -413,11 +413,8 @@ export function useElementSelected() {
     async (fragmentIdMap: FragmentIdMap) => {
       console.log("Element selected", fragmentIdMap);
 
-      console.log("MODEL", model);
-      console.log("MODELS", models);
-
       if (!model) {
-        console.log("No model found");
+        console.log("Model not found");
         setSelectedElement(null);
         return;
       }
@@ -453,7 +450,15 @@ export function useElementSelected() {
         setSelectedElement(null);
       }
     },
-    [model, processEntityAttributes, setSelectedElement, getModelUnit, models]
+    [
+      model,
+      models,
+      processEntityAttributes,
+      setSelectedElement,
+      getModelUnit,
+      models,
+      highlighter,
+    ]
   );
 
   // Deselection Callback
