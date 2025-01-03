@@ -13,7 +13,7 @@ export default function FilesLayout({
       <FileViewerHeader />
 
       <div className="flex flex-1 w-full mt-[55px] items-center justify-center overflow-y-auto">
-        <Worker workerUrl="http://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+        <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
           {children}
         </Worker>
 
