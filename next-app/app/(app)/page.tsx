@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ViewerLayout } from "@/components/viewer/viewer-layout";
 import { ElementDetailsSidebarRight } from "@/components/element-details-sidebar";
 import IFCViewer from "@/components/ifc-viewer";
@@ -8,23 +8,17 @@ import { LoadingOverlay } from "@/components/viewer/loading-overlay";
 import TerminalChat from "@/components/viewer/terminal-chat";
 import api from "@/lib/api";
 import { useChat } from "@/hooks/useChat";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export default function ModelViewerUploadPage() {
-  //   const {
-  //     // uploadedFiles,
-  //     // setUploadedFiles,
-  //     selectedElement,
-  //     isLoading,
-  //     // aiMode,
-  //   } = useViewerStore();
-  const aiMode = false;
-  const selectedElement = null;
+  const [files, setUploadedFiles] = useState<File[]>([]);
+  const { isLoading, aiMode, selectedElement } = useViewerStore();
 
   const { setIfcSessionId } = useChat();
 
   // Same handleModelUpload logic, but we won't show any UI for it
   const handleModelUpload = async (files: File[]) => {
-    // setUploadedFiles(files);
+    setUploadedFiles(files);
     api.createIfcSession(files[0]).then((sessionId) => {
       setIfcSessionId(sessionId);
     });
@@ -51,7 +45,7 @@ export default function ModelViewerUploadPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-      {/* {loadingModels && <LoadingOverlay />} */}
+      {isLoading && <LoadingOverlay />}
       <ViewerLayout
         selectedElement={selectedElement}
         rightSidebar={<ElementDetailsSidebarRight />}
@@ -63,7 +57,7 @@ export default function ModelViewerUploadPage() {
               aiMode ? "h-[50%]" : "flex-1"
             } transition-all duration-300`}
           >
-            <IFCViewer files={[]} />
+            <IFCViewer files={files} />
           </div>
 
           {/* Terminal chat container */}

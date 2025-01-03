@@ -3,9 +3,11 @@
 import IFCViewerToolbar from "./ifc-viewer-toolbar";
 import { useEffect } from "react";
 import { useViewer } from "@/hooks/ifc-viewer/useViewer";
+import { useIfcLoader } from "@/hooks/ifc-viewer/useIfcLoader";
 
 export default function IFCViewer({ files }: { files: File[] }) {
   const { initializeViewer } = useViewer("ifc-viewer");
+  const { loadIfcFile } = useIfcLoader();
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -18,6 +20,12 @@ export default function IFCViewer({ files }: { files: File[] }) {
 
     return () => cleanup?.();
   }, []);
+
+  useEffect(() => {
+    if (files.length) {
+      loadIfcFile(files[0]);
+    }
+  }, [files, loadIfcFile]);
 
   return (
     <div className="flex flex-1 relative h-full bg-secondary">

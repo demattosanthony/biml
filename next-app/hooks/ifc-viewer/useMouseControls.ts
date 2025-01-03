@@ -1,9 +1,9 @@
+import { useViewerStore } from "@/store/useViewerStore";
 import { useCallback, useRef, useState } from "react";
 import * as THREE from "three";
-import { useIfcViewer } from "./useIfcViewer";
 
 export function useMouseControls() {
-  const { world } = useIfcViewer();
+  const { world } = useViewerStore();
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const raycasterRef = useRef(new THREE.Raycaster());

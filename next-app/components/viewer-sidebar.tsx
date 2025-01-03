@@ -41,8 +41,7 @@ import { useViewerStore } from "@/store/useViewerStore";
 
 export function IFCViewerSidebar() {
   const { models, categories, highlighter } = useViewerStore();
-  const { theme, systemTheme } = useTheme();
-  const realTheme = theme === "system" ? systemTheme : theme;
+  const { resolvedTheme } = useTheme();
 
   return (
     <Sidebar side="left">
@@ -57,7 +56,7 @@ export function IFCViewerSidebar() {
                       height={30}
                       width={30}
                       src={
-                        realTheme === "dark"
+                        resolvedTheme === "dark"
                           ? "/rhombicuboctahedron-white.svg"
                           : "/rhombicuboctahedron.svg"
                       }

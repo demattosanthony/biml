@@ -47,8 +47,7 @@ export default function Component() {
     },
   ];
 
-  const { world } = useViewerStore();
-  const [aiMode, setAiMode] = useState(false);
+  const { aiMode, setAiMode, world } = useViewerStore();
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isOrthographic, setIsOrthographic] = useState(false);

@@ -4,8 +4,8 @@ import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import Stats from "stats.js";
 
-async function createWorld(components: OBC.Components, container: HTMLElement) {
-  const world = await components
+function createWorld(components: OBC.Components, container: HTMLElement) {
+  const world = components
     .get(OBC.Worlds)
     .create<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBC.SimpleRenderer>();
 
@@ -20,7 +20,6 @@ async function createWorld(components: OBC.Components, container: HTMLElement) {
 
   const grids = components.get(OBC.Grids);
   const grid = grids.create(world);
-  console.log(grid);
 
   return world;
 }
@@ -87,10 +86,15 @@ function setupStats(world: OBC.World, container: HTMLElement | null = null) {
   world.renderer.onAfterUpdate.add(() => stats.end());
 }
 
+function setupHider(components: OBC.Components) {
+  return components.get(OBC.Hider);
+}
+
 export {
   createWorld,
   setupFragments,
   setupHighlighter,
   setupCuller,
   setupStats,
+  setupHider,
 };

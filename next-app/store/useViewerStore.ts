@@ -16,6 +16,7 @@ interface ViewerState {
   isLoading: boolean;
   plans: OBCF.Plans | null;
   hider: OBC.Hider | null;
+  aiMode: boolean;
 
   setWorld: (world: OBC.World | null) => void;
   setCamera: (camera: OBC.OrthoPerspectiveCamera | null) => void;
@@ -30,6 +31,7 @@ interface ViewerState {
   reset: () => void;
   setPlans: (plans: OBCF.Plans | null) => void;
   setHider: (hider: OBC.Hider | null) => void;
+  setAiMode: (aiMode: boolean) => void;
   setCuller: (culler: OBC.MeshCullerRenderer | null) => void;
 }
 
@@ -46,6 +48,7 @@ const initialState = {
   plans: null,
   hider: null,
   culler: null,
+  aiMode: false,
 };
 
 export const useViewerStore = create<ViewerState>((set) => ({
@@ -58,7 +61,7 @@ export const useViewerStore = create<ViewerState>((set) => ({
   setHighlighter: (highlighter) => set({ highlighter }),
   addModel: (model) =>
     set((state) => ({
-      models: [...state.models, model],
+      models: [...state.models.map((m) => ({ ...m })), { ...model }],
     })),
   clearModels: () => set({ models: [] }),
   setCategories: (categories) => set({ categories }),
@@ -67,5 +70,6 @@ export const useViewerStore = create<ViewerState>((set) => ({
   setPlans: (plans) => set({ plans }),
   setHider: (hider) => set({ hider }),
   setCuller: (culler) => set({ culler }),
+  setAiMode: (aiMode) => set({ aiMode }),
   reset: () => set(initialState),
 }));

@@ -1,14 +1,16 @@
 import { useViewerStore } from "@/store/useViewerStore";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import * as OBC from "@thatopen/components";
 import {
   createWorld,
   setupCuller,
   setupFragments,
+  setupHider,
   setupHighlighter,
   setupStats,
 } from "@/lib/viewer";
 import { OrientationGizmo } from "@/components/oritentation-gizmo";
+import { useElementSelected } from "./useElementSelected";
 
 export function useViewer(containerId: string) {
   const {
@@ -18,9 +20,12 @@ export function useViewer(containerId: string) {
     setFragments,
     setCuller,
     setHighlighter,
+    setHider,
     setLoading,
     reset,
+    highlighter,
   } = useViewerStore();
+  const { onSelection, onDeselection } = useElementSelected();
 
   const initializeViewer = useCallback(async () => {
     const container = document.getElementById(containerId);
@@ -30,10 +35,11 @@ export function useViewer(containerId: string) {
 
     try {
       const components = new OBC.Components();
-      const world = await createWorld(components, container);
+      const world = createWorld(components, container);
       const fragments = await setupFragments(components);
       const highlighter = setupHighlighter(world, components);
       const culler = setupCuller(world, components);
+      const hider = setupHider(components);
       setupStats(world, container);
 
       setComponents(components);
@@ -42,6 +48,7 @@ export function useViewer(containerId: string) {
       setHighlighter(highlighter);
       setCamera(world.camera);
       setCuller(culler);
+      setHider(hider);
 
       // Add the orientation gizmo component
       new OrientationGizmo(components, world);
@@ -73,6 +80,19 @@ export function useViewer(containerId: string) {
       setLoading(false);
     }
   }, [containerId]);
+
+  // Highlighter and on select element event
+  useEffect(() => {
+    if (!highlighter) return;
+
+    highlighter?.events.select?.onHighlight.add(onSelection);
+    highlighter?.events.select?.onClear.add(onDeselection);
+
+    return () => {
+      highlighter?.events.select?.onHighlight.remove(onSelection);
+      highlighter?.events.select?.onClear.remove(onDeselection);
+    };
+  }, [onSelection, highlighter]);
 
   return { initializeViewer };
 }

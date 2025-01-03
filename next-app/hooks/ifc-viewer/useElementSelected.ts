@@ -2,7 +2,6 @@
 import { useCallback, useMemo } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
-import * as FRAGS from "@thatopen/fragments";
 import {
   ElementAttributes,
   EntityNode,
@@ -13,8 +12,8 @@ import {
   QuantitySet,
   IFCModel,
 } from "@/types/ifc";
-import { useIfcViewer } from "./useIfcViewer";
-import { FragmentIdMap, FragmentsGroup } from "@thatopen/fragments";
+import { FragmentIdMap } from "@thatopen/fragments";
+import { useViewerStore } from "@/store/useViewerStore";
 
 // Constants for unit mappings
 const UNIT_TYPE_MAP: Record<string, string> = {
@@ -40,8 +39,11 @@ const IFC_UNIT_SYMBOLS: Record<string, { symbol: string; digits: number }> = {
 
 // Hook Implementation
 export function useElementSelected() {
-  const { highlighter, models, components, setSelectedElement } =
-    useIfcViewer();
+  const models = useViewerStore((state) => state.models);
+  const components = useViewerStore((state) => state.components);
+  const setSelectedElement = useViewerStore(
+    (state) => state.setSelectedElement
+  );
 
   // Assume only one model is loaded
   const model: IFCModel | null = useMemo(
@@ -411,7 +413,11 @@ export function useElementSelected() {
     async (fragmentIdMap: FragmentIdMap) => {
       console.log("Element selected", fragmentIdMap);
 
+      console.log("MODEL", model);
+      console.log("MODELS", models);
+
       if (!model) {
+        console.log("No model found");
         setSelectedElement(null);
         return;
       }
@@ -447,7 +453,7 @@ export function useElementSelected() {
         setSelectedElement(null);
       }
     },
-    [model, processEntityAttributes, setSelectedElement]
+    [model, processEntityAttributes, setSelectedElement, getModelUnit, models]
   );
 
   // Deselection Callback
