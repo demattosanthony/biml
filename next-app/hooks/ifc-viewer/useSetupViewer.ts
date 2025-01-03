@@ -172,9 +172,8 @@ export function useSetup(files: File[]) {
 
     world.camera.updateAspect();
     focusOnModels();
-
     const stats = new Stats();
-    stats.showPanel(2);
+    stats.showPanel(0); // 0 shows FPS by default
     if (container) {
       container.append(stats.dom);
       stats.dom.style.position = "absolute"; // Ensure absolute positioning
