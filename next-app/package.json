@@ -56,7 +56,8 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.170.0",
     "three-viewport-gizmo": "^1.0.6",
-    "web-ifc": "^0.0.61"
+    "web-ifc": "^0.0.61",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@types/node": "^20",

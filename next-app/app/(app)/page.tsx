@@ -8,22 +8,23 @@ import { LoadingOverlay } from "@/components/viewer/loading-overlay";
 import TerminalChat from "@/components/viewer/terminal-chat";
 import api from "@/lib/api";
 import { useChat } from "@/hooks/useChat";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 
 export default function ModelViewerUploadPage() {
-  const {
-    uploadedFiles,
-    setUploadedFiles,
-    selectedElement,
-    loadingModels,
-    aiMode,
-  } = useIfcViewer();
+  //   const {
+  //     // uploadedFiles,
+  //     // setUploadedFiles,
+  //     selectedElement,
+  //     isLoading,
+  //     // aiMode,
+  //   } = useViewerStore();
+  const aiMode = false;
+  const selectedElement = null;
 
   const { setIfcSessionId } = useChat();
 
   // Same handleModelUpload logic, but we won't show any UI for it
   const handleModelUpload = async (files: File[]) => {
-    setUploadedFiles(files);
+    // setUploadedFiles(files);
     api.createIfcSession(files[0]).then((sessionId) => {
       setIfcSessionId(sessionId);
     });
@@ -62,7 +63,7 @@ export default function ModelViewerUploadPage() {
               aiMode ? "h-[50%]" : "flex-1"
             } transition-all duration-300`}
           >
-            <IFCViewer files={uploadedFiles} />
+            <IFCViewer files={[]} />
           </div>
 
           {/* Terminal chat container */}

@@ -9,7 +9,7 @@ import { useMouseControls } from "./useMouseControls";
 import Stats from "stats.js";
 import { OrientationGizmo } from "@/components/oritentation-gizmo";
 import { IFCCategory } from "@/types/ifc";
-import { useIfcViewer } from "./useIfcViewer";
+import { useViewerStore } from "@/store/useViewerStore";
 
 // This hook sets up the IFC viewer with the given files
 // It loads the world, fragments, highlighter, culler, and other components
@@ -21,7 +21,7 @@ export function useSetup(files: File[]) {
     setFragments,
     setHighlighter,
     setHider,
-    setLoadingModels,
+    setLoading,
     highlighter,
     setComponents,
     setCamera,
@@ -29,7 +29,7 @@ export function useSetup(files: File[]) {
     categories: loadedCategories,
     fragments,
     clearModels,
-  } = useIfcViewer();
+  } = useViewerStore();
 
   const { onSelection, onDeselection } = useElementSelected();
 
@@ -48,7 +48,7 @@ export function useSetup(files: File[]) {
       return;
     }
 
-    setLoadingModels(true);
+    setLoading(true);
 
     // Create new components instance if it doesn't exist
     if (!componentsRef.current) {
@@ -168,7 +168,7 @@ export function useSetup(files: File[]) {
       culler.needsUpdate = true;
     });
 
-    setLoadingModels(false);
+    setLoading(false);
 
     world.camera.updateAspect();
     focusOnModels();
@@ -254,7 +254,7 @@ export function useSetup(files: File[]) {
 }
 
 export function useCameraFocus() {
-  const { world, models, components } = useIfcViewer();
+  const { world, models, components } = useViewerStore();
 
   const focusOnModels = useCallback(() => {
     if (!world || !components || models.length === 0) return;

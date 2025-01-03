@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
+import { useViewerStore } from "@/store/useViewerStore";
 
 type CameraMode = {
   id: string;
@@ -47,7 +47,8 @@ export default function Component() {
     },
   ];
 
-  const { world, aiMode, setAiMode } = useIfcViewer();
+  const { world } = useViewerStore();
+  const [aiMode, setAiMode] = useState(false);
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isOrthographic, setIsOrthographic] = useState(false);

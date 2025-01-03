@@ -2,7 +2,6 @@ import { useChat } from "@/hooks/useChat";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { MessageRole, ToolCall } from "@/types/message";
 import {
   Loader2,
@@ -86,7 +85,7 @@ export default function TerminalChat() {
     resetChat,
     ifcSessionId,
   } = useChat();
-  const { setAiMode } = useIfcViewer();
+  const [aiMode, setAiMode] = useState(true);
 
   useEffect(() => {
     createThread();

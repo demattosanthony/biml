@@ -5,14 +5,15 @@ import * as OBCF from "@thatopen/components-front";
 import * as THREE from "three";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { EntityNode } from "@/types/ifc";
-import { useIfcViewer } from "./useIfcViewer";
+import { useViewerStore } from "@/store/useViewerStore";
 
 // Define a type for the memoization cache
 type DecompositionCache = Map<number, EntityNode>;
 
 export function useIfcLoader() {
   const [loadingModel, setLoadingModel] = useState(false);
-  const { addModel, setPlans } = useIfcViewer();
+  const setPlans = useViewerStore((state) => state.setPlans);
+  const addModel = useViewerStore((state) => state.addModel);
 
   // Use a ref to store the cache to persist across re-renders without causing re-renders
   const decompositionCache = useRef<DecompositionCache>(new Map());

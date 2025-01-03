@@ -1,15 +1,23 @@
 "use client";
 
-import { useSetup } from "@/hooks/ifc-viewer/useSetupViewer";
 import IFCViewerToolbar from "./ifc-viewer-toolbar";
 import { useEffect } from "react";
+import { useViewer } from "@/hooks/ifc-viewer/useViewer";
 
 export default function IFCViewer({ files }: { files: File[] }) {
-  const { setupWorld } = useSetup(files);
+  const { initializeViewer } = useViewer("ifc-viewer");
 
   useEffect(() => {
-    if (files.length > 0) setupWorld();
-  }, [setupWorld]);
+    let cleanup: (() => void) | undefined;
+
+    const init = async () => {
+      cleanup = await initializeViewer();
+    };
+
+    init();
+
+    return () => cleanup?.();
+  }, []);
 
   return (
     <div className="flex flex-1 relative h-full bg-secondary">

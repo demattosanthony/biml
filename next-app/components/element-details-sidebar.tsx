@@ -24,13 +24,13 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { ChevronRight } from "lucide-react";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { Property, ElementAttributes } from "@/types/ifc";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export function ElementDetailsSidebarRight({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { selectedElement, setSelectedElement } = useIfcViewer();
+  const { selectedElement, setSelectedElement } = useViewerStore();
 
   // Helper function to format property values
   const formatPropertyValue = (prop: Property) => {
