@@ -63,8 +63,8 @@ export default function Component() {
     setAiMode(!aiMode);
     setTimeout(() => {
       window.dispatchEvent(new Event("resize"));
-      // world?.renderer?.resize();
-      // world?.camera?.updateAspect();
+      //   world?.renderer?.resize();
+      //   world?.camera?.updateAspect();
     }, 200);
   };
 

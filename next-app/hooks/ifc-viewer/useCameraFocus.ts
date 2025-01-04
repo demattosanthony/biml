@@ -4,7 +4,9 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
 export function useCameraFocus() {
-  const { world, models, components } = useViewerStore();
+  const world = useViewerStore((state) => state.world);
+  const models = useViewerStore((state) => state.models);
+  const components = useViewerStore((state) => state.components);
 
   const focusOnModels = useCallback(() => {
     if (!world || !components || models.length === 0) return;

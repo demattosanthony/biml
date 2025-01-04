@@ -56,8 +56,8 @@ export default function ModelViewerUploadPage() {
           {/* IFC viewer container */}
           <div
             className={`${
-              aiMode ? "h-[50%]" : "flex-1"
-            } transition-all duration-300`}
+              aiMode ? "h-1/2" : "flex-1"
+            } transition-all duration-300 relative`}
           >
             <IFCViewer files={files} />
           </div>
@@ -65,7 +65,7 @@ export default function ModelViewerUploadPage() {
           {/* Terminal chat container */}
           <div
             className={`overflow-hidden transition-all duration-300 ${
-              aiMode ? "h-[50%]" : "h-0"
+              aiMode ? "h-1/2" : "h-0"
             }`}
           >
             {aiMode && <TerminalChat />}

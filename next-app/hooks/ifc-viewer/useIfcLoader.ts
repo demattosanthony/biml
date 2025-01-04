@@ -8,6 +8,7 @@ import { EntityNode, IFCCategory } from "@/types/ifc";
 import { useViewerStore } from "@/store/useViewerStore";
 import { setupHighlighter } from "@/lib/viewer";
 import { useElementSelected } from "./useElementSelected";
+import { useCameraFocus } from "./useCameraFocus";
 
 // Define a type for the memoization cache
 type DecompositionCache = Map<number, EntityNode>;
@@ -25,8 +26,10 @@ export function useIfcLoader() {
   const clearModels = useViewerStore((state) => state.clearModels);
   const highlighter = useViewerStore((state) => state.highlighter);
   const plans = useViewerStore((state) => state.plans);
+  const setHighlighter = useViewerStore((state) => state.setHighlighter);
 
   const { onSelection, onDeselection } = useElementSelected();
+  const { focusOnModels } = useCameraFocus();
 
   // Use a ref to store the cache to persist across re-renders without causing re-renders
   const decompositionCache = useRef<DecompositionCache>(new Map());
@@ -175,6 +178,8 @@ export function useIfcLoader() {
 
         world.scene.three.add(model);
 
+        model.position.set(0, 0, 0);
+
         // Add instanced meshes to the culler if necessary
         const FILE_SIZE_THRESHOLD_FOR_CULLING = 100 * 1024 * 1024; // 100MB
         const fileSizeInBytes = file.size;
@@ -298,8 +303,12 @@ export function useIfcLoader() {
         setPlans(null);
       }
 
+      const fragments = components.get(OBC.FragmentsManager);
+
       // 4. Remove models from scene and dispose
       for (const { fragmentsGroup } of models) {
+        fragments.disposeGroup(fragmentsGroup);
+
         // Remove from culler first
         if (culler) {
           fragmentsGroup.traverse((child) => {
@@ -308,12 +317,21 @@ export function useIfcLoader() {
             }
           });
         }
-
         // Remove from scene
         world.scene?.three.remove(fragmentsGroup);
 
-        // // Dispose of the fragment group
-        fragmentsGroup.clear();
+        fragmentsGroup.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((material) => material.dispose());
+              } else {
+                child.material.dispose();
+              }
+            }
+          }
+        });
       }
 
       clearModels();
@@ -328,6 +346,8 @@ export function useIfcLoader() {
   useEffect(() => {
     if (!highlighter) return;
 
+    console.log("Setting up highlighter events");
+
     highlighter?.events.select?.onHighlight.add(onSelection);
     highlighter?.events.select?.onClear.add(onDeselection);
 
@@ -336,6 +356,10 @@ export function useIfcLoader() {
       highlighter?.events.select?.onClear.remove(onDeselection);
     };
   }, [onSelection, highlighter, onDeselection]);
+
+  //   useEffect(() => {
+  //     focusOnModels();
+  //   }, [models]);
 
   return { loadIfcFile, unloadAllIfcFiles };
 }

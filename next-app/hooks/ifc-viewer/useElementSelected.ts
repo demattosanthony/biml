@@ -44,6 +44,7 @@ export function useElementSelected() {
     (state) => state.setSelectedElement
   );
   const highlighter = useViewerStore((state) => state.highlighter);
+  const world = useViewerStore((state) => state.world);
 
   // Assume only one model is loaded
   const model: IFCModel | null = useMemo(
@@ -443,12 +444,19 @@ export function useElementSelected() {
         if (selectedElement) {
           setSelectedElement(selectedElement);
         } else {
+          console.log("Selected element not found");
           setSelectedElement(null);
         }
       } catch (error) {
         console.error("Error during element selection:", error);
         setSelectedElement(null);
       }
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+        //   world?.renderer?.resize();
+        //   world?.camera?.updateAspect();
+      }, 200);
     },
     [
       model,
@@ -458,12 +466,18 @@ export function useElementSelected() {
       getModelUnit,
       models,
       highlighter,
+      world,
     ]
   );
 
   // Deselection Callback
   const onDeselection = useCallback(() => {
     setSelectedElement(null);
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+      //   world?.renderer?.resize();
+      //   world?.camera?.updateAspect();
+    }, 200);
   }, [setSelectedElement]);
 
   return { onSelection, onDeselection };

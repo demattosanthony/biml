@@ -23,7 +23,7 @@ export const ViewerLayout = ({
       >
         <IFCViewerSidebar />
         <SidebarInset className="flex overflow-hidden">
-          <div className="flex-1 relative w-full h-full">{children}</div>
+          <div className="flex-1 relative">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </div>

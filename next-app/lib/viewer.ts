@@ -49,7 +49,6 @@ async function setupFragments(components: OBC.Components) {
 function setupHighlighter(world: OBC.World, components: OBC.Components) {
   try {
     const highlighter = components.get(OBCF.Highlighter);
-    // Add a flag to prevent re-setup
     highlighter.setup({
       world,
       hoverColor: new THREE.Color(0x0b99ff),
@@ -65,7 +64,7 @@ function setupHighlighter(world: OBC.World, components: OBC.Components) {
 function setupCuller(
   world: OBC.World,
   components: OBC.Components,
-  threshold: number = 5
+  threshold: number = 20
 ) {
   const cullers = components.get(OBC.Cullers);
   const culler = cullers.create(world);

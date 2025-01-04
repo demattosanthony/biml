@@ -10,7 +10,6 @@ import {
   setupStats,
 } from "@/lib/viewer";
 import { OrientationGizmo } from "@/components/oritentation-gizmo";
-import { useCameraFocus } from "./useCameraFocus";
 
 export function useViewer(containerId: string) {
   const setWorld = useViewerStore((state) => state.setWorld);
@@ -21,8 +20,6 @@ export function useViewer(containerId: string) {
   const setHighlighter = useViewerStore((state) => state.setHighlighter);
   const setHider = useViewerStore((state) => state.setHider);
   const reset = useViewerStore((state) => state.reset);
-
-  const { focusOnModels } = useCameraFocus();
 
   const initializeViewer = useCallback(async () => {
     const container = document.getElementById(containerId);
@@ -62,7 +59,6 @@ export function useViewer(containerId: string) {
       });
 
       world.camera.updateAspect();
-      focusOnModels();
 
       return () => {
         world?.dispose();
