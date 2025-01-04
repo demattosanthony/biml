@@ -12,7 +12,9 @@ import { useViewerStore } from "@/store/useViewerStore";
 
 export default function ModelViewerUploadPage() {
   const [files, setUploadedFiles] = useState<File[]>([]);
-  const { isLoading, aiMode, selectedElement } = useViewerStore();
+  const isLoading = useViewerStore((state) => state.isLoading);
+  const aiMode = useViewerStore((state) => state.aiMode);
+  const selectedElement = useViewerStore((state) => state.selectedElement);
 
   const { setIfcSessionId } = useChat();
 

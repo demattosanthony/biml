@@ -54,8 +54,6 @@ function setupHighlighter(world: OBC.World, components: OBC.Components) {
       world,
       hoverColor: new THREE.Color(0x0b99ff),
       selectionColor: new THREE.Color(0x0b99ff),
-      //   selectName: Date.now().toString() + "select",
-      //   hoverName: Date.now().toString() + "hover",
     });
     highlighter.zoomToSelection = false;
     return highlighter;

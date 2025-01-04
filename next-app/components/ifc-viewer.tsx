@@ -46,6 +46,7 @@ export default function IFCViewer({ files }: { files: File[] }) {
 
   useEffect(() => {
     if (files.length && newFiles.length === 0) {
+      unloadAllIfcFiles();
       loadIfcFile(files[0]);
     }
   }, [files, loadIfcFile]);
