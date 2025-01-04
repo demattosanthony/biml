@@ -51,7 +51,7 @@ export default function Component() {
     },
   ];
 
-  const { aiMode, setAiMode, world } = useViewerStore();
+  const { aiMode, setAiMode, world, setLoading } = useViewerStore();
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isOrthographic, setIsOrthographic] = useState(false);
@@ -194,6 +194,7 @@ export default function Component() {
     setNewFiles(newFiles);
 
     // Create new IFC session
+    setLoading(true);
     const sessionId = await api.createIfcSession(newFiles[0]);
     setIfcSessionId(sessionId);
 
