@@ -5,11 +5,11 @@ import * as FRAGS from "@thatopen/fragments";
 import { useState } from "react";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { TypographyH3 } from "./typography-new";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export default function IFCModelCard() {
-  const { models, plans, hider, culler } = useIfcViewer();
+  const { models, plans, hider, culler } = useViewerStore();
 
   const [visibility, setVisibility] = useState<{ [key: number]: boolean }>({});
 

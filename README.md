@@ -38,13 +38,3 @@ Plans:
 - pay per compute usage
 - enterprise version to host on your own servers
 
-### Pitch to raj
-
-- improve the efficencny of your engineers (especially the ones in india)
-- remove dependance on autodesk
-- improve qa/qc process
-- improve your digital handover
-- specification in code compared against the models
-
-- create the brick schema models within the models
-- strong version control

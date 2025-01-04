@@ -1,18 +1,32 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as OBC from "@thatopen/components";
 import * as WEBIFC from "web-ifc";
 import * as OBCF from "@thatopen/components-front";
 import * as THREE from "three";
 import { FragmentsGroup } from "@thatopen/fragments";
-import { EntityNode } from "@/types/ifc";
-import { useIfcViewer } from "./useIfcViewer";
+import { EntityNode, IFCCategory } from "@/types/ifc";
+import { useViewerStore } from "@/store/useViewerStore";
+import { setupHighlighter } from "@/lib/viewer";
+import { useElementSelected } from "./useElementSelected";
 
 // Define a type for the memoization cache
 type DecompositionCache = Map<number, EntityNode>;
 
 export function useIfcLoader() {
-  const [loadingModel, setLoadingModel] = useState(false);
-  const { addModel, setPlans } = useIfcViewer();
+  const setLoading = useViewerStore((state) => state.setLoading);
+  const world = useViewerStore((state) => state.world);
+  const components = useViewerStore((state) => state.components);
+  const culler = useViewerStore((state) => state.culler);
+  const setPlans = useViewerStore((state) => state.setPlans);
+  const addModel = useViewerStore((state) => state.addModel);
+  const categories = useViewerStore((state) => state.categories);
+  const setCategories = useViewerStore((state) => state.setCategories);
+  const models = useViewerStore((state) => state.models);
+  const clearModels = useViewerStore((state) => state.clearModels);
+  const highlighter = useViewerStore((state) => state.highlighter);
+  const plans = useViewerStore((state) => state.plans);
+
+  const { onSelection, onDeselection } = useElementSelected();
 
   // Use a ref to store the cache to persist across re-renders without causing re-renders
   const decompositionCache = useRef<DecompositionCache>(new Map());
@@ -145,18 +159,14 @@ export function useIfcLoader() {
    * Loads an IFC file, processes it, and adds it to the scene.
    */
   const loadIfcFile = useCallback(
-    async (
-      world: OBC.World | null,
-      file: File,
-      fragmentIfcLoader: OBC.IfcLoader,
-      components: OBC.Components,
-      culler?: OBC.MeshCullerRenderer
-    ): Promise<FragmentsGroup> => {
-      if (!world || !fragmentIfcLoader) {
-        throw new Error("World or loader not set");
+    async (file: File): Promise<FragmentsGroup | null> => {
+      if (!world || !components) {
+        console.error("World or components not initialized.");
+        return null;
       }
+      const fragmentIfcLoader = components.get(OBC.IfcLoader);
 
-      setLoadingModel(true);
+      setLoading(true);
       try {
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
@@ -211,26 +221,123 @@ export function useIfcLoader() {
 
         // Generate floor plans
         const plans = components.get(OBCF.Plans);
-        plans.world = world;
-        try {
-          await plans.generate(model);
-          setPlans(plans);
-        } catch (error) {
-          console.error("Error generating floor plans:", error);
+        if (plans) {
+          // Clear existing plans
+          plans.dispose();
+          // Reinitialize the plans with the new world
+          plans.world = world;
+          try {
+            await plans.generate(model);
+            setPlans(plans);
+          } catch (error) {
+            console.error("Error generating floor plans:", error);
+            setPlans(null);
+          }
         }
+
+        // Extract all the categories
+        const classifier = components.get(OBC.Classifier);
+
+        // Save all ifc categories
+        classifier.byEntity(model);
+        const entities = classifier.list["entities"];
+
+        const newCategories: Record<string, IFCCategory> = {
+          ...categories,
+        };
+
+        // Iterate through each entity group
+        Object.entries(entities).forEach(([groupName, entityData]) => {
+          const categoryName = entityData.name;
+
+          // If category doesn't exist, create it
+          if (!newCategories[categoryName]) {
+            newCategories[categoryName] = {
+              name: categoryName,
+              fragIds: {},
+            };
+          }
+
+          // Update fragment IDs for this category
+          // The map property from entities contains the fragment IDs for the current model
+          newCategories[categoryName].fragIds[model.id] = entityData.map;
+        });
+        setCategories(newCategories);
 
         return model;
       } catch (error) {
         console.error("Error loading IFC file:", error);
         throw error;
       } finally {
-        setLoadingModel(false);
+        setLoading(false);
       }
     },
-    [addModel, computeModelTree, setPlans]
+    [
+      addModel,
+      computeModelTree,
+      setPlans,
+      world,
+      components,
+      culler,
+      highlighter,
+      setupHighlighter,
+    ]
   );
 
-  return { loadIfcFile, loadingModel };
+  /**
+   * Completely unload and clear all IFC models from scene and store.
+   */
+  const unloadAllIfcFiles = useCallback(async () => {
+    if (!world || !components) return;
+
+    setLoading(true);
+
+    try {
+      if (plans) {
+        plans.dispose();
+        setPlans(null);
+      }
+
+      // 4. Remove models from scene and dispose
+      for (const { fragmentsGroup } of models) {
+        // Remove from culler first
+        if (culler) {
+          fragmentsGroup.traverse((child) => {
+            if (child instanceof THREE.InstancedMesh) {
+              culler.remove(child);
+            }
+          });
+        }
+
+        // Remove from scene
+        world.scene?.three.remove(fragmentsGroup);
+
+        // // Dispose of the fragment group
+        fragmentsGroup.clear();
+      }
+
+      clearModels();
+    } catch (error) {
+      console.error("Failed to unload IFC models:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [world, components, models, culler, highlighter, plans]);
+
+  //   Highlighter and on select element event
+  useEffect(() => {
+    if (!highlighter) return;
+
+    highlighter?.events.select?.onHighlight.add(onSelection);
+    highlighter?.events.select?.onClear.add(onDeselection);
+
+    return () => {
+      highlighter?.events.select?.onHighlight.remove(onSelection);
+      highlighter?.events.select?.onClear.remove(onDeselection);
+    };
+  }, [onSelection, highlighter, onDeselection]);
+
+  return { loadIfcFile, unloadAllIfcFiles };
 }
 
 // Load IFC model

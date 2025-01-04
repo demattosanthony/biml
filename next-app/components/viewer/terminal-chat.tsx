@@ -2,7 +2,6 @@ import { useChat } from "@/hooks/useChat";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus, X } from "lucide-react";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { MessageRole, ToolCall } from "@/types/message";
 import {
   Loader2,
@@ -12,6 +11,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useState } from "react";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export function ToolStateDisplay({ toolData }: { toolData: ToolCall }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -86,7 +86,7 @@ export default function TerminalChat() {
     resetChat,
     ifcSessionId,
   } = useChat();
-  const { setAiMode } = useIfcViewer();
+  const { setAiMode } = useViewerStore();
 
   useEffect(() => {
     createThread();
@@ -99,8 +99,8 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex">
-      <div className="h-full bg-background font-mono text-sm overflow-y-auto p-4 w-full">
+    <div className="border-t border-muted h-full w-full flex bg-sidebar">
+      <div className="h-full bg-sidebar font-mono text-sm overflow-y-auto p-4 w-full">
         {messages.map((message, i) => {
           // User messages
           if (message.role === MessageRole.user) {

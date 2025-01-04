@@ -36,17 +36,16 @@ import {
 } from "./ui/dropdown-menu";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useIfcViewer } from "@/hooks/ifc-viewer/useIfcViewer";
 import { EntityNode } from "@/types/ifc";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export function IFCViewerSidebar() {
-  const { models, categories, setUploadedFiles, highlighter } = useIfcViewer();
-  const { theme, systemTheme } = useTheme();
-  const realTheme = theme === "system" ? systemTheme : theme;
+  const { models, categories, highlighter } = useViewerStore();
+  const { resolvedTheme } = useTheme();
 
   return (
     <Sidebar side="left">
-      <SidebarHeader>
+      {/* <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -57,7 +56,7 @@ export function IFCViewerSidebar() {
                       height={30}
                       width={30}
                       src={
-                        realTheme === "dark"
+                        resolvedTheme === "dark"
                           ? "/rhombicuboctahedron-white.svg"
                           : "/rhombicuboctahedron.svg"
                       }
@@ -78,7 +77,7 @@ export function IFCViewerSidebar() {
                 <DropdownMenuItem
                   className="gap-2 p-2"
                   onClick={() => {
-                    setUploadedFiles([]);
+                    // setUploadedFiles([]);
                   }}
                 >
                   <div className="font-medium text-muted-foreground">
@@ -89,7 +88,7 @@ export function IFCViewerSidebar() {
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
+      </SidebarHeader> */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="font-semibold">
@@ -158,7 +157,7 @@ export function IFCViewerSidebar() {
 }
 
 function FloorPlans() {
-  const { plans } = useIfcViewer();
+  const { plans } = useViewerStore();
   const [activeFloor, setActiveFloor] = useState<string | null>(null);
 
   return (
@@ -195,7 +194,7 @@ function FloorPlans() {
 
 function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name } = node;
-  const { hider, highlighter } = useIfcViewer();
+  const { hider, highlighter } = useViewerStore();
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -254,7 +253,7 @@ function Node({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
 
 function Tree({ node, model }: { node: EntityNode; model: FragmentsGroup }) {
   const { ifcClass, name, children } = node;
-  const { hider, highlighter } = useIfcViewer();
+  const { hider, highlighter } = useViewerStore();
   const [isHidden, setIsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
 

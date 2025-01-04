@@ -14,7 +14,7 @@ export const ViewerLayout = ({
   selectedElement,
   rightSidebar,
 }: ViewerLayoutProps) => (
-  <div className="flex h-full w-full">
+  <div className="flex h-full w-full ">
     <div className="flex-1 flex min-w-0">
       <SidebarProvider
         name="ifc-viewer-sidebar"
