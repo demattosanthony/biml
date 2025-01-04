@@ -139,14 +139,25 @@ export default function TerminalChat() {
         })}
 
         {!generating && (
-          <form className="flex items-center" onSubmit={handleSubmit}>
-            <span className="text-primary mr-2">➜</span>
-            <input
-              type="text"
+          <form className="flex mb-4" onSubmit={handleSubmit}>
+            <span className="text-primary mr-2 mt-auto">➜</span>
+            <textarea
               value={input}
-              placeholder="Ask DaVinci..."
+              placeholder="Ask DaVinci (⌘L)"
               onChange={(e) => setInput(e.target.value)}
-              className="flex-1 bg-transparent text-foreground outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+              className="flex-1 bg-transparent text-foreground outline-none resize-none w-full"
+              rows={1}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = "auto";
+                target.style.height = `${target.scrollHeight}px`;
+              }}
               autoFocus
             />
           </form>

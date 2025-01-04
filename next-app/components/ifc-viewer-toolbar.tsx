@@ -8,6 +8,7 @@ import {
   Square,
   PersonStanding,
   Bot,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,9 @@ import {
 } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
 import { useViewerStore } from "@/store/useViewerStore";
+import { useChat } from "@/hooks/useChat";
+import { useIfcLoader } from "@/hooks/ifc-viewer/useIfcLoader";
+import api from "@/lib/api";
 
 type CameraMode = {
   id: string;
@@ -51,6 +55,9 @@ export default function Component() {
   const [selectedMode, setSelectedMode] = useState<CameraMode>(cameraModes[0]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isOrthographic, setIsOrthographic] = useState(false);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const { setIfcSessionId } = useChat();
+  const { loadIfcFile, unloadAllIfcFiles } = useIfcLoader();
 
   const toggleAiMode = () => {
     setAiMode(!aiMode);
@@ -139,6 +146,13 @@ export default function Component() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Add AI chat toggle shortcut (CMD + L)
+      if (event.key.toLowerCase() === "l" && event.metaKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleAiMode();
+      }
+
       // Ignore key presses if the user is typing in an input field
       const activeElement = document.activeElement;
       if (
@@ -170,9 +184,43 @@ export default function Component() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cameraModes, selectedMode.id, isOrthographic]);
 
+  const handleModelUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const uploadedFiles = event.target.files;
+    if (!uploadedFiles?.length) return;
+
+    const newFiles = Array.from(uploadedFiles);
+    setNewFiles(newFiles);
+
+    // Create new IFC session
+    const sessionId = await api.createIfcSession(newFiles[0]);
+    setIfcSessionId(sessionId);
+
+    unloadAllIfcFiles();
+    loadIfcFile(newFiles[0]);
+  };
+
   return (
     <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
       <div className="flex items-center gap-1 p-1.5 bg-background rounded-lg border shadow-lg">
+        {/* Upload button */}
+        <Button
+          onClick={() => document.getElementById("file-upload")?.click()}
+          variant={newFiles.length ? "ghost" : "default"}
+          size={newFiles.length ? "icon" : "default"}
+          className={newFiles.length ? "h-9 w-9" : ""}
+        >
+          {newFiles.length ? <Upload /> : " Upload your own ifc model"}
+        </Button>
+        <input
+          id="file-upload"
+          type="file"
+          accept=".ifc"
+          onChange={handleModelUpload}
+          className="hidden"
+        />
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-9 w-9">
