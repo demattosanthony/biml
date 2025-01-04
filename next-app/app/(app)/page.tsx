@@ -47,12 +47,12 @@ export default function ModelViewerUploadPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-      {/* {isLoading && <LoadingOverlay />} */}
+      {isLoading && <LoadingOverlay />}
       <ViewerLayout
         selectedElement={selectedElement}
         rightSidebar={<ElementDetailsSidebarRight />}
       >
-        <div className="w-full h-full flex flex-1 flex-col transition-all duration-300">
+        <div className="w-full h-full flex flex-1 flex-col">
           {/* IFC viewer container */}
           <div
             className={`${

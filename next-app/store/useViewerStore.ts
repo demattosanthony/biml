@@ -44,7 +44,7 @@ const initialState = {
   models: [],
   categories: {},
   selectedElement: null,
-  isLoading: false,
+  isLoading: true,
   plans: null,
   hider: null,
   culler: null,

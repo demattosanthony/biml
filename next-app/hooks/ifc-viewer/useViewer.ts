@@ -20,7 +20,6 @@ export function useViewer(containerId: string) {
   const setCuller = useViewerStore((state) => state.setCuller);
   const setHighlighter = useViewerStore((state) => state.setHighlighter);
   const setHider = useViewerStore((state) => state.setHider);
-  const setLoading = useViewerStore((state) => state.setLoading);
   const reset = useViewerStore((state) => state.reset);
 
   const { focusOnModels } = useCameraFocus();
@@ -28,8 +27,6 @@ export function useViewer(containerId: string) {
   const initializeViewer = useCallback(async () => {
     const container = document.getElementById(containerId);
     if (!container) return;
-
-    setLoading(true);
 
     try {
       const components = new OBC.Components();
@@ -77,8 +74,6 @@ export function useViewer(containerId: string) {
       };
     } catch (error) {
       console.error("Failed to initialize viewer:", error);
-    } finally {
-      setLoading(false);
     }
   }, [containerId]);
 
