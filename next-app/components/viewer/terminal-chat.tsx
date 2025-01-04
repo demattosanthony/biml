@@ -11,6 +11,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useState } from "react";
+import { useViewerStore } from "@/store/useViewerStore";
 
 export function ToolStateDisplay({ toolData }: { toolData: ToolCall }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +86,7 @@ export default function TerminalChat() {
     resetChat,
     ifcSessionId,
   } = useChat();
-  const [aiMode, setAiMode] = useState(true);
+  const { setAiMode } = useViewerStore();
 
   useEffect(() => {
     createThread();
