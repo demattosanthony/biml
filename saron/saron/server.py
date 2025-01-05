@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import uvicorn
-import json
 from typing import Generator
 from dataclasses import dataclass
 from fastapi import UploadFile, File
@@ -20,7 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 ifc_session_manager = IfcSessionManager()
 thread_manager = ThreadManager(session_manager=ifc_session_manager)
@@ -42,7 +40,7 @@ class ChatRequest:
     thread_id: str
 
 
-@app.post("/threads/{ifc_session_id}")  
+@app.post("/threads/{ifc_session_id}")
 async def threads_endpoint(ifc_session_id: str):
     thread_id = thread_manager.create_thread(session_id=ifc_session_id)
     return {"thread_id": thread_id}

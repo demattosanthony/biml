@@ -30,7 +30,7 @@ export default function IFCViewer({ files }: { files: File[] }) {
 
   return (
     <div className="flex flex-1 relative h-full bg-secondary">
-      <div id="ifc-viewer" className="flex flex-1 h-full w-full" />
+      <div id="ifc-viewer" className="flex flex-1 relative" />
       <IFCViewerToolbar />
     </div>
   );

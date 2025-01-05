@@ -56,11 +56,11 @@ class Message:
 
 @dataclass
 class Thread:
-    session_id: str 
+    session_id: str
     thread_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     messages: List[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
-    
+
     def add_message(self, message: Message) -> None:
         self.messages.append(message)
 
@@ -76,22 +76,22 @@ class Thread:
         }
 
 
-
 class ThreadManager:
     def __init__(self, session_manager: IfcSessionManager):
         self._threads: Dict[str, Thread] = {}
-        self._session_manager = session_manager 
+        self._session_manager = session_manager
 
     def create_thread(self, session_id: str) -> str:
         if not self._session_manager.get_session(session_id):
             raise ValueError(f"Session {session_id} does not exist")
-        session = self._session_manager.get_session(session_id)
-        project = session.list_projects()[0]
-        prompt =  f"""IFC Project info:
-        {project}""" 
         thread = Thread(session_id=session_id)
         self._threads[thread.thread_id] = thread
-        thread.add_message(Message(role="user", content=prompt))
+        thread.add_message(Message(role="system", content=system_prompt))
+        # session = self._session_manager.get_session(session_id)
+        # project = session.list_projects()[0]
+        # prompt =  f"""IFC Project info:
+        # {project}"""
+        # thread.add_message(Message(role="user", content=prompt))
         return thread.thread_id
 
     def get_thread(self, thread_id: str) -> Optional[Thread]:
@@ -110,6 +110,7 @@ class ThreadManager:
         return thread.messages
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "threads": [thread.to_dict() for thread in self._threads.values()]
-        }
+        return {"threads": [thread.to_dict() for thread in self._threads.values()]}
+
+
+system_prompt = """You are Davinci, a chatbot assistant that specialize in building information modeling (BIM). You are an expert in leveraging ifcopenshell to interact with Industry Foundation Classes (IFC) files. Use the various tools at your dispoal to help the user with their needs. Use level 2 thinking to help the user with their needs instead of just instantly responding, creating a solid plan first will help you. You don't need to say what tool you are choosing, just use it."""

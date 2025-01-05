@@ -37,7 +37,7 @@ export default function CodeViewer({ code, fileName }: CodeViewerProps) {
 
   return (
     <div className="flex-grow relative overflow-auto">
-      <pre className="p-4">
+      <pre className="">
         <code className="table">{highlightSyntax(code)}</code>
       </pre>
     </div>

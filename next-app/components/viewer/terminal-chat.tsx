@@ -1,7 +1,7 @@
 import { useChat } from "@/hooks/useChat";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
-import { Plus, X } from "lucide-react";
+import { Check, Code, Hammer, Plus, X } from "lucide-react";
 import { MessageRole, ToolCall } from "@/types/message";
 import {
   Loader2,
@@ -12,68 +12,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useViewerStore } from "@/store/useViewerStore";
-
-export function ToolStateDisplay({ toolData }: { toolData: ToolCall }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const getStatusIcon = () => {
-    switch (toolData.status) {
-      case "pending":
-        return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "failed":
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="w-full max-w-sm rounded-md">
-      <button
-        className="w-full flex items-center justify-between p-2 text-sm"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span>{toolData.function.name || "No tool selected"}</span>
-        <div className="flex items-center space-x-2">
-          {getStatusIcon()}
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </div>
-      </button>
-      {isOpen && (
-        <div className="p-2 text-sm border-t border-gray-200">
-          {toolData.function.arguments && (
-            <div className="mb-2">
-              <strong>Parameters:</strong>
-              <pre className="mt-1 text-xs overflow-x-auto">
-                {toolData.function.arguments}
-              </pre>
-            </div>
-          )}
-          {toolData.result && (
-            <div className="mb-2">
-              <strong>Response:</strong>
-              <pre className="mt-1 text-xs overflow-x-auto">
-                {toolData.result}
-              </pre>
-            </div>
-          )}
-          {/* {toolData. && (
-            <div>
-              <strong>Error:</strong>
-              <p className="mt-1 text-xs text-red-500">{toolData.error}</p>
-            </div>
-          )} */}
-        </div>
-      )}
-    </div>
-  );
-}
+import CodeViewer from "../code-viewer";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
 
 export default function TerminalChat() {
   const {
@@ -99,7 +43,7 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex bg-sidebar">
+    <div className="border-t border-muted h-full w-full flex bg-sidebar overflow-y-auto">
       <div className="h-full bg-sidebar font-mono text-sm overflow-y-auto p-4 w-full">
         {messages.map((message, i) => {
           // User messages
@@ -117,9 +61,9 @@ export default function TerminalChat() {
               <div key={i} className="whitespace-pre-wrap mb-2 text-foreground">
                 {/* If there are any tool calls, show them underneath */}
                 {message.toolCalls && message.toolCalls.length > 0 && (
-                  <div className="mb-2">
+                  <div className="mb-2 gap-1">
                     {message.toolCalls.map((toolCall, j) => (
-                      <ToolStateDisplay key={j} toolData={toolCall} />
+                      <ToolCallDisplay key={j} toolData={toolCall} />
                     ))}
                   </div>
                 )}
@@ -188,5 +132,96 @@ export default function TerminalChat() {
         </Button>
       </div>
     </div>
+  );
+}
+
+function getCleanFunctionName(name: string) {
+  if (name === "execute_python_code_against_model") return "Python code";
+  if (name === "get_project_info") return "Getting project info";
+  if (name === "list_children_of_element") return "Listing children";
+  if (name === "get_node_information") return "Getting element info";
+  if (name === "get_all_ifc_categories") return "Getting categories";
+  if (name === "get_elements_of_a_category")
+    return "Getting elements of category";
+  if (name === "save_model") return "Saving model";
+  return name;
+}
+
+export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getStatusIcon = () => {
+    switch (toolData.status) {
+      case "pending":
+        return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+      case "completed":
+        return <Check className="w-4 h-4 text-green-500" />;
+      case "failed":
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  if (toolData.function.name === "execute_python_code_against_model") {
+    return (
+      <Collapsible onOpenChange={setIsOpen} open={isOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="link" size="sm" className="flex items-center gap-2">
+            <Code className="h-4 w-4" />
+            <span>{getCleanFunctionName(toolData.function.name)}</span>
+            {getStatusIcon()}
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${
+                isOpen ? "transform rotate-180" : ""
+              }`}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="gap-4 flex flex-col ml-6">
+          <div className="">
+            <CodeViewer
+              code={JSON.parse(toolData.function.arguments).code || ""}
+            />
+          </div>
+          <div>
+            <h4 className="mb-1 text-sm font-semibold">Output:</h4>
+            <pre className="text-sm overflow-x-auto">{toolData.result}</pre>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  return (
+    <Collapsible onOpenChange={setIsOpen} open={isOpen} key={toolData.id}>
+      <CollapsibleTrigger asChild>
+        <Button variant="link" size="sm" className="flex items-center gap-2">
+          <Hammer className="h-4 w-4" />
+          <span>{getCleanFunctionName(toolData.function.name)}</span>
+          {getStatusIcon()}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${
+              isOpen ? "transform rotate-180" : ""
+            }`}
+          />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="gap-4 flex flex-col ml-6">
+        {toolData.function.arguments !== "{}" && (
+          <div>
+            <h4 className="mb-1 text-sm font-semibold">Input:</h4>
+            <pre className="text-sm overflow-x-auto">
+              {toolData.function.arguments}
+            </pre>
+          </div>
+        )}
+
+        <div>
+          <h4 className="mb-1 text-sm font-semibold">Output:</h4>
+          <pre className="text-sm overflow-x-auto">{toolData.result}</pre>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

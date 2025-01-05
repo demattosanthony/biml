@@ -4,14 +4,36 @@ import { EventSourceMessage } from "@microsoft/fetch-event-source";
 import { atom, useAtom } from "jotai";
 
 export const messagesAtom = atom<ChatMessage[]>([
-  // {
-  //   role: MessageRole.user,
-  //   content: "What are you",
-  // },
-  // {
-  //   role: MessageRole.assistant,
-  //   content: "Hello! How are you doing today?",
-  // },
+  //   {
+  //     role: MessageRole.user,
+  //     content: "What are you",
+  //   },
+  //   {
+  //     role: MessageRole.assistant,
+  //     content: `Arguments: "{}"
+  // Tool Result: {
+  //   "guid": "0w984V0GL6yR4z75XVLWOq",
+  //   "type": "IfcProject",
+  //   "name": "0001"
+  // }
+  // Arguments: "{\"guid\": \"0w984V0GL6yR4z75XVLWOq\"}"
+  // Tool Result: [
+  //   {
+  //     "guid": "0w984V0GL6yR4z75XVLWOs",
+  //     "type": "IfcSite",
+  //     "name": "Default"
+  //   }
+  // ]
+  // I'll first get some additional details about the project to help inspire the story.
+  // Let me explore the model a bit to get more context:
+  // Here's a short story inspired by this IFC model:
+  // The Architect's Blueprint
+  // In the quiet drafting room of Project 0001, Elena traced her fingers along the pristine lines of her latest design. The model number might seem mundane to others, but to her, it represented more than just a sequence—it was a promise of possibility.
+  // The default site lay before her, a blank canvas waiting to be transformed. Each geometric precision in her IFC model was a whisper of potential: walls yet unbuilt, spaces waiting to be filled with life, dreams waiting to take structural form.
+  // "Every great building starts with a single coordinate," she murmured to herself, adjusting a digital wall with the delicate touch of an artist. Project 0001 wasn't just a project number—it was the first step in her vision of creating spaces that would breathe, that would tell stories long after the blueprints were filed away.
+  // Outside her window, the real world waited. But here, in the realm of her digital model, anything was possible. One line, one element at a time, she was about to bring an entire world into existence.
+  // The story captures the essence of an architectural project in its early stages, reflecting the potential and creativity inherent in an IFC model, symbolized by the project's simple name "0001" and its default site. It highlights the architect's perspective and the transformative power of design.`,
+  //   },
 ]);
 const inputAtom = atom("");
 const generatingAtom = atom(false);

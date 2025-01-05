@@ -60,7 +60,9 @@ class Agent:
                             print(f"Tool Call: {tool_call.name}")
                         if verbose:
                             print(f"Arguments: {tool_call.arguments}")
-                        yield "event: tool_selected\ndata: " + json.dumps({"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}) + "\n\n"
+                        yield "event: tool_selected\ndata: " + json.dumps(
+                            {"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}
+                        ) + "\n\n"
                         result = self._execute_tool_call(tool_call, tools=tools)
                         yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": result}) + "\n\n"
                         if verbose:

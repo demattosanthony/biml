@@ -47,6 +47,7 @@ export default function ModelViewerUploadPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
+      {isLoading && <LoadingOverlay />}
       <ViewerLayout
         selectedElement={selectedElement}
         rightSidebar={<ElementDetailsSidebarRight />}
