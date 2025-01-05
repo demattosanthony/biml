@@ -47,25 +47,23 @@ export default function ModelViewerUploadPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-      {isLoading && <LoadingOverlay />}
       <ViewerLayout
         selectedElement={selectedElement}
         rightSidebar={<ElementDetailsSidebarRight />}
       >
-        <div className="w-full h-full flex flex-1 flex-col">
-          {/* IFC viewer container */}
+        <div className="w-full h-full flex flex-1 flex-col relative">
+          {/* IFC viewer container - now uses absolute positioning */}
           <div
-            className={`${
-              aiMode ? "h-1/2" : "flex-1"
-            } transition-all duration-300 relative`}
+            className={`absolute inset-0 transition-all duration-300 ${
+              aiMode ? "bottom-1/2" : "bottom-0"
+            }`}
           >
             <IFCViewer files={files} />
           </div>
-
-          {/* Terminal chat container */}
+          {/* Terminal chat container - now uses absolute positioning */}
           <div
-            className={`overflow-hidden transition-all duration-300 ${
-              aiMode ? "h-1/2" : "h-0"
+            className={`absolute left-0 right-0 transition-all duration-300 ${
+              aiMode ? "top-1/2 bottom-0" : "top-full bottom-0"
             }`}
           >
             {aiMode && <TerminalChat />}
