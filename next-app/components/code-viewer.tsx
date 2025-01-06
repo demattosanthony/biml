@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface CodeViewerProps {
   code: string;
@@ -38,7 +40,19 @@ export default function CodeViewer({ code, fileName }: CodeViewerProps) {
   return (
     <div className="flex-grow relative overflow-auto">
       <pre className="">
-        <code className="table">{highlightSyntax(code)}</code>
+        <code className="table">
+          {
+            <SyntaxHighlighter
+              style={vscDarkPlus}
+              language={"python"}
+              PreTag="div"
+              showLineNumbers={true}
+              wrapLines={true}
+            >
+              {code}
+            </SyntaxHighlighter>
+          }
+        </code>
       </pre>
     </div>
   );

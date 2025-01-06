@@ -251,7 +251,7 @@ export default function Component() {
           </PopoverContent>
         </Popover>
 
-        <Button
+        {/* <Button
           variant="ghost"
           size="icon"
           className="h-9 w-9"
@@ -266,7 +266,7 @@ export default function Component() {
             <Square className="h-4 w-4" />
           )}
           <span className="sr-only">Toggle projection</span>
-        </Button>
+        </Button> */}
 
         <Button
           variant="ghost"

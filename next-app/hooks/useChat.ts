@@ -168,7 +168,7 @@ export function useChat() {
           } else if (eventType === "tool_result") {
             // 5) Tool execution completed
             const parsedData = JSON.parse(data);
-            const { id, result } = parsedData;
+            const { id, result, error } = parsedData;
 
             // Find the matching tool call in the last assistant message and update it
             setMessages((prev) => {
@@ -188,6 +188,7 @@ export function useChat() {
                       ...lastAssistant.toolCalls[toolCallIndex],
                       status: "completed",
                       result,
+                      error: error ? error : undefined,
                     };
                   }
                 }

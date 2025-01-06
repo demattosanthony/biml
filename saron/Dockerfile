@@ -57,5 +57,7 @@ RUN pip install poetry==1.4.2 && \
 
 EXPOSE 8000
 
+ENV ENV=prod
+
 # Run the FastAPI application
 CMD ["poetry", "run", "python3", "saron/server.py"]

@@ -160,7 +160,7 @@ class IfcSession:
             return output
         except Exception as e:
             sys.stdout = old_stdout
-            return str(e)
+            raise e
 
     def save(self, path: str = "output.ifc"):
         self.model.write(path)

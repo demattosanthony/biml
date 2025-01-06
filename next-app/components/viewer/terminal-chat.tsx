@@ -153,6 +153,7 @@ export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
   const { loadIfcFile, unloadAllIfcFiles } = useIfcLoader();
 
   const getStatusIcon = () => {
+    if (toolData.error) return <XCircle className="w-4 h-4 text-red-500" />;
     switch (toolData.status) {
       case "pending":
         return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;

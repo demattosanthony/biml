@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import uvicorn
-from typing import Generator
+from typing import AsyncGenerator
 from dataclasses import dataclass
 from fastapi import UploadFile, File
 import os
@@ -31,7 +31,8 @@ gpt_4o = "gpt-4o"
 gemini = "gemini/gemini-exp-1206"
 gemini_flash = "gemini/gemini-2.0-flash-exp"
 
-agent = Agent(model_name=claude_sonnet, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
+model = claude_sonnet if os.getenv("ENV", "dev") == "prod" else claude_haiku
+agent = Agent(model_name=model, thread_manager=thread_manager, ifc_session_manager=ifc_session_manager)
 
 
 @dataclass
@@ -78,14 +79,14 @@ async def chat_endpoint(request: ChatRequest) -> StreamingResponse:
         user_message = Message(role="user", content=request.message)
         thread_manager.add_message(request.thread_id, message=user_message)
 
-        def event_stream() -> Generator[str, None, None]:
-            for chunk in agent.chat(thread_id=request.thread_id, verbose=True):
+        async def event_stream() -> AsyncGenerator[str, None]:
+            async for chunk in agent.chat(thread_id=request.thread_id, verbose=True):
                 yield chunk
-
             yield "event: DONE\ndata: {}\n\n"
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
+        print(f"Error in chat endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

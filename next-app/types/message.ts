@@ -26,5 +26,6 @@ export type ToolCall = {
     function: { name: K; arguments: string };
     status: "pending" | "completed" | "failed";
     result?: string;
+    error?: boolean;
   };
 }[keyof FunctionResultMap];

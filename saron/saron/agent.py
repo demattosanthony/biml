@@ -1,6 +1,6 @@
-from typing import Generator
+from typing import AsyncGenerator
 import json
-from litellm import completion, stream_chunk_builder
+from litellm import acompletion, stream_chunk_builder
 from .thread import Message, ThreadManager, ToolCall
 from .ifc_session import IfcSessionManager
 
@@ -11,7 +11,7 @@ class Agent:
         self.thread_manager = thread_manager
         self.ifc_session_manager = ifc_session_manager
 
-    def chat(self, thread_id: str, verbose=False) -> Generator[str, None, None]:
+    async def chat(self, thread_id: str, verbose=False) -> AsyncGenerator[str, None]:
         thread = self.thread_manager.get_thread(thread_id)
         ifc_session = self.ifc_session_manager.get_session(session_id=thread.session_id)
         if not thread or not ifc_session:
@@ -22,13 +22,13 @@ class Agent:
 
         while True:
             try:
-                response = completion(
+                response = await acompletion(
                     model=self.model_name, messages=formatted_messages, temperature=0, stream=True, tools=[tool.to_dict() for tool in tools.values()]
                 )
 
                 chunks = []
                 current_content = ""
-                for chunk in response:
+                async for chunk in response:
                     chunks.append(chunk)
                     content_delta = chunk.choices[0].delta.content or ""
                     if verbose:
@@ -56,18 +56,20 @@ class Agent:
                 # Handle tool calls if present
                 if tool_calls:
                     for tool_call in tool_calls:
+                        yield "event: tool_selected\ndata: " + json.dumps(
+                            {"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}
+                        ) + "\n\n"
+                        yield "" # Flush the event stream
                         if verbose:
                             print(f"Tool Call: {tool_call.name}")
                         if verbose:
                             print(f"Arguments: {tool_call.arguments}")
-                        yield "event: tool_selected\ndata: " + json.dumps(
-                            {"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}
-                        ) + "\n\n"
                         try:
                             result = self._execute_tool_call(tool_call, tools=tools)
                             yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": result}) + "\n\n"
                         except Exception as e:
-                            yield "event: error\ndata: " + json.dumps({"error": str(e)}) + "\n\n"
+                            result = f"Error executing tool: {str(e)}"
+                            yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": str(e), "error": True}) + "\n\n"
                         if tool_call.name == "save_model":
                             tool_call.result = "Model saved"
                             result = "Model saved"
@@ -102,5 +104,5 @@ class Agent:
             return result
         except Exception as e:
             error_msg = f"Error executing tool: {str(e)}"
-            print(error_msg)  # Log the error
-            return error_msg
+            print(error_msg)
+            raise e
