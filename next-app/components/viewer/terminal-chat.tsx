@@ -1,7 +1,7 @@
 import { useChat } from "@/hooks/useChat";
 import { useEffect } from "react";
 import { Button } from "../ui/button";
-import { Check, Code, Hammer, Plus, X } from "lucide-react";
+import { Box, Check, Code, Hammer, Plus, X } from "lucide-react";
 import { MessageRole, ToolCall } from "@/types/message";
 import {
   Loader2,
@@ -200,6 +200,7 @@ export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
       <>
         {toolData.status === "completed" && (
           <Button
+            variant={"ghost"}
             onClick={(e) => {
               e.preventDefault();
 
@@ -209,6 +210,7 @@ export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
               loadIfcFile(new File([blob], "model.ifc"));
             }}
           >
+            <Box />
             Open new model
           </Button>
         )}
