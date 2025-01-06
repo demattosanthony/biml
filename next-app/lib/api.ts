@@ -89,7 +89,7 @@ class ApiClient {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Accept: "text/event-stream",
+            Accept: "text/event-stream",
           },
           body: JSON.stringify({
             message: message,

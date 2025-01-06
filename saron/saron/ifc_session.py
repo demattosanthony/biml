@@ -246,7 +246,6 @@ class IfcSession:
         """Save the current state of the model."""
         file = self.save()
         return file
-        
 
     @tool
     def get_project_info(self):
