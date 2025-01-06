@@ -164,7 +164,9 @@ class IfcSession:
 
     def save(self, path: str = "output.ifc"):
         self.model.write(path)
-        return f"IFC project saved to {path}"
+        # read the file
+        with open(path, "r") as f:
+            return f.read()
 
     # ---------------------
     # Internal Helper Methods
@@ -237,13 +239,14 @@ class IfcSession:
             output = self.execute_code(code)
             return output
         except Exception as e:
-            return f"An error occurred: {str(e)}"
+            raise e
 
     @tool
     def save_model(self):
         """Save the current state of the model."""
-        self.save()
-        return "Model saved successfully."
+        file = self.save()
+        return file
+        
 
     @tool
     def get_project_info(self):

@@ -18,6 +18,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
+import { useIfcLoader } from "@/hooks/ifc-viewer/useIfcLoader";
 
 export default function TerminalChat() {
   const {
@@ -149,6 +150,7 @@ function getCleanFunctionName(name: string) {
 
 export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { loadIfcFile, unloadAllIfcFiles } = useIfcLoader();
 
   const getStatusIcon = () => {
     switch (toolData.status) {
@@ -190,6 +192,27 @@ export function ToolCallDisplay({ toolData }: { toolData: ToolCall }) {
           </div>
         </CollapsibleContent>
       </Collapsible>
+    );
+  }
+
+  if (toolData.function.name === "save_model") {
+    return (
+      <>
+        {toolData.status === "completed" && (
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+
+              if (!toolData.result) return;
+              const blob = new Blob([toolData.result], { type: "text/plain" });
+              unloadAllIfcFiles();
+              loadIfcFile(new File([blob], "model.ifc"));
+            }}
+          >
+            Open new model
+          </Button>
+        )}
+      </>
     );
   }
 

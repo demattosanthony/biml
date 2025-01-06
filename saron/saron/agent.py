@@ -63,8 +63,14 @@ class Agent:
                         yield "event: tool_selected\ndata: " + json.dumps(
                             {"id": tool_call.id, "name": tool_call.name, "arguments": tool_call.arguments}
                         ) + "\n\n"
-                        result = self._execute_tool_call(tool_call, tools=tools)
-                        yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": result}) + "\n\n"
+                        try:
+                            result = self._execute_tool_call(tool_call, tools=tools)
+                            yield "event: tool_result\ndata: " + json.dumps({"id": tool_call.id, "result": result}) + "\n\n"
+                        except Exception as e:
+                            yield "event: error\ndata: " + json.dumps({"error": str(e)}) + "\n\n"
+                        if tool_call.name == "save_model":
+                            tool_call.result = "Model saved"
+                            result = "Model saved"
                         if verbose:
                             print(f"Tool Result: {result}")
 
