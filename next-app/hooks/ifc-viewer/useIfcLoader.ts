@@ -357,9 +357,9 @@ export function useIfcLoader() {
     };
   }, [onSelection, highlighter, onDeselection]);
 
-  //   useEffect(() => {
-  //     focusOnModels();
-  //   }, [models]);
+  useEffect(() => {
+    focusOnModels();
+  }, [models]);
 
   return { loadIfcFile, unloadAllIfcFiles };
 }

@@ -38,3 +38,9 @@ Plans:
 - pay per compute usage
 - enterprise version to host on your own servers
 
+### Dream goal
+
+- Single prompt
+- Generate multiple models and systems
+- Run simulations on all of them to see energy output
+-

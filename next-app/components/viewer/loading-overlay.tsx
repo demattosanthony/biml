@@ -9,25 +9,20 @@ export const LoadingOverlay = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center z-[1000] bg-background">
-      {/* <ClimbingBoxLoader
-        size={20}
-        loading
-        color={realTheme === "dark" ? "#FFF" : "#000"}
-      /> */}
       <Image
         height={300}
         width={300}
-        src={
-          resolvedTheme === "dark"
-            ? "/rhombicuboctahedron-white.svg"
-            : "/rhombicuboctahedron.svg"
-        }
+        src={"/rhombicuboctahedron-white.svg"}
         alt="Logo"
-        className="animate-pulse"
+        className="animate-pulse hidden dark:flex"
       />
-      {/* <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-        DaVinci
-      </h3> */}
+      <Image
+        height={300}
+        width={300}
+        src={"/rhombicuboctahedron.svg"}
+        alt="Logo"
+        className="animate-pulse dark:hidden"
+      />
     </div>
   );
 };

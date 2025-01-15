@@ -62,8 +62,8 @@ export default function ChatInputForm({
 
   return (
     <form
-      className={`relative h-auto min-h-[24px] max-h-[450px] w-full mx-auto rounded-2xl border ${
-        focused && "border-primary"
+      className={`relative h-auto min-h-[24px] max-h-[450px] w-full mx-auto rounded-2xl border max-w-[750px] bg-background ${
+        focused && "md:drop-shadow-md"
       }`}
       onSubmit={handleSubmit}
     >
@@ -77,7 +77,7 @@ export default function ChatInputForm({
           onBlur={() => setFocused(false)}
           onFocus={() => setFocused(true)}
           autoFocus
-          className="resize-none min-h-[24px] h-[50px] max-h-[400px] w-full pt-[14px] text-lg rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 focus-visible:ring-offset-0 bg-transparent"
+          className={`resize-none min-h-[50px] h-[50px] w-full pt-[15px] text-lg rounded-xl border-none focus:ring-0 shadow-none focus-visible:ring-0 flex-1 focus-visible:ring-offset-0 bg-transparent`}
         />
 
         <div className="h-full pr-1 flex pb-[9px]">

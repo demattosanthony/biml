@@ -14,7 +14,7 @@ function createWorld(components: OBC.Components, container: HTMLElement) {
   world.camera = new OBC.OrthoPerspectiveCamera(components);
 
   components.init();
-  world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+  world.camera.controls.setLookAt(6, 3, 4, 0, 0, -5);
   world.scene.setup();
   world.scene.three.background = null;
 
