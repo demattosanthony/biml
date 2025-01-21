@@ -48,7 +48,7 @@ const initialState = {
   plans: null,
   hider: null,
   culler: null,
-  aiMode: true,
+  aiMode: false,
 };
 
 export const useViewerStore = create<ViewerState>((set) => ({

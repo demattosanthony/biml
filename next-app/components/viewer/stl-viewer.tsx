@@ -50,15 +50,15 @@ export default function STLViewer({
       renderer.setSize(size, size);
       mountRef.current.appendChild(renderer.domElement);
 
-      // Improved lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // Lighting adjustments
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased intensity
       scene.add(ambientLight);
 
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); // Increased intensity
       directionalLight.position.set(5, 5, 5);
       scene.add(directionalLight);
 
-      const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.8); // Increased intensity
       secondaryLight.position.set(-5, -5, -5);
       scene.add(secondaryLight);
 

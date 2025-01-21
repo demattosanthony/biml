@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ViewerLayout } from "@/components/viewer/viewer-layout";
 import { ElementDetailsSidebarRight } from "@/components/element-details-sidebar";
 import IFCViewer from "@/components/ifc-viewer";
@@ -15,7 +15,6 @@ export default function ModelViewerUploadPage() {
   const isLoading = useViewerStore((state) => state.isLoading);
   const aiMode = useViewerStore((state) => state.aiMode);
   const selectedElement = useViewerStore((state) => state.selectedElement);
-  const [terminalWidth, setTerminalWidth] = useState(375);
 
   const { setIfcSessionId } = useChat();
 
@@ -46,51 +45,32 @@ export default function ModelViewerUploadPage() {
     loadSampleModel();
   }, []);
 
-  const handleResize = useCallback(
-    (mouseDownEvent: React.MouseEvent) => {
-      const startX = mouseDownEvent.clientX;
-      const startWidth = terminalWidth;
-
-      function onMouseMove(mouseMoveEvent: MouseEvent) {
-        const newWidth = startWidth + mouseMoveEvent.clientX - startX;
-        setTerminalWidth(Math.min(Math.max(200, newWidth), 800)); // Min 200px, Max 800px
-      }
-
-      function onMouseUp() {
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
-      }
-
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    },
-    [terminalWidth]
-  );
-
   return (
-    <div className="h-screen w-screen relative">
+    <div className="h-screen w-screen overflow-hidden relative">
       {isLoading && <LoadingOverlay />}
-      <div className="w-full h-full flex flex-1 relative overflow-hidden">
-        <div
-          className="flex flex-1 h-full overflow-hidden"
-          style={{
-            width: terminalWidth,
-            minWidth: terminalWidth,
-            maxWidth: terminalWidth,
-          }}
-        >
-          {aiMode && <TerminalChat />}
-
+      <ViewerLayout
+        selectedElement={selectedElement}
+        rightSidebar={<ElementDetailsSidebarRight />}
+      >
+        <div className="w-full h-full flex flex-1 flex-col relative">
+          {/* IFC viewer container - now uses absolute positioning */}
           <div
-            className="w-1 bg-sidebar hover:bg-ring cursor-col-resize transition-all duration-100"
-            onMouseDown={handleResize}
-          />
+            className={`absolute inset-0 transition-all duration-300 ${
+              aiMode ? "bottom-[40%]" : "bottom-0"
+            }`}
+          >
+            <IFCViewer files={files} />
+          </div>
+          {/* Terminal chat container - now uses absolute positioning */}
+          <div
+            className={`absolute left-0 right-0 transition-all duration-300 ${
+              aiMode ? "top-[60%] bottom-0" : "top-full bottom-0"
+            }`}
+          >
+            {aiMode && <TerminalChat />}
+          </div>
         </div>
-
-        <div className="flex flex-1 h-full overflow-hidden">
-          <IFCViewer files={files} />
-        </div>
-      </div>
+      </ViewerLayout>
     </div>
   );
 }

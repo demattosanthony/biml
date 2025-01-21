@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { facilityTable, ifcModelTable } from "../schema";
-import db from "../db";
+import db from "../config/db";
 
 export const facilityService = {
   createFacility: async () => {

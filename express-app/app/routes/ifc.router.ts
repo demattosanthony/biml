@@ -4,7 +4,7 @@ import { ifcModelTable } from "../schema";
 import { eq } from "drizzle-orm";
 import fs from "fs/promises";
 import { upload } from "../middleware/upload";
-import db from "../db";
+import db from "../config/db";
 
 const ifcRouter = Router();
 
@@ -12,7 +12,8 @@ ifcRouter.post("/upload", upload.single("file"), async (req, res) => {
   const { facilityId } = req.body;
 
   if (!req.file) {
-    return res.status(400).send("No file uploaded.");
+    res.status(400).send("No file uploaded.");
+    return;
   }
 
   const filePath = req.file.path;

@@ -44,7 +44,7 @@ export default function TerminalChat() {
   };
 
   return (
-    <div className="border-t border-muted h-full w-full flex bg-sidebar overflow-y-auto relative">
+    <div className="border-t border-muted h-full w-full flex bg-sidebar overflow-y-auto">
       <div className="h-full bg-sidebar font-mono text-sm overflow-y-auto p-4 w-full">
         {messages.map((message, i) => {
           // User messages
@@ -88,7 +88,7 @@ export default function TerminalChat() {
             <span className="text-primary mr-2 mt-auto">➜</span>
             <textarea
               value={input}
-              placeholder="Type your message here..."
+              placeholder="Ask DaVinci (⌘L)"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -108,7 +108,7 @@ export default function TerminalChat() {
           </form>
         )}
       </div>
-      <div className="absolute top-2 right-2 flex gap-1">
+      <div className="flex justify-end p-1">
         <Button
           variant={"ghost"}
           className="h-6 w-6"
@@ -117,7 +117,7 @@ export default function TerminalChat() {
         >
           <Plus />
         </Button>
-        {/* <Button
+        <Button
           variant={"ghost"}
           className="h-6 w-6"
           size={"icon"}
@@ -130,7 +130,7 @@ export default function TerminalChat() {
           }}
         >
           <X />
-        </Button> */}
+        </Button>
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-1 flex-col justify-center items-center">
       <div className="flex flex-1 justify-center">
-        <div className="h-[85%] max-w-[750px] flex flex-col items-center justify-center">
+        <div className="h-[80%] max-w-[750px] flex flex-col items-center justify-center">
           <div className="min-h-[350px] min-w-[350px] flex items-center justify-center">
             {stlFile && <STLViewer file={stlFile} size={350} />}
           </div>
@@ -45,6 +45,7 @@ export default function ChatPage() {
             alt="Logo"
             className="h-[175px]"
           /> */}
+
           <div className="space-y-2 text-center">
             <h1 className="text-5xl font-bold tracking-tighter">
               What would you like to design?

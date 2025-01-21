@@ -6,7 +6,7 @@ import path from "path";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import aiRouter from "./routes/ai.router";
 import ifcRouter from "./routes/ifc.router";
-import db from "./db";
+import db from "./config/db";
 
 async function main() {
   await migrate(db, {

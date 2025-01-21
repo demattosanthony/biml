@@ -1,9 +1,13 @@
-import type { Config } from "drizzle-kit";
-export default {
+import { defineConfig } from "drizzle-kit";
+import { __prod__ } from "./app/constants";
+
+export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/schema.ts",
+  schema: "./app/config/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: "postgresql://postgres:postgres@localhost:5432/postgres",
+    url: __prod__
+      ? process.env.DATABASE_URL!
+      : "postgresql://postgres:postgres@localhost:5432/postgres",
   },
-} satisfies Config;
+});

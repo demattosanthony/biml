@@ -1,9 +1,8 @@
 import * as OBC from "@thatopen/components";
 import path from "path";
 import fs from "fs/promises";
-import supabase from "../config/supabase";
 import { ifcModelTable } from "../schema";
-import db from "../db";
+import db from "../config/db";
 
 export const ifcService = {
   createIfcModel: async (facilityId: string, name: string) => {
@@ -138,7 +137,7 @@ export const ifcService = {
     let geometriesData: OBC.StreamedGeometries = {};
     let geometryFilesCount = 1;
 
-    tiler.onGeometryStreamed.add((geometry) => {
+    tiler.onGeometryStreamed.add(async (geometry) => {
       const { buffer, data } = geometry;
       const bufferFileName = `small.ifc-processed-geometries-${geometryFilesCount}`;
       for (const expressID in data) {
@@ -152,11 +151,11 @@ export const ifcService = {
 
     let assetsData: OBC.StreamedAsset[] = [];
 
-    tiler.onAssetStreamed.add((assets) => {
+    tiler.onAssetStreamed.add(async (assets) => {
       assetsData = [...assetsData, ...assets];
     });
 
-    tiler.onIfcLoaded.add((groupBuffer) => {
+    tiler.onIfcLoaded.add(async (groupBuffer) => {
       files.push({
         name: "small.ifc-processed-global",
         bits: [groupBuffer],
@@ -170,10 +169,10 @@ export const ifcService = {
       const file = new File(bits, name);
 
       // Upload to supabase storage
-      const { data, error } = await supabase.storage
-        .from("autobim")
-        .upload(`${facilityId}/${modelId}/streaming/${name}`, file);
-      console.log(data, error);
+      //   const { data, error } = await supabase.storage
+      //     .from("autobim")
+      //     .upload(`${facilityId}/${modelId}/streaming/${name}`, file);
+      //   console.log(data, error);
 
       // Ensure the directory exists
       // const dirPath = path.join(__dirname, "../../geometry-files");
@@ -202,7 +201,7 @@ export const ifcService = {
       }
     }
 
-    tiler.onProgress.add((progress) => {
+    tiler.onProgress.add(async (progress) => {
       if (progress !== 1) return;
       setTimeout(async () => {
         const processedData = {
