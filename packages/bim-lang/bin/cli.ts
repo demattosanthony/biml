@@ -4,6 +4,7 @@ import { NodeFileSystem } from "langium/node";
 import { URI } from "langium";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { spawn } from "bun";
 import { createBimServices } from "../src/language/bim-module";
 import { generateJsonIR } from "../src/generator";
 import type { Model } from "../src/generated/ast";
@@ -52,10 +53,53 @@ async function parseAction(
 
   if (options.output) {
     fs.writeFileSync(options.output, JSON.stringify(jsonIR, null, 2));
-    console.error(`JSON IR written to ${options.output}`);
+    console.log(`JSON IR written to ${options.output}`);
   } else {
     console.log(JSON.stringify(jsonIR, null, 2));
   }
+}
+
+async function compileAction(
+  filePath: string,
+  options: { output?: string; ir?: boolean }
+): Promise<void> {
+  const absolutePath = path.resolve(filePath);
+  if (!fs.existsSync(absolutePath)) {
+    console.error(`File not found: ${absolutePath}`);
+    process.exit(1);
+  }
+
+  // Default output path: same name as input with .ifc extension
+  // Resolve to absolute path so it works regardless of subprocess cwd
+  const outputPath = path.resolve(options.output ?? absolutePath.replace(/\.biml$/, ".ifc"));
+
+  // Parse and generate JSON IR
+  const jsonIR = generateJsonIR(await parseAndValidate(absolutePath));
+
+  // Optionally write IR file
+  if (options.ir) {
+    const irPath = outputPath.replace(/\.ifc$/, ".json");
+    fs.writeFileSync(irPath, JSON.stringify(jsonIR, null, 2));
+    console.log(`JSON IR written to ${irPath}`);
+  }
+
+  // Call Python compiler via subprocess, passing JSON IR via stdin
+  // Use uv run from the compiler package directory, "-" tells it to read from stdin
+  const compilerDir = path.resolve(__dirname, "../../compiler");
+  const proc = spawn(["uv", "run", "bim-compile", "-", "-o", outputPath], {
+    cwd: compilerDir,
+    stdin: new Response(JSON.stringify(jsonIR)).body,
+    stdout: "pipe", // Suppress Python's "Wrote ..." message, we print our own
+    stderr: "inherit",
+  });
+
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
+    console.error(`IFC compilation failed with exit code ${exitCode}`);
+    process.exit(exitCode);
+  }
+
+  console.log(`IFC written to ${outputPath}`);
 }
 
 const program = new Command();
@@ -67,5 +111,13 @@ program
   .argument("<file>", "Path to .biml file")
   .option("-o, --output <file>", "Output file path (defaults to stdout)")
   .action(parseAction);
+
+program
+  .command("compile")
+  .description("Compile a .biml file directly to IFC")
+  .argument("<file>", "Path to .biml file")
+  .option("-o, --output <file>", "Output IFC file path (defaults to input name with .ifc)")
+  .option("--ir", "Also output the intermediate JSON IR")
+  .action(compileAction);
 
 program.parse();

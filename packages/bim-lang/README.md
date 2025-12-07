@@ -5,14 +5,14 @@ DSL for BIM model generation.
 ## Quick Start
 
 ```bash
-# Parse a .biml file to JSON IR
-bun ./bin/cli.ts parse test/fixtures/simple.biml
+# Compile .biml directly to IFC
+bun ./bin/cli.ts compile test/fixtures/simple.biml -o model.ifc
 
-# Save to file
+# Also output intermediate JSON IR
+bun ./bin/cli.ts compile test/fixtures/simple.biml -o model.ifc --ir
+
+# Or just parse to JSON IR (without IFC generation)
 bun ./bin/cli.ts parse test/fixtures/simple.biml -o output.json
-
-# Pipe to compiler (generates IFC)
-bun ./bin/cli.ts parse test/fixtures/simple.biml | (cd ../compiler && uv run bim-compile - -o model.ifc)
 ```
 
 ## Example .biml File

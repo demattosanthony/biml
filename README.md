@@ -1,6 +1,13 @@
-# davinci
+# BIM Language (BIML)
 
-AI-powered BIM generation using a domain-specific language.
+Building Information Modeling Language (BIML) makes it easy to build BIM models using a simple, declarative language.
+
+biml is a domain specific language designed for BIM model generation.
+
+- **Compiles to IFC:** Easily integrates with existing BIM tools
+- **Parametric design:** Change a floor height and doors, windows, and ceilings adjust automatically. The compiler handles downstream dependencies.
+- **Easy to use:** Simple, declarative syntax
+- **AI-friendly:** Designed for AI agents to generate BIM models
 
 ## Architecture
 
@@ -18,12 +25,17 @@ AI-powered BIM generation using a domain-specific language.
 ## Quick Start
 
 ```bash
-# Parse .biml to JSON IR
-bun packages/bim-lang/bin/cli.ts parse file.biml
+# Set .biml file path
+biml_path=packages/bim-lang/test/fixtures/simple.biml
 
-# Full pipeline: .biml → .ifc
-bun packages/bim-lang/bin/cli.ts parse file.biml | \
-  (cd packages/compiler && uv run bim-compile - -o output.ifc)
+# Compile .biml directly to IFC
+bun packages/bim-lang/bin/cli.ts compile $biml_path -o output.ifc
+
+# Also output intermediate JSON IR
+bun packages/bim-lang/bin/cli.ts compile $biml_path -o output.ifc --ir
+
+# Or just parse to JSON IR (without IFC generation)
+bun packages/bim-lang/bin/cli.ts parse $biml_path -o output.json
 ```
 
 ## Example
