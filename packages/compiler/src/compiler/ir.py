@@ -1,8 +1,11 @@
-"""JSON IR types matching bim-lang output."""
+"""JSON IR types matching bim-lang output (v0.2.0 flat structure)."""
 
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Literal
 import json
+
+
+WallDirection = Literal["north", "south", "east", "west"]
 
 
 @dataclass
@@ -12,22 +15,35 @@ class MeasurementIR:
 
 
 @dataclass
-class DoorIR:
-    target: str
-    width: MeasurementIR | None = None
+class PositionIR:
+    row: int
+    col: int
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        return cls(row=data["row"], col=data["col"])
+
+
+@dataclass
+class FloorIR:
+    name: str
+    elevation: MeasurementIR | None = None
+    height: MeasurementIR | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         return cls(
-            target=data["target"],
-            width=MeasurementIR(**data["width"]) if data.get("width") else None,
+            name=data["name"],
+            elevation=MeasurementIR(**data["elevation"]) if data.get("elevation") else None,
+            height=MeasurementIR(**data["height"]) if data.get("height") else None,
         )
 
 
 @dataclass
 class RoomIR:
     name: str
-    doors: list[DoorIR]
+    floor: str
+    position: PositionIR
     area: MeasurementIR | None = None
     width: MeasurementIR | None = None
     length: MeasurementIR | None = None
@@ -36,7 +52,8 @@ class RoomIR:
     def from_dict(cls, data: dict) -> Self:
         return cls(
             name=data["name"],
-            doors=[DoorIR.from_dict(d) for d in data.get("doors", [])],
+            floor=data["floor"],
+            position=PositionIR.from_dict(data["position"]),
             area=MeasurementIR(**data["area"]) if data.get("area") else None,
             width=MeasurementIR(**data["width"]) if data.get("width") else None,
             length=MeasurementIR(**data["length"]) if data.get("length") else None,
@@ -44,45 +61,40 @@ class RoomIR:
 
 
 @dataclass
-class FloorIR:
-    name: str
-    rooms: list[RoomIR]
-    elevation: MeasurementIR | None = None
+class DoorIR:
+    from_room: str  # 'from' is a Python keyword, so we use from_room
+    to: str  # Room name or "exterior"
+    width: MeasurementIR | None = None
     height: MeasurementIR | None = None
+    wall: WallDirection | None = None
+    offset: float | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         return cls(
-            name=data["name"],
-            rooms=[RoomIR.from_dict(r) for r in data.get("rooms", [])],
-            elevation=MeasurementIR(**data["elevation"]) if data.get("elevation") else None,
+            from_room=data["from"],
+            to=data["to"],
+            width=MeasurementIR(**data["width"]) if data.get("width") else None,
             height=MeasurementIR(**data["height"]) if data.get("height") else None,
-        )
-
-
-@dataclass
-class ProjectIR:
-    name: str
-    floors: list[FloorIR]
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(
-            name=data["name"],
-            floors=[FloorIR.from_dict(f) for f in data.get("floors", [])],
+            wall=data.get("wall"),
+            offset=data.get("offset"),
         )
 
 
 @dataclass
 class JsonIR:
     version: str
-    projects: list[ProjectIR]
+    floors: list[FloorIR]
+    rooms: list[RoomIR]
+    doors: list[DoorIR]
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         return cls(
             version=data["version"],
-            projects=[ProjectIR.from_dict(p) for p in data.get("projects", [])],
+            floors=[FloorIR.from_dict(f) for f in data.get("floors", [])],
+            rooms=[RoomIR.from_dict(r) for r in data.get("rooms", [])],
+            doors=[DoorIR.from_dict(d) for d in data.get("doors", [])],
         )
 
     @classmethod

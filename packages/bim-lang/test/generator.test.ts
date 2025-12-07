@@ -44,25 +44,23 @@ describe("JSON IR Generator", () => {
   }
 
   it("generates correct JSON IR structure", async () => {
-    const ir = await parseAndGenerate('project "Test" {}');
+    const ir = await parseAndGenerate("");
 
-    expect(ir.version).toBe("0.1.0");
-    expect(ir.projects).toHaveLength(1);
-    expect(ir.projects[0].name).toBe("Test");
-    expect(ir.projects[0].floors).toHaveLength(0);
+    expect(ir.version).toBe("0.2.0");
+    expect(ir.floors).toHaveLength(0);
+    expect(ir.rooms).toHaveLength(0);
+    expect(ir.doors).toHaveLength(0);
   });
 
   it("includes all floor properties", async () => {
     const ir = await parseAndGenerate(`
-            project "Building" {
-                floor "Ground" {
-                    elevation: 0m
-                    height: 4m
-                }
-            }
-        `);
+      floor Ground {
+        elevation: 0m
+        height: 4m
+      }
+    `);
 
-    const floor = ir.projects[0].floors[0];
+    const floor = ir.floors[0];
     expect(floor.name).toBe("Ground");
     expect(floor.elevation).toEqual({ value: 0, unit: "m" });
     expect(floor.height).toEqual({ value: 4, unit: "m" });
@@ -70,63 +68,96 @@ describe("JSON IR Generator", () => {
 
   it("includes all room properties", async () => {
     const ir = await parseAndGenerate(`
-            project "Building" {
-                floor "Level 1" {
-                    room "Office" {
-                        area: 30m²
-                    }
-                    room "Hallway" {
-                        width: 2.5m
-                        length: 15m
-                    }
-                }
-            }
-        `);
+      floor Ground {}
 
-    const rooms = ir.projects[0].floors[0].rooms;
+      room Office {
+        floor: Ground
+        position: [0, 0]
+        area: 30m²
+      }
+
+      room Hallway {
+        floor: Ground
+        position: [0, 1]
+        width: 2.5m
+        length: 15m
+      }
+    `);
+
+    const rooms = ir.rooms;
 
     expect(rooms[0].name).toBe("Office");
+    expect(rooms[0].floor).toBe("Ground");
+    expect(rooms[0].position).toEqual({ row: 0, col: 0 });
     expect(rooms[0].area).toEqual({ value: 30, unit: "m²" });
 
     expect(rooms[1].name).toBe("Hallway");
+    expect(rooms[1].position).toEqual({ row: 0, col: 1 });
     expect(rooms[1].width).toEqual({ value: 2.5, unit: "m" });
     expect(rooms[1].length).toEqual({ value: 15, unit: "m" });
   });
 
-  it("includes door references", async () => {
+  it("includes door properties", async () => {
     const ir = await parseAndGenerate(`
-            project "Building" {
-                floor "Level 1" {
-                    room "Office" {
-                        doors: [
-                            door to "Hallway" { width: 0.9m },
-                            door to "Storage" { width: 0.8m }
-                        ]
-                    }
-                }
-            }
-        `);
+      floor Ground {}
 
-    const doors = ir.projects[0].floors[0].rooms[0].doors;
+      room Office {
+        floor: Ground
+        position: [0, 0]
+      }
+
+      room Hallway {
+        floor: Ground
+        position: [0, 1]
+      }
+
+      door {
+        from: Office
+        to: Hallway
+        width: 0.9m
+        height: 2.1m
+      }
+
+      door {
+        from: Office
+        to: exterior
+        wall: south
+        width: 1.0m
+      }
+    `);
+
+    const doors = ir.doors;
 
     expect(doors).toHaveLength(2);
-    expect(doors[0].target).toBe("Hallway");
+    expect(doors[0].from).toBe("Office");
+    expect(doors[0].to).toBe("Hallway");
     expect(doors[0].width).toEqual({ value: 0.9, unit: "m" });
-    expect(doors[1].target).toBe("Storage");
+    expect(doors[0].height).toEqual({ value: 2.1, unit: "m" });
+
+    expect(doors[1].from).toBe("Office");
+    expect(doors[1].to).toBe("exterior");
+    expect(doors[1].wall).toBe("south");
   });
 
   it("generates correct IR from simple.biml fixture", async () => {
     const ir = await parseFileAndGenerate("simple.biml");
 
-    expect(ir.projects[0].name).toBe("Test Building");
-    expect(ir.projects[0].floors[0].name).toBe("Level 1");
-    expect(ir.projects[0].floors[0].elevation).toEqual({ value: 0, unit: "m" });
-    expect(ir.projects[0].floors[0].height).toEqual({ value: 3.5, unit: "m" });
+    expect(ir.version).toBe("0.2.0");
+    expect(ir.floors).toHaveLength(1);
+    expect(ir.floors[0].name).toBe("Ground");
+    expect(ir.floors[0].elevation).toEqual({ value: 0, unit: "m" });
+    expect(ir.floors[0].height).toEqual({ value: 3.5, unit: "m" });
 
-    const rooms = ir.projects[0].floors[0].rooms;
-    expect(rooms).toHaveLength(2);
-    expect(rooms[0].name).toBe("Reception");
-    expect(rooms[0].area).toEqual({ value: 50, unit: "m²" });
-    expect(rooms[0].doors[0].target).toBe("Hallway");
+    expect(ir.rooms).toHaveLength(2);
+    expect(ir.rooms[0].name).toBe("Reception");
+    expect(ir.rooms[0].floor).toBe("Ground");
+    expect(ir.rooms[0].area).toEqual({ value: 50, unit: "m²" });
+
+    expect(ir.rooms[1].name).toBe("Hallway");
+    expect(ir.rooms[1].width).toEqual({ value: 2, unit: "m" });
+
+    expect(ir.doors).toHaveLength(1);
+    expect(ir.doors[0].from).toBe("Reception");
+    expect(ir.doors[0].to).toBe("Hallway");
   });
 });

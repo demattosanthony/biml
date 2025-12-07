@@ -28,24 +28,31 @@ bun packages/bim-lang/bin/cli.ts parse file.biml | \
 
 ## Example
 
-```
-project "Office Building" {
-    floor "Ground Floor" {
-        elevation: 0m
-        height: 3.5m
+```biml
+# Simple two-room office with connecting door
 
-        room "Lobby" {
-            area: 100m²
-            doors: [
-                door to "Hallway" { width: 1.2m }
-            ]
-        }
+floor Ground {
+  elevation: 0m
+  height: 3.5m
+}
 
-        room "Hallway" {
-            width: 2m
-            length: 15m
-        }
-    }
+room Lobby {
+  floor: Ground
+  position: [0, 0]
+  area: 100m²
+}
+
+room Hallway {
+  floor: Ground
+  position: [0, 1]
+  width: 2m
+  length: 15m
+}
+
+door {
+  from: Lobby
+  to: Hallway
+  width: 1.2m
 }
 ```
 
