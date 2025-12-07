@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "projects": [
+    {
+      "name": "Test Building",
+      "floors": [
+        {
+          "name": "Level 1",
+          "elevation": { "value": 0, "unit": "m" },
+          "height": { "value": 3.5, "unit": "m" },
+          "rooms": [
+            {
+              "name": "Reception",
+              "area": { "value": 50, "unit": "m²" },
+              "doors": [
+                { "target": "Hallway", "width": { "value": 1.2, "unit": "m" } }
+              ]
+            },
+            {
+              "name": "Hallway",
+              "width": { "value": 2, "unit": "m" },
+              "length": { "value": 10, "unit": "m" },
+              "doors": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

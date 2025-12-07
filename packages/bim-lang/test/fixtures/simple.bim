@@ -1,0 +1,18 @@
+project "Test Building" {
+  floor "Level 1" {
+    elevation: 0m
+    height: 3.5m
+
+    room "Reception" {
+      area: 50m²
+      doors: [
+        door to "Hallway" { width: 1.2m }
+      ]
+    }
+
+    room "Hallway" {
+      width: 2m
+      length: 10m
+    }
+  }
+}

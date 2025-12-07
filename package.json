@@ -1,0 +1,11 @@
+{
+  "name": "davinci",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "bun run test:bim && bun run test:compiler",
+    "test:bim": "cd packages/bim-lang && bun test",
+    "test:compiler": "cd packages/compiler && uv run pytest",
+    "build": "cd packages/bim-lang && bun run build"
+  }
+}

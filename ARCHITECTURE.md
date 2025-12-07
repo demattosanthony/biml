@@ -1,0 +1,118 @@
+# davinci
+
+AI agent system for generating BIM (Building Information Models) via a domain-specific language.
+
+## Problem
+
+Existing approaches to AI-driven BIM generation don't work:
+
+**Revit**
+
+- Prohibitive licensing and expensive APIs
+- APIs don't expose what's needed for programmatic generation
+- Application too complex for LLM computer-use, even as the technology matures
+
+**IfcOpenShell (raw)**
+
+- Scripts become unmanageably complex for real buildings
+- No support for parametric design patterns
+- No equivalent to Revit families (reusable, parameterized components)
+
+## Solution
+
+A domain-specific language (`.bim`) designed for AI agents to generate BIM models.
+
+**Key insight:** Instead of fighting existing tools, create a language that maps cleanly to BIM concepts while being simple enough for LLMs to write correctly.
+
+**Killer feature:** Parametric design built into the language. Change a floor height and doors, windows, and ceilings adjust automatically. The compiler handles downstream dependencies.
+
+## Architecture
+
+```
+.bim file (DSL)
+    │
+    ▼
+┌─────────────┐
+│   Langium   │  Parse DSL, produce AST
+│   (TypeScript)
+└─────────────┘
+    │
+    ▼
+  JSON IR      Intermediate representation
+    │
+    ▼
+┌─────────────┐
+│  Compiler   │  Transform IR to IFC
+│  (Python +  │
+│ IfcOpenShell)
+└─────────────┘
+    │
+    ▼
+  .ifc file    Industry standard BIM format
+```
+
+## DSL Example
+
+```bim
+project "Office Building" {
+  floor "Level 1" {
+    elevation: 0m
+    height: 3.5m
+
+    room "Reception" {
+      area: 50m²
+      doors: [
+        door to "Hallway" { width: 1.2m }
+      ]
+    }
+
+    room "Hallway" {
+      width: 2m
+      length: 10m
+    }
+  }
+}
+```
+
+Syntax principles:
+
+- Declarative and human-readable
+- Parametric values propagate changes (change `height: 3.5m`, doors adjust)
+- Relationships defined inline (`door to "Hallway"`)
+- Units explicit in values (`m`, `m²`)
+
+## Project Structure
+
+```
+davinci/
+├── packages/
+│   ├── bim-lang/           # Langium grammar + TypeScript tooling
+│   │   ├── src/
+│   │   │   ├── language/   # Grammar + module
+│   │   │   ├── cli/        # CLI for parsing .bim files
+│   │   │   └── generated/  # Langium-generated code
+│   │   ├── test/           # Bun tests
+│   │   └── package.json
+│   │
+│   └── compiler/           # Python + IfcOpenShell
+│       ├── src/
+│       │   └── compiler/   # JSON IR → IFC transformation
+│       └── pyproject.toml
+│
+├── ARCHITECTURE.md
+└── package.json            # Bun workspace root
+```
+
+## Roadmap
+
+**Phase 1: DSL**
+
+- Define Langium grammar for core BIM concepts
+- Implement parser producing JSON IR
+- Focus: floors, rooms, doors (minimal viable set)
+
+**Phase 2: v0 End-to-End**
+
+- Build Python compiler (JSON IR → IFC)
+- Complete flow: `.bim` → AST → JSON IR → `.ifc`
+- Validate output opens in IFC viewers

@@ -1,1 +1,0 @@
-ALTER TABLE "ifc_model" ADD COLUMN "model_fragment_url" text;
