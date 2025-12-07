@@ -17,7 +17,7 @@ describe("JSON IR Generator", () => {
   });
 
   async function parseAndGenerate(text: string): Promise<JsonIR> {
-    const uri = URI.parse("memory://test.bim");
+    const uri = URI.parse("memory://test.biml");
     const document =
       services.shared.workspace.LangiumDocumentFactory.fromString(text, uri);
 
@@ -115,8 +115,8 @@ describe("JSON IR Generator", () => {
     expect(doors[1].target).toBe("Storage");
   });
 
-  it("generates correct IR from simple.bim fixture", async () => {
-    const ir = await parseFileAndGenerate("simple.bim");
+  it("generates correct IR from simple.biml fixture", async () => {
+    const ir = await parseFileAndGenerate("simple.biml");
 
     expect(ir.projects[0].name).toBe("Test Building");
     expect(ir.projects[0].floors[0].name).toBe("Level 1");

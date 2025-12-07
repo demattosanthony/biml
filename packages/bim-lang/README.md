@@ -5,17 +5,17 @@ DSL for BIM model generation.
 ## Quick Start
 
 ```bash
-# Parse a .bim file to JSON IR
-bun ./bin/cli.ts parse test/fixtures/simple.bim
+# Parse a .biml file to JSON IR
+bun ./bin/cli.ts parse test/fixtures/simple.biml
 
 # Save to file
-bun ./bin/cli.ts parse test/fixtures/simple.bim -o output.json
+bun ./bin/cli.ts parse test/fixtures/simple.biml -o output.json
 
 # Pipe to compiler (generates IFC)
-bun ./bin/cli.ts parse test/fixtures/simple.bim | (cd ../compiler && uv run bim-compile - -o model.ifc)
+bun ./bin/cli.ts parse test/fixtures/simple.biml | (cd ../compiler && uv run bim-compile - -o model.ifc)
 ```
 
-## Example .bim File
+## Example .biml File
 
 ```
 project "My Building" {

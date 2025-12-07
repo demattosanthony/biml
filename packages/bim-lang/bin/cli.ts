@@ -63,8 +63,8 @@ program.name("bim").description("BIM DSL parser and compiler").version("0.1.0");
 
 program
   .command("parse")
-  .description("Parse a .bim file and output JSON IR")
-  .argument("<file>", "Path to .bim file")
+  .description("Parse a .biml file and output JSON IR")
+  .argument("<file>", "Path to .biml file")
   .option("-o, --output <file>", "Output file path (defaults to stdout)")
   .action(parseAction);
 

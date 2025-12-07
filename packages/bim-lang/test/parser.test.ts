@@ -39,7 +39,7 @@ describe("BIM Parser", () => {
   async function parseText(
     text: string
   ): Promise<{ model: Model; errors: string[] }> {
-    const uri = URI.parse("memory://test.bim");
+    const uri = URI.parse("memory://test.biml");
     const document =
       services.shared.workspace.LangiumDocumentFactory.fromString(text, uri);
 
@@ -144,8 +144,8 @@ describe("BIM Parser", () => {
     expect(room.doors[0].doors[0].target).toBe("Hallway");
   });
 
-  it("parses simple.bim fixture", async () => {
-    const { model, errors } = await parseFile("simple.bim");
+  it("parses simple.biml fixture", async () => {
+    const { model, errors } = await parseFile("simple.biml");
 
     expect(errors).toHaveLength(0);
     expect(model.projects).toHaveLength(1);
@@ -154,7 +154,7 @@ describe("BIM Parser", () => {
   });
 
   it("rejects invalid syntax", async () => {
-    const { errors } = await parseFile("invalid.bim");
+    const { errors } = await parseFile("invalid.biml");
 
     expect(errors.length).toBeGreaterThan(0);
   });

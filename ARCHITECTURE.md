@@ -20,7 +20,7 @@ Existing approaches to AI-driven BIM generation don't work:
 
 ## Solution
 
-A domain-specific language (`.bim`) designed for AI agents to generate BIM models.
+A domain-specific language (`.biml`) designed for AI agents to generate BIM models.
 
 **Key insight:** Instead of fighting existing tools, create a language that maps cleanly to BIM concepts while being simple enough for LLMs to write correctly.
 
@@ -29,7 +29,7 @@ A domain-specific language (`.bim`) designed for AI agents to generate BIM model
 ## Architecture
 
 ```
-.bim file (DSL)
+.biml file (DSL)
     │
     ▼
 ┌─────────────┐
@@ -89,7 +89,7 @@ davinci/
 │   ├── bim-lang/           # Langium grammar + TypeScript tooling
 │   │   ├── src/
 │   │   │   ├── language/   # Grammar + module
-│   │   │   ├── cli/        # CLI for parsing .bim files
+│   │   │   ├── cli/        # CLI for parsing .biml files
 │   │   │   └── generated/  # Langium-generated code
 │   │   ├── test/           # Bun tests
 │   │   └── package.json
@@ -114,5 +114,5 @@ davinci/
 **Phase 2: v0 End-to-End**
 
 - Build Python compiler (JSON IR → IFC)
-- Complete flow: `.bim` → AST → JSON IR → `.ifc`
+- Complete flow: `.biml` → AST → JSON IR → `.ifc`
 - Validate output opens in IFC viewers

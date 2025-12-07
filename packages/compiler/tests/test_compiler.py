@@ -53,11 +53,16 @@ class TestIFCGeneration:
         assert storeys[0].Name == "Level 1"
         assert storeys[0].Elevation == 0.0
 
-    def test_creates_walls(self, simple_ir):
+    def test_creates_walls_and_slabs(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
         walls = ifc.by_type("IfcWall")
-        assert len(walls) == 2
-        assert {w.Name for w in walls} == {"Reception", "Hallway"}
+        slabs = ifc.by_type("IfcSlab")
+        # 4 walls per room × 2 rooms = 8 walls
+        assert len(walls) == 8
+        # 1 floor slab per room × 2 rooms = 2 slabs
+        assert len(slabs) == 2
+        assert any("Reception - Floor" in s.Name for s in slabs)
+        assert any("Hallway - Floor" in s.Name for s in slabs)
 
     def test_empty_projects_raises(self):
         ir = JsonIR(version="0.1.0", projects=[])

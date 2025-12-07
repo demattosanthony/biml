@@ -4,7 +4,7 @@
     {
       "id": "bim",
       "grammar": "src/language/bim.langium",
-      "fileExtensions": [".bim"],
+      "fileExtensions": [".biml"],
       "textMate": {
         "out": "./syntaxes/bim.tmLanguage.json"
       }

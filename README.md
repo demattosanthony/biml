@@ -5,7 +5,7 @@ AI-powered BIM generation using a domain-specific language.
 ## Architecture
 
 ```
-.bim file → bim-lang (parse) → JSON IR → compiler → .ifc file
+.biml file → bim-lang (parse) → JSON IR → compiler → .ifc file
 ```
 
 ## Packages
@@ -18,11 +18,11 @@ AI-powered BIM generation using a domain-specific language.
 ## Quick Start
 
 ```bash
-# Parse .bim to JSON IR
-bun packages/bim-lang/bin/cli.ts parse file.bim
+# Parse .biml to JSON IR
+bun packages/bim-lang/bin/cli.ts parse file.biml
 
-# Full pipeline: .bim → .ifc
-bun packages/bim-lang/bin/cli.ts parse file.bim | \
+# Full pipeline: .biml → .ifc
+bun packages/bim-lang/bin/cli.ts parse file.biml | \
   (cd packages/compiler && uv run bim-compile - -o output.ifc)
 ```
 
