@@ -1,46 +1,65 @@
-## Machine Learned Buildng Information Modeling Application
+# davinci
 
-This software will be like buying autodesk revit + all the engineers that would use the tool.
+AI-powered BIM generation using a domain-specific language.
 
-Plus Plus a git like enviornment for managing all of the projects you are working on.
+## Architecture
 
-A place for designers to design, projects managers to QA/QC, track progress. Save building states. Open source building design.
-Lets actually solve the problem of design -> construction -> operation dgital handover. Creating repositories with all the information that can collaboratively updated.
+```
+.biml file → bim-lang (parse) → JSON IR → compiler → .ifc file
+```
 
-This could lead to really cool stuff like open source building design or bounties and engineering freelance work.
+## Packages
 
-Eat the software spend on autodesk revit + the spend on engineers and drafters. (maybe)
+| Package    | Language   | Description                      |
+| ---------- | ---------- | -------------------------------- |
+| `bim-lang` | TypeScript | DSL parser built with Langium    |
+| `compiler` | Python     | IFC generator using IfcOpenShell |
 
-Devin AI engineer for building information modeling === Need to focus on davinci workspace
+## Quick Start
 
-- project folder. Using git to manage version control. (leverage gitlab)
-- blender + bonsai add on. (gui + python console)
+```bash
+# Parse .biml to JSON IR
+bun packages/bim-lang/bin/cli.ts parse file.biml
 
--- Actually probably dont need blender and bonsai. Should be able to do this just using ifcopenshell python solely. This will require the creation of more tools though.
+# Full pipeline: .biml → .ifc
+bun packages/bim-lang/bin/cli.ts parse file.biml | \
+  (cd packages/compiler && uv run bim-compile - -o output.ifc)
+```
 
-Tools needed:
+## Example
 
-- project file browser (all files related to a project)
-- ifc editor session (load, edit, manipulate)
-  - file hierarchy
-  - element details
-  - ifc project library
-  - python console
+```biml
+# Simple two-room office with connecting door
 
-that good to start. Eventually could add things like
+floor Ground {
+  elevation: 0m
+  height: 3.5m
+}
 
-- web browser
-- terminal?
+room Lobby {
+  floor: Ground
+  position: [0, 0]
+  area: 100m²
+}
 
-Plans:
+room Hallway {
+  floor: Ground
+  position: [0, 1]
+  width: 2m
+  length: 15m
+}
 
-- opensource ?
-- pay per compute usage
-- enterprise version to host on your own servers
+door {
+  from: Lobby
+  to: Hallway
+  width: 1.2m
+}
+```
 
-### Dream goal
+## Development
 
-- Single prompt
-- Generate multiple models and systems
-- Run simulations on all of them to see energy output
--
+```bash
+bun install              # Install dependencies
+bun run test             # Run all tests
+bun run build            # Build bim-lang
+```

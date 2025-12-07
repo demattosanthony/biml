@@ -1,0 +1,14 @@
+{
+  "projectName": "BimLang",
+  "languages": [
+    {
+      "id": "bim",
+      "grammar": "src/language/bim.langium",
+      "fileExtensions": [".biml"],
+      "textMate": {
+        "out": "./syntaxes/bim.tmLanguage.json"
+      }
+    }
+  ],
+  "out": "./src/generated"
+}

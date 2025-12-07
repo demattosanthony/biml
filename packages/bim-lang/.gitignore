@@ -4,13 +4,12 @@ node_modules/
 # Build output
 dist/
 
+# Langium generated files
+src/generated/
+syntaxes/
+
 # Bun
 *.lockb
-bun.lockb
-
-# OS
-.DS_Store
-Thumbs.db
 
 # IDE
 .idea/
@@ -18,8 +17,15 @@ Thumbs.db
 *.swp
 *.swo
 
-# Logs
-*.log
+# OS
+.DS_Store
+Thumbs.db
 
 # Test coverage
 coverage/
+
+# Logs
+*.log
+
+# IFC files
+*.ifc

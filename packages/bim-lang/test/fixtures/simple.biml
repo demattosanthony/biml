@@ -1,0 +1,25 @@
+# Simple two-room office with connecting door
+
+floor Ground {
+  elevation: 0m
+  height: 3.5m
+}
+
+room Reception {
+  floor: Ground
+  position: [0, 0]
+  area: 50m²
+}
+
+room Hallway {
+  floor: Ground
+  position: [0, 1]
+  width: 2m
+  length: 10m
+}
+
+door {
+  from: Reception
+  to: Hallway
+  width: 1.2m
+}

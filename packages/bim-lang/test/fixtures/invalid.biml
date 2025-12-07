@@ -1,0 +1,8 @@
+project "Broken" {
+  floor "Bad Floor" {
+    elevation: 0m
+    // Missing closing brace
+    room "Orphan" {
+      area: 20m²
+    }
+}
