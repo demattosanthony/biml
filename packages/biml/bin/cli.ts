@@ -103,21 +103,19 @@ async function compileAction(
 }
 
 const program = new Command();
-program.name("bim").description("BIM DSL parser and compiler").version("0.1.0");
-
 program
-  .command("parse")
-  .description("Parse a .biml file and output JSON IR")
-  .argument("<file>", "Path to .biml file")
-  .option("-o, --output <file>", "Output file path (defaults to stdout)")
-  .action(parseAction);
-
-program
-  .command("compile")
-  .description("Compile a .biml file directly to IFC")
+  .name("bimlc")
+  .description("BIML compiler - compile .biml files to IFC")
+  .version("0.1.0")
   .argument("<file>", "Path to .biml file")
   .option("-o, --output <file>", "Output IFC file path (defaults to input name with .ifc)")
   .option("--ir", "Also output the intermediate JSON IR")
   .action(compileAction);
+
+program
+  .command("parse <file>")
+  .description("Parse a .biml file and output JSON IR (for debugging)")
+  .option("-o, --output <file>", "Output file path (defaults to stdout)")
+  .action(parseAction);
 
 program.parse();

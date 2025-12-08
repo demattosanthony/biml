@@ -1,12 +1,12 @@
 {
-  "name": "bim-lang",
+  "name": "biml",
   "version": "0.1.0",
   "description": "Domain-specific language for BIM model generation",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "bim": "./bin/cli.ts"
+    "bimlc": "./bin/cli.ts"
   },
   "scripts": {
     "build": "langium generate && tsc --project tsconfig.build.json",

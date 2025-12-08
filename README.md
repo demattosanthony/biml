@@ -1,6 +1,4 @@
-# BIM Language (BIML)
-
-Building Information Modeling Language (BIML) makes it easy to build BIM models using a simple, declarative language.
+# Building Information Modeling Language (BIML)
 
 biml is a domain specific language designed for BIM model generation.
 
@@ -12,30 +10,27 @@ biml is a domain specific language designed for BIM model generation.
 ## Architecture
 
 ```
-.biml file → bim-lang (parse) → JSON IR → compiler → .ifc file
+.biml file → bimlc (parse) → JSON IR → compiler → .ifc file
 ```
 
 ## Packages
 
 | Package    | Language   | Description                      |
 | ---------- | ---------- | -------------------------------- |
-| `bim-lang` | TypeScript | DSL parser built with Langium    |
+| `biml`     | TypeScript | DSL parser built with Langium    |
 | `compiler` | Python     | IFC generator using IfcOpenShell |
 
 ## Quick Start
 
 ```bash
-# Set .biml file path
-biml_path=packages/bim-lang/test/fixtures/simple.biml
-
 # Compile .biml directly to IFC
-bun packages/bim-lang/bin/cli.ts compile $biml_path -o output.ifc
+bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc
 
 # Also output intermediate JSON IR
-bun packages/bim-lang/bin/cli.ts compile $biml_path -o output.ifc --ir
+bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc --ir
 
 # Or just parse to JSON IR (without IFC generation)
-bun packages/bim-lang/bin/cli.ts parse $biml_path -o output.json
+bun run bimlc parse packages/biml/test/fixtures/simple.biml -o output.json
 ```
 
 ## Example
@@ -73,5 +68,5 @@ door {
 ```bash
 bun install              # Install dependencies
 bun run test             # Run all tests
-bun run build            # Build bim-lang
+bun run build            # Build biml
 ```

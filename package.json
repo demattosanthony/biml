@@ -1,11 +1,12 @@
 {
-  "name": "davinci",
+  "name": "biml",
   "private": true,
   "workspaces": ["packages/*"],
   "scripts": {
-    "test": "bun run test:bim && bun run test:compiler",
-    "test:bim": "cd packages/bim-lang && bun test",
-    "test:compiler": "cd packages/compiler && uv run pytest",
-    "build": "cd packages/bim-lang && bun run build"
+    "bimlc": "bun packages/biml/bin/cli.ts",
+    "test": "bun run test:biml && bun run test:compiler",
+    "test:biml": "cd packages/biml && bun test",
+    "test:compiler": "cd packages/compiler && uv sync --extra dev && uv run pytest",
+    "build": "cd packages/biml && bun run build"
   }
 }
