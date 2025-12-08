@@ -1,4 +1,4 @@
-# bim-lang
+# biml
 
 DSL for BIM model generation.
 
@@ -18,41 +18,51 @@ bun ./bin/cli.ts parse test/fixtures/simple.biml -o output.json
 ## Example .biml File
 
 ```biml
-# Multi-floor building with rooms and doors
+# Define parametric door types
+library "Doors" {
+  family Door {
+    parameter width: Length = 900mm
+    parameter height: Length = 2100mm
+  }
 
-floor Ground {
-  elevation: 0m
-  height: 3.5m
+  type SingleFlush extends Door { }
+  type DoubleDoor extends Door {
+    width = 1800mm
+  }
 }
 
-floor Level1 {
-  elevation: 3.5m
-  height: 3m
-}
+# Define building hierarchy
+project "Office Building" {
+  site "Main Site" {
+    building "Building A" {
+      level "Ground" {
+        elevation: 0m
+        height: 3.5m
 
-room Lobby {
-  floor: Ground
-  position: [0, 0]
-  area: 100m²
-}
+        space "Lobby" {
+          position: [0, 0]
+          area: 100m²
+          door "D1": SingleFlush
+        }
 
-room Hallway {
-  floor: Ground
-  position: [0, 1]
-  width: 2m
-  length: 15m
-}
+        space "Hallway" {
+          position: [0, 1]
+          width: 2m
+          length: 15m
+        }
+      }
 
-room Office {
-  floor: Level1
-  position: [0, 0]
-  area: 25m²
-}
+      level "Level1" {
+        elevation: 3.5m
+        height: 3m
 
-door {
-  from: Lobby
-  to: Hallway
-  width: 1.2m
+        space "Office" {
+          position: [0, 0]
+          area: 25m²
+        }
+      }
+    }
+  }
 }
 ```
 

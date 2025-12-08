@@ -60,140 +60,230 @@ describe("BIM Parser", () => {
     const { model, errors } = await parseText("");
 
     expect(errors).toHaveLength(0);
-    expect(model.floors).toHaveLength(0);
-    expect(model.rooms).toHaveLength(0);
-    expect(model.doors).toHaveLength(0);
+    expect(model.libraries).toHaveLength(0);
+    expect(model.projects).toHaveLength(0);
   });
 
-  it("parses single floor", async () => {
+  it("parses library with family", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
-    `);
-
-    expect(errors).toHaveLength(0);
-    expect(model.floors).toHaveLength(1);
-    expect(model.floors[0].name).toBe("Ground");
-  });
-
-  it("parses floor with elevation and height", async () => {
-    const { model, errors } = await parseText(`
-      floor Ground {
-        elevation: 0m
-        height: 3.5m
+      library "TestLib" {
+        family Door {
+          parameter width: Length = 900mm
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    const floor = model.floors[0];
-    expect(floor.properties).toHaveLength(2);
+    expect(model.libraries).toHaveLength(1);
+    expect(model.libraries[0].name).toBe("TestLib");
+    expect(model.libraries[0].families).toHaveLength(1);
+    expect(model.libraries[0].families[0].name).toBe("Door");
   });
 
-  it("parses room with floor reference and position", async () => {
+  it("parses family parameters", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
-
-      room Office {
-        floor: Ground
-        position: [0, 0]
-        area: 25m²
+      library "Doors" {
+        family Door {
+          parameter width: Length = 900mm
+          parameter height: Length = 2100mm
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    expect(model.rooms).toHaveLength(1);
-    const room = model.rooms[0];
-    expect(room.name).toBe("Office");
-    expect(room.properties).toHaveLength(3);
+    const family = model.libraries[0].families[0];
+    expect(family.parameters).toHaveLength(2);
+    expect(family.parameters[0].name).toBe("width");
+    expect(family.parameters[0].paramType).toBe("Length");
+    expect(family.parameters[1].name).toBe("height");
   });
 
-  it("parses room with width and length", async () => {
+  it("parses type extending family", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
+      library "Doors" {
+        family Door {
+          parameter width: Length = 900mm
+        }
 
-      room Hallway {
-        floor: Ground
-        position: [0, 1]
-        width: 2m
-        length: 10m
+        type SingleFlush extends Door { }
+        type DoubleDoor extends Door {
+          width = 1800mm
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    const room = model.rooms[0];
-    expect(room.properties).toHaveLength(4);
+    const lib = model.libraries[0];
+    expect(lib.types).toHaveLength(2);
+    expect(lib.types[0].name).toBe("SingleFlush");
+    expect(lib.types[1].name).toBe("DoubleDoor");
+    expect(lib.types[1].overrides).toHaveLength(1);
   });
 
-  it("parses room with quoted name", async () => {
+  it("parses project with site and building", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
-
-      room "Conference Room" {
-        floor: Ground
-        position: [1, 0]
-        area: 40m²
+      project "Test Project" {
+        site "Main Site" {
+          building "Building A" {
+          }
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    // Langium strips quotes from STRING terminals
-    expect(model.rooms[0].name).toBe("Conference Room");
+    expect(model.projects).toHaveLength(1);
+    expect(model.projects[0].name).toBe("Test Project");
+    expect(model.projects[0].sites).toHaveLength(1);
+    expect(model.projects[0].sites[0].buildings).toHaveLength(1);
   });
 
-  it("parses door between rooms", async () => {
+  it("parses level with properties", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
-
-      room Lobby {
-        floor: Ground
-        position: [0, 0]
-      }
-
-      room Office {
-        floor: Ground
-        position: [0, 1]
-      }
-
-      door {
-        from: Lobby
-        to: Office
-        width: 0.9m
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "Ground" {
+              elevation: 0m
+              height: 3.5m
+            }
+          }
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    expect(model.doors).toHaveLength(1);
-    // Door properties are in properties array
-    expect(model.doors[0].properties.length).toBeGreaterThan(0);
+    const level = model.projects[0].sites[0].buildings[0].levels[0];
+    expect(level.name).toBe("Ground");
+    expect(level.properties).toHaveLength(2);
   });
 
-  it("parses exterior door", async () => {
+  it("parses space with area", async () => {
     const { model, errors } = await parseText(`
-      floor Ground {}
-
-      room Lobby {
-        floor: Ground
-        position: [0, 0]
-      }
-
-      door {
-        from: Lobby
-        to: exterior
-        wall: south
-        width: 1.0m
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Office" {
+                position: [0, 0]
+                area: 25m²
+              }
+            }
+          }
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    expect(model.doors).toHaveLength(1);
+    const space = model.projects[0].sites[0].buildings[0].levels[0].spaces[0];
+    expect(space.name).toBe("Office");
+    expect(space.properties).toHaveLength(2);
+  });
+
+  it("parses space with width and length", async () => {
+    const { model, errors } = await parseText(`
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Hallway" {
+                position: [0, 1]
+                width: 2m
+                length: 10m
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    expect(errors).toHaveLength(0);
+    const space = model.projects[0].sites[0].buildings[0].levels[0].spaces[0];
+    expect(space.properties).toHaveLength(3);
+  });
+
+  it("parses space with door", async () => {
+    const { model, errors } = await parseText(`
+      library "Doors" {
+        family Door { }
+        type StandardDoor extends Door { }
+      }
+
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Room" {
+                position: [0, 0]
+                area: 25m²
+                door "D1": StandardDoor
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    expect(errors).toHaveLength(0);
+    const space = model.projects[0].sites[0].buildings[0].levels[0].spaces[0];
+    expect(space.elements).toHaveLength(1);
+    expect(space.elements[0].$type).toBe("SpaceDoor");
+  });
+
+  it("parses door with wall override", async () => {
+    const { model, errors } = await parseText(`
+      library "Doors" {
+        family Door { }
+        type StandardDoor extends Door { }
+      }
+
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Room" {
+                position: [0, 0]
+                area: 25m²
+                door "D1": StandardDoor {
+                  wall: north
+                }
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    expect(errors).toHaveLength(0);
+    const door = model.projects[0].sites[0].buildings[0].levels[0].spaces[0].elements[0];
+    expect(door.$type).toBe("SpaceDoor");
+    if (door.$type === "SpaceDoor") {
+      expect(door.overrides).toHaveLength(1);
+    }
   });
 
   it("parses simple.biml fixture", async () => {
     const { model, errors } = await parseFile("simple.biml");
 
     expect(errors).toHaveLength(0);
-    expect(model.floors).toHaveLength(1);
-    expect(model.rooms).toHaveLength(2);
-    expect(model.doors).toHaveLength(1);
+    expect(model.libraries).toHaveLength(1);
+    expect(model.projects).toHaveLength(1);
+  });
+
+  it("parses hierarchical.biml fixture", async () => {
+    const { model, errors } = await parseFile("hierarchical.biml");
+
+    expect(errors).toHaveLength(0);
+    expect(model.libraries).toHaveLength(1);
+    expect(model.projects).toHaveLength(1);
+    expect(model.projects[0].sites[0].buildings[0].levels).toHaveLength(2);
   });
 
   it("rejects invalid syntax", async () => {
@@ -205,12 +295,14 @@ describe("BIM Parser", () => {
   it("supports # comments", async () => {
     const { model, errors } = await parseText(`
       # This is a comment
-      floor Ground {
-        elevation: 0m  # inline comment
+      library "Test" {
+        family Door {
+          parameter width: Length = 900mm  # inline comment
+        }
       }
     `);
 
     expect(errors).toHaveLength(0);
-    expect(model.floors).toHaveLength(1);
+    expect(model.libraries).toHaveLength(1);
   });
 });

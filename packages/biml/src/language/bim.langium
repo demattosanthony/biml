@@ -1,42 +1,120 @@
 grammar Bim
 
-// Flat structure: floors, rooms, and doors are top-level entities
+// Entry point: hierarchical syntax with libraries and projects
 entry Model:
-    (floors+=Floor | rooms+=Room | doors+=Door)*;
+    (libraries+=Library | projects+=Project)*;
 
 // ============================================================================
-// FLOOR
+// LIBRARY & TYPE SYSTEM
 // ============================================================================
 
-Floor:
-    'floor' name=ID '{'
-        properties+=FloorProperty*
+Library:
+    'library' name=STRING '{'
+        (families+=Family | types+=Type)*
     '}';
 
-FloorProperty:
+Family:
+    'family' name=ID '{'
+        parameters+=FamilyParameter*
+    '}';
+
+FamilyParameter:
+    'parameter' name=ParameterName ':' paramType=ParameterType ('=' defaultValue=Expression)?;
+
+ParameterType returns string:
+    'Length' | 'Area' | 'Number' | 'Boolean' | 'String';
+
+Type:
+    'type' name=ID ('extends' base=[Family:ID])? '{'
+        overrides+=ParameterOverride*
+    '}';
+
+ParameterOverride:
+    name=ParameterName '=' value=Expression;
+
+// Allow keywords to be used as parameter names
+ParameterName returns string:
+    ID | 'width' | 'height' | 'area' | 'length' | 'offset' | 'wall' | 'position' | 'elevation' | 'floor';
+
+// ============================================================================
+// EXPRESSIONS (Simple Arithmetic)
+// ============================================================================
+
+Expression:
+    AdditiveExpression;
+
+AdditiveExpression infers Expression:
+    MultiplicativeExpression ({infer BinaryExpression.left=current} op=('+' | '-') right=MultiplicativeExpression)*;
+
+MultiplicativeExpression infers Expression:
+    PrimaryExpression ({infer BinaryExpression.left=current} op=('*' | '/') right=PrimaryExpression)*;
+
+PrimaryExpression infers Expression:
+    '(' Expression ')' |
+    {infer MeasurementLiteral} value=NUMBER unit=LengthUnit |
+    {infer NumberLiteral} value=NUMBER |
+    {infer ParameterRef} ref=[FamilyParameter:ParameterName];
+
+// ============================================================================
+// PROJECT HIERARCHY
+// ============================================================================
+
+Project:
+    'project' name=STRING '{'
+        sites+=Site*
+    '}';
+
+Site:
+    'site' name=STRING '{'
+        buildings+=Building*
+    '}';
+
+Building:
+    'building' name=STRING '{'
+        levels+=Level*
+    '}';
+
+Level:
+    'level' name=STRING '{'
+        properties+=LevelProperty*
+        spaces+=Space*
+    '}';
+
+LevelProperty:
     ElevationProperty | HeightProperty;
+
+Space:
+    'space' name=STRING '{'
+        properties+=SpaceProperty*
+        elements+=SpaceElement*
+    '}';
+
+SpaceProperty:
+    AreaProperty | WidthProperty | LengthProperty | PositionProperty;
+
+SpaceElement:
+    SpaceDoor;
+
+SpaceDoor:
+    'door' name=STRING (':' typeRef=TypeReference)? ('{'
+        overrides+=SpaceDoorOverride*
+    '}')?;
+
+SpaceDoorOverride:
+    DoorWidthProperty | DoorHeightProperty | DoorWallProperty | DoorOffsetProperty;
+
+TypeReference:
+    typeName=ID;
+
+// ============================================================================
+// SHARED PROPERTY RULES
+// ============================================================================
 
 ElevationProperty:
     'elevation' ':' value=Measurement;
 
 HeightProperty:
     'height' ':' value=Measurement;
-
-// ============================================================================
-// ROOM
-// ============================================================================
-
-Room:
-    'room' name=(ID | STRING) '{'
-        properties+=RoomProperty*
-    '}';
-
-RoomProperty:
-    FloorRefProperty | PositionProperty | AreaProperty | WidthProperty | LengthProperty;
-
-// Reference to which floor this room is on
-FloorRefProperty:
-    'floor' ':' floor=[Floor:ID];
 
 // Grid position [row, col]
 PositionProperty:
@@ -51,41 +129,15 @@ WidthProperty:
 LengthProperty:
     'length' ':' value=Measurement;
 
-// ============================================================================
-// DOOR
-// ============================================================================
-
-Door:
-    'door' '{'
-        properties+=DoorProperty*
-    '}';
-
-DoorProperty:
-    DoorFromProperty | DoorToProperty | DoorWidthProperty | DoorHeightProperty | DoorWallProperty | DoorOffsetProperty;
-
-// Source room (reference by name)
-DoorFromProperty:
-    'from' ':' from=[Room:RoomRef];
-
-// Target: either a room reference or 'exterior' keyword
-DoorToProperty:
-    'to' ':' (to=[Room:RoomRef] | exterior?='exterior');
-
-// Room reference can be ID or STRING
-RoomRef returns string:
-    ID | STRING;
-
 DoorWidthProperty:
     'width' ':' value=Measurement;
 
 DoorHeightProperty:
     'height' ':' value=Measurement;
 
-// Which wall (required for exterior doors, optional for room-to-room)
 DoorWallProperty:
     'wall' ':' direction=WallDirection;
 
-// Position along wall (0.0 = start, 0.5 = center, 1.0 = end)
 DoorOffsetProperty:
     'offset' ':' value=NUMBER;
 

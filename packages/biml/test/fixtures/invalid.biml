@@ -1,8 +1,13 @@
+# Invalid BIML syntax for testing error handling
+
 project "Broken" {
-  floor "Bad Floor" {
-    elevation: 0m
-    // Missing closing brace
-    room "Orphan" {
-      area: 20m²
+  site "Test Site" {
+    building "Bad Building" {
+      level "Ground" {
+        elevation: 0m
+        // Missing closing brace for level
+        space "Orphan" {
+          area: 20m²
+        }
     }
 }

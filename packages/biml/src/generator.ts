@@ -1,50 +1,123 @@
 import type {
   Model,
-  Floor,
-  Room,
-  Door,
   Measurement,
   AreaMeasurement,
+  Library,
+  Family,
+  FamilyParameter,
+  Type,
+  Expression,
+  Project,
+  Site,
+  Building,
+  Level,
+  Space,
+  SpaceDoor,
 } from "./generated/ast.js";
 
 // ============================================================================
-// IR Types (flat structure)
+// IR Types - Shared
 // ============================================================================
 
-export interface JsonIR {
-  version: string;
-  floors: FloorIR[];
-  rooms: RoomIR[];
-  doors: DoorIR[];
+export interface MeasurementIR {
+  value: number;
+  unit: string;
 }
 
-export interface FloorIR {
+// ============================================================================
+// IR Types - Library & Type System
+// ============================================================================
+
+export interface ExpressionIR {
+  kind: "literal" | "measurement" | "reference" | "binary";
+  value?: number;
+  unit?: string;
+  ref?: string;
+  op?: "+" | "-" | "*" | "/";
+  left?: ExpressionIR;
+  right?: ExpressionIR;
+}
+
+export interface ParameterIR {
   name: string;
-  elevation?: MeasurementIR;
-  height?: MeasurementIR;
+  paramType: string;
+  defaultValue?: ExpressionIR;
 }
 
-export interface RoomIR {
+export interface FamilyIR {
   name: string;
-  floor: string;
-  position: { row: number; col: number };
-  area?: MeasurementIR;
-  width?: MeasurementIR;
-  length?: MeasurementIR;
+  parameters: ParameterIR[];
 }
 
-export interface DoorIR {
-  from: string;
-  to: string;  // Room name or "exterior"
+export interface ResolvedParameterIR {
+  name: string;
+  value: MeasurementIR | number;
+}
+
+export interface TypeIR {
+  name: string;
+  family: string;
+  parameters: ResolvedParameterIR[];
+}
+
+export interface LibraryIR {
+  name: string;
+  families: FamilyIR[];
+  types: TypeIR[];
+}
+
+// ============================================================================
+// IR Types - Project Hierarchy
+// ============================================================================
+
+export interface SpaceDoorIR {
+  name: string;
+  typeRef?: string;
   width?: MeasurementIR;
   height?: MeasurementIR;
   wall?: "north" | "south" | "east" | "west";
   offset?: number;
 }
 
-export interface MeasurementIR {
-  value: number;
-  unit: string;
+export interface SpaceIR {
+  name: string;
+  position?: { row: number; col: number };
+  area?: MeasurementIR;
+  width?: MeasurementIR;
+  length?: MeasurementIR;
+  doors: SpaceDoorIR[];
+}
+
+export interface LevelIR {
+  name: string;
+  elevation?: MeasurementIR;
+  height?: MeasurementIR;
+  spaces: SpaceIR[];
+}
+
+export interface BuildingIR {
+  name: string;
+  levels: LevelIR[];
+}
+
+export interface SiteIR {
+  name: string;
+  buildings: BuildingIR[];
+}
+
+export interface ProjectIR {
+  name: string;
+  sites: SiteIR[];
+}
+
+// ============================================================================
+// Top-level IR
+// ============================================================================
+
+export interface JsonIR {
+  version: string;
+  libraries?: LibraryIR[];
+  projects?: ProjectIR[];
 }
 
 // ============================================================================
@@ -64,90 +137,264 @@ function cleanName(name: string): string {
 }
 
 // ============================================================================
-// Generators
+// Expression Generator
 // ============================================================================
 
-function generateFloor(floor: Floor): FloorIR {
-  const ir: FloorIR = { name: floor.name };
+function generateExpression(expr: Expression): ExpressionIR {
+  switch (expr.$type) {
+    case "NumberLiteral":
+      return { kind: "literal", value: expr.value };
+    case "MeasurementLiteral":
+      return { kind: "measurement", value: expr.value, unit: expr.unit };
+    case "ParameterRef":
+      return { kind: "reference", ref: expr.ref.ref?.name ?? expr.ref.$refText };
+    case "BinaryExpression":
+      return {
+        kind: "binary",
+        op: expr.op as "+" | "-" | "*" | "/",
+        left: generateExpression(expr.left),
+        right: generateExpression(expr.right),
+      };
+    default:
+      throw new Error(`Unknown expression type: ${(expr as Expression).$type}`);
+  }
+}
 
-  for (const p of floor.properties) {
-    if (p.$type === "ElevationProperty") {
-      ir.elevation = measurement(p.value);
-    } else if (p.$type === "HeightProperty") {
-      ir.height = measurement(p.value);
+// ============================================================================
+// Expression Evaluator (for resolving type parameters)
+// ============================================================================
+
+function evaluateExpression(
+  expr: ExpressionIR,
+  context: Map<string, MeasurementIR | number>
+): MeasurementIR | number {
+  switch (expr.kind) {
+    case "literal":
+      return expr.value!;
+    case "measurement":
+      return { value: expr.value!, unit: expr.unit! };
+    case "reference": {
+      const value = context.get(expr.ref!);
+      if (value === undefined) {
+        throw new Error(`Unknown parameter reference: ${expr.ref}`);
+      }
+      return value;
     }
+    case "binary": {
+      const left = evaluateExpression(expr.left!, context);
+      const right = evaluateExpression(expr.right!, context);
+
+      // For now, simple numeric operations
+      const leftVal = typeof left === "number" ? left : left.value;
+      const rightVal = typeof right === "number" ? right : right.value;
+      const leftUnit = typeof left === "number" ? undefined : left.unit;
+
+      let result: number;
+      switch (expr.op) {
+        case "+": result = leftVal + rightVal; break;
+        case "-": result = leftVal - rightVal; break;
+        case "*": result = leftVal * rightVal; break;
+        case "/": result = leftVal / rightVal; break;
+        default: throw new Error(`Unknown operator: ${expr.op}`);
+      }
+
+      // If left has a unit, preserve it
+      if (leftUnit) {
+        return { value: result, unit: leftUnit };
+      }
+      return result;
+    }
+    default:
+      throw new Error(`Unknown expression kind: ${expr.kind}`);
+  }
+}
+
+// ============================================================================
+// Library & Type Generators
+// ============================================================================
+
+function generateFamilyParameter(param: FamilyParameter): ParameterIR {
+  const ir: ParameterIR = {
+    name: param.name,
+    paramType: param.paramType,
+  };
+
+  if (param.defaultValue) {
+    ir.defaultValue = generateExpression(param.defaultValue);
   }
 
   return ir;
 }
 
-function generateRoom(room: Room): RoomIR {
-  const name = cleanName(room.name);
+function generateFamily(family: Family): FamilyIR {
+  return {
+    name: family.name,
+    parameters: family.parameters.map(generateFamilyParameter),
+  };
+}
 
-  // Default position if not specified
-  let floorRef = "";
-  let position = { row: 0, col: 0 };
+function generateType(type: Type, families: Map<string, FamilyIR>): TypeIR {
+  const familyName = type.base?.ref?.name ?? type.base?.$refText ?? "";
+  const family = families.get(familyName);
 
-  const ir: RoomIR = { name, floor: floorRef, position };
+  // Build parameter context from family defaults
+  const context = new Map<string, MeasurementIR | number>();
+  const resolvedParams: ResolvedParameterIR[] = [];
 
-  for (const p of room.properties) {
-    switch (p.$type) {
-      case "FloorRefProperty":
-        // Reference to floor - get the name from the referenced floor
-        ir.floor = p.floor.ref?.name ?? p.floor.$refText;
-        break;
-      case "PositionProperty":
-        ir.position = { row: Math.floor(p.row), col: Math.floor(p.col) };
-        break;
-      case "AreaProperty":
-        ir.area = measurement(p.value);
-        break;
-      case "WidthProperty":
-        ir.width = measurement(p.value);
-        break;
-      case "LengthProperty":
-        ir.length = measurement(p.value);
-        break;
+  if (family) {
+    for (const param of family.parameters) {
+      if (param.defaultValue) {
+        const value = evaluateExpression(param.defaultValue, context);
+        context.set(param.name, value);
+        resolvedParams.push({ name: param.name, value });
+      }
     }
   }
 
-  return ir;
+  // Apply type overrides
+  for (const override of type.overrides) {
+    const exprIR = generateExpression(override.value);
+    const value = evaluateExpression(exprIR, context);
+    context.set(override.name, value);
+
+    // Update or add the parameter
+    const existing = resolvedParams.find(p => p.name === override.name);
+    if (existing) {
+      existing.value = value;
+    } else {
+      resolvedParams.push({ name: override.name, value });
+    }
+  }
+
+  return {
+    name: type.name,
+    family: familyName,
+    parameters: resolvedParams,
+  };
 }
 
-function generateDoor(door: Door): DoorIR {
-  let from = "";
-  let to: string = "";
-  const ir: DoorIR = { from, to };
+function generateLibrary(library: Library): LibraryIR {
+  // First generate all families
+  const familyIRs = library.families.map(generateFamily);
+  const familyMap = new Map(familyIRs.map(f => [f.name, f]));
 
-  for (const p of door.properties) {
-    switch (p.$type) {
-      case "DoorFromProperty":
-        // Reference to room
-        ir.from = cleanName(p.from.ref?.name ?? p.from.$refText);
-        break;
-      case "DoorToProperty":
-        if (p.exterior) {
-          ir.to = "exterior";
-        } else if (p.to) {
-          ir.to = cleanName(p.to.ref?.name ?? p.to.$refText);
-        }
-        break;
+  // Then generate types with family context
+  const typeIRs = library.types.map(t => generateType(t, familyMap));
+
+  return {
+    name: cleanName(library.name),
+    families: familyIRs,
+    types: typeIRs,
+  };
+}
+
+// ============================================================================
+// Project Hierarchy Generators
+// ============================================================================
+
+function generateSpaceDoor(door: SpaceDoor): SpaceDoorIR {
+  const ir: SpaceDoorIR = {
+    name: cleanName(door.name),
+  };
+
+  if (door.typeRef) {
+    ir.typeRef = door.typeRef.typeName;
+  }
+
+  for (const override of door.overrides) {
+    switch (override.$type) {
       case "DoorWidthProperty":
-        ir.width = measurement(p.value);
+        ir.width = measurement(override.value);
         break;
       case "DoorHeightProperty":
-        ir.height = measurement(p.value);
+        ir.height = measurement(override.value);
         break;
       case "DoorWallProperty":
-        ir.wall = p.direction as "north" | "south" | "east" | "west";
+        ir.wall = override.direction as "north" | "south" | "east" | "west";
         break;
       case "DoorOffsetProperty":
-        ir.offset = p.value;
+        ir.offset = override.value;
         break;
     }
   }
 
   return ir;
+}
+
+function generateSpace(space: Space): SpaceIR {
+  const ir: SpaceIR = {
+    name: cleanName(space.name),
+    doors: [],
+  };
+
+  for (const prop of space.properties) {
+    switch (prop.$type) {
+      case "PositionProperty":
+        ir.position = { row: Math.floor(prop.row), col: Math.floor(prop.col) };
+        break;
+      case "AreaProperty":
+        ir.area = measurement(prop.value);
+        break;
+      case "WidthProperty":
+        ir.width = measurement(prop.value);
+        break;
+      case "LengthProperty":
+        ir.length = measurement(prop.value);
+        break;
+    }
+  }
+
+  // Generate doors
+  for (const element of space.elements) {
+    if (element.$type === "SpaceDoor") {
+      ir.doors.push(generateSpaceDoor(element));
+    }
+  }
+
+  return ir;
+}
+
+function generateLevel(level: Level): LevelIR {
+  const ir: LevelIR = {
+    name: cleanName(level.name),
+    spaces: [],
+  };
+
+  for (const prop of level.properties) {
+    switch (prop.$type) {
+      case "ElevationProperty":
+        ir.elevation = measurement(prop.value);
+        break;
+      case "HeightProperty":
+        ir.height = measurement(prop.value);
+        break;
+    }
+  }
+
+  ir.spaces = level.spaces.map(generateSpace);
+
+  return ir;
+}
+
+function generateBuilding(building: Building): BuildingIR {
+  return {
+    name: cleanName(building.name),
+    levels: building.levels.map(generateLevel),
+  };
+}
+
+function generateSite(site: Site): SiteIR {
+  return {
+    name: cleanName(site.name),
+    buildings: site.buildings.map(generateBuilding),
+  };
+}
+
+function generateProject(project: Project): ProjectIR {
+  return {
+    name: cleanName(project.name),
+    sites: project.sites.map(generateSite),
+  };
 }
 
 // ============================================================================
@@ -155,10 +402,17 @@ function generateDoor(door: Door): DoorIR {
 // ============================================================================
 
 export function generateJsonIR(model: Model): JsonIR {
-  return {
-    version: "0.2.0",
-    floors: model.floors.map(generateFloor),
-    rooms: model.rooms.map(generateRoom),
-    doors: model.doors.map(generateDoor),
+  const ir: JsonIR = {
+    version: "0.3.0",
   };
+
+  if (model.libraries.length > 0) {
+    ir.libraries = model.libraries.map(generateLibrary);
+  }
+
+  if (model.projects.length > 0) {
+    ir.projects = model.projects.map(generateProject);
+  }
+
+  return ir;
 }

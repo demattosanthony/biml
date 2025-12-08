@@ -1,25 +1,33 @@
 # Simple two-room office with connecting door
 
-floor Ground {
-  elevation: 0m
-  height: 3.5m
+library "Doors" {
+  family Door {
+    parameter width: Length = 900mm
+    parameter height: Length = 2100mm
+  }
+
+  type StandardDoor extends Door { }
 }
 
-room Reception {
-  floor: Ground
-  position: [0, 0]
-  area: 50m²
-}
+project "Simple Office" {
+  site "Main Site" {
+    building "Office Building" {
+      level "Ground" {
+        elevation: 0m
+        height: 3.5m
 
-room Hallway {
-  floor: Ground
-  position: [0, 1]
-  width: 2m
-  length: 10m
-}
+        space "Reception" {
+          position: [0, 0]
+          area: 50m²
+          door "D1": StandardDoor
+        }
 
-door {
-  from: Reception
-  to: Hallway
-  width: 1.2m
+        space "Hallway" {
+          position: [0, 1]
+          width: 2m
+          length: 10m
+        }
+      }
+    }
+  }
 }

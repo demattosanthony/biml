@@ -1,4 +1,4 @@
-"""Tests for BIM compiler (v0.2.0 flat structure)."""
+"""Tests for BIM compiler (v0.3.0 hierarchical structure)."""
 
 import pytest
 from pathlib import Path
@@ -15,41 +15,78 @@ def simple_ir():
 
 class TestIR:
     def test_parse_simple_json(self, simple_ir):
-        assert simple_ir.version == "0.2.0"
-        assert len(simple_ir.floors) == 1
-        assert len(simple_ir.rooms) == 2
-        assert len(simple_ir.doors) == 1
+        assert simple_ir.version == "0.3.0"
+        assert len(simple_ir.libraries) == 1
+        assert len(simple_ir.projects) == 1
 
-    def test_parse_floor(self, simple_ir):
-        floor = simple_ir.floors[0]
-        assert floor.name == "Ground"
-        assert floor.elevation.value == 0
-        assert floor.height.value == 3.5
+    def test_parse_library(self, simple_ir):
+        lib = simple_ir.libraries[0]
+        assert lib.name == "Doors"
+        assert len(lib.families) == 1
+        assert lib.families[0].name == "Door"
+        assert len(lib.families[0].parameters) == 2
 
-    def test_parse_rooms(self, simple_ir):
-        rooms = simple_ir.rooms
-        assert len(rooms) == 2
+    def test_parse_types(self, simple_ir):
+        lib = simple_ir.libraries[0]
+        assert len(lib.types) == 1
+        door_type = lib.types[0]
+        assert door_type.name == "StandardDoor"
+        assert door_type.family == "Door"
+        assert len(door_type.parameters) == 2
 
-        reception = rooms[0]
+    def test_get_type(self, simple_ir):
+        door_type = simple_ir.get_type("StandardDoor")
+        assert door_type is not None
+        assert door_type.name == "StandardDoor"
+
+        width = door_type.get_parameter("width")
+        assert width is not None
+        assert width.value == 900
+
+    def test_parse_project(self, simple_ir):
+        project = simple_ir.projects[0]
+        assert project.name == "Simple Office"
+        assert len(project.sites) == 1
+
+    def test_parse_building_hierarchy(self, simple_ir):
+        project = simple_ir.projects[0]
+        site = project.sites[0]
+        assert site.name == "Main Site"
+        assert len(site.buildings) == 1
+
+        building = site.buildings[0]
+        assert building.name == "Office Building"
+        assert len(building.levels) == 1
+
+    def test_parse_level(self, simple_ir):
+        level = simple_ir.projects[0].sites[0].buildings[0].levels[0]
+        assert level.name == "Ground"
+        assert level.elevation.value == 0
+        assert level.height.value == 3.5
+        assert len(level.spaces) == 2
+
+    def test_parse_spaces(self, simple_ir):
+        spaces = simple_ir.projects[0].sites[0].buildings[0].levels[0].spaces
+        assert len(spaces) == 2
+
+        reception = spaces[0]
         assert reception.name == "Reception"
-        assert reception.floor == "Ground"
         assert reception.position.row == 0
         assert reception.position.col == 0
         assert reception.area.value == 50
+        assert len(reception.doors) == 1
 
-        hallway = rooms[1]
+        hallway = spaces[1]
         assert hallway.name == "Hallway"
-        assert hallway.floor == "Ground"
         assert hallway.position.row == 0
         assert hallway.position.col == 1
         assert hallway.width.value == 2
         assert hallway.length.value == 10
 
     def test_parse_doors(self, simple_ir):
-        door = simple_ir.doors[0]
-        assert door.from_room == "Reception"
-        assert door.to == "Hallway"
-        assert door.width.value == 1.2
+        door = simple_ir.projects[0].sites[0].buildings[0].levels[0].spaces[0].doors[0]
+        assert door.name == "D1"
+        assert door.type_ref == "StandardDoor"
 
 
 class TestIFCGeneration:
@@ -62,7 +99,19 @@ class TestIFCGeneration:
         ifc = compile_to_ifc(simple_ir)
         projects = ifc.by_type("IfcProject")
         assert len(projects) == 1
-        assert projects[0].Name == "Building"
+        assert projects[0].Name == "Simple Office"
+
+    def test_creates_site(self, simple_ir):
+        ifc = compile_to_ifc(simple_ir)
+        sites = ifc.by_type("IfcSite")
+        assert len(sites) == 1
+        assert sites[0].Name == "Main Site"
+
+    def test_creates_building(self, simple_ir):
+        ifc = compile_to_ifc(simple_ir)
+        buildings = ifc.by_type("IfcBuilding")
+        assert len(buildings) == 1
+        assert buildings[0].Name == "Office Building"
 
     def test_creates_storey(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
@@ -87,13 +136,22 @@ class TestIFCGeneration:
         ifc = compile_to_ifc(simple_ir)
         openings = ifc.by_type("IfcOpeningElement")
         doors = ifc.by_type("IfcDoor")
-        # 1 door = 1 opening + 1 door entity
+        # 1 door in Reception
         assert len(openings) == 1
         assert len(doors) == 1
-        assert "Reception" in openings[0].Name
-        assert "Hallway" in openings[0].Name
-        assert "Reception" in doors[0].Name
-        assert "Hallway" in doors[0].Name
+        assert doors[0].Name == "D1"
+
+    def test_creates_door_type(self, simple_ir):
+        ifc = compile_to_ifc(simple_ir)
+        door_types = ifc.by_type("IfcDoorType")
+        assert len(door_types) == 1
+        assert door_types[0].Name == "StandardDoor"
+
+    def test_creates_type_relationship(self, simple_ir):
+        ifc = compile_to_ifc(simple_ir)
+        type_rels = ifc.by_type("IfcRelDefinesByType")
+        # 1 door linked to its type
+        assert len(type_rels) == 1
 
     def test_creates_void_relationship(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
@@ -107,7 +165,7 @@ class TestIFCGeneration:
         # 1 door fills 1 opening
         assert len(fills) == 1
 
-    def test_empty_floors_raises(self):
-        ir = JsonIR(version="0.2.0", floors=[], rooms=[], doors=[])
-        with pytest.raises(ValueError, match="No floors"):
+    def test_empty_projects_raises(self):
+        ir = JsonIR(version="0.3.0", libraries=[], projects=[])
+        with pytest.raises(ValueError, match="No projects"):
             compile_to_ifc(ir)
