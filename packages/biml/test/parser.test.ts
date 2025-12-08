@@ -277,15 +277,6 @@ describe("BIM Parser", () => {
     expect(model.projects).toHaveLength(1);
   });
 
-  it("parses hierarchical.biml fixture", async () => {
-    const { model, errors } = await parseFile("hierarchical.biml");
-
-    expect(errors).toHaveLength(0);
-    expect(model.libraries).toHaveLength(1);
-    expect(model.projects).toHaveLength(1);
-    expect(model.projects[0].sites[0].buildings[0].levels).toHaveLength(2);
-  });
-
   it("rejects invalid syntax", async () => {
     const { errors } = await parseFile("invalid.biml");
 

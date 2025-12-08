@@ -54,30 +54,52 @@ A domain-specific language (`.biml`) designed for AI agents to generate BIM mode
 ## DSL Example
 
 ```biml
-# Flat, reference-based syntax inspired by Terraform/HCL
+# Define a library with parametric door types
+library "Doors" {
+  family Door {
+    parameter width: Length = 900mm
+    parameter height: Length = 2100mm
+  }
 
-floor Level1 {
-  elevation: 0m
-  height: 3.5m
+  type SingleFlush extends Door { }
+  type DoubleDoor extends Door {
+    width = 1800mm
+  }
 }
 
-room Reception {
-  floor: Level1
-  position: [0, 0]
-  area: 50m²
-}
+# Define building hierarchy
+project "Office Building" {
+  site "Main Campus" {
+    building "Building A" {
+      level "Ground" {
+        elevation: 0m
+        height: 3.5m
 
-room Hallway {
-  floor: Level1
-  position: [0, 1]
-  width: 2m
-  length: 10m
-}
+        space "Lobby" {
+          position: [0, 0]
+          area: 100m²
+          door "D1": SingleFlush
+        }
 
-door {
-  from: Reception
-  to: Hallway
-  width: 1.2m
+        space "Hallway" {
+          position: [0, 1]
+          width: 2m
+          length: 15m
+        }
+      }
+
+      level "Level 1" {
+        elevation: 3.5m
+        height: 3m
+
+        space "Conference Room" {
+          position: [0, 0]
+          area: 40m²
+          door "D2": DoubleDoor
+        }
+      }
+    }
+  }
 }
 ```
 
