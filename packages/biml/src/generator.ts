@@ -85,6 +85,7 @@ export interface SpaceIR {
   area?: MeasurementIR;
   width?: MeasurementIR;
   length?: MeasurementIR;
+  ceiling?: boolean;
   doors: SpaceDoorIR[];
 }
 
@@ -324,6 +325,7 @@ function generateSpaceDoor(door: SpaceDoor): SpaceDoorIR {
 function generateSpace(space: Space): SpaceIR {
   const ir: SpaceIR = {
     name: cleanName(space.name),
+    ceiling: undefined,
     doors: [],
   };
 
@@ -348,6 +350,8 @@ function generateSpace(space: Space): SpaceIR {
   for (const element of space.elements) {
     if (element.$type === "SpaceDoor") {
       ir.doors.push(generateSpaceDoor(element));
+    } else if (element.$type === "SpaceCeiling") {
+      ir.ceiling = true;
     }
   }
 

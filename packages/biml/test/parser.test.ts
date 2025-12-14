@@ -205,6 +205,31 @@ describe("BIM Parser", () => {
     expect(space.properties).toHaveLength(3);
   });
 
+  it("parses space with ceiling element", async () => {
+    const { model, errors } = await parseText(`
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Room" {
+                position: [0, 0]
+                area: 25m²
+                ceiling
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    expect(errors).toHaveLength(0);
+    const space = model.projects[0].sites[0].buildings[0].levels[0].spaces[0];
+    expect(space.elements).toHaveLength(1);
+    expect(space.elements[0].$type).toBe("SpaceCeiling");
+  });
+
   it("parses space with door", async () => {
     const { model, errors } = await parseText(`
       library "Doors" {

@@ -1,5 +1,13 @@
 grammar Bim
 
+interface SpaceElement {}
+interface SpaceDoor extends SpaceElement {
+    name: string
+    typeRef?: TypeReference
+    overrides: SpaceDoorOverride[]
+}
+interface SpaceCeiling extends SpaceElement {}
+
 // Entry point: hierarchical syntax with libraries and projects
 entry Model:
     (libraries+=Library | projects+=Project)*;
@@ -92,10 +100,13 @@ Space:
 SpaceProperty:
     AreaProperty | WidthProperty | LengthProperty | PositionProperty;
 
-SpaceElement:
-    SpaceDoor;
+SpaceElement returns SpaceElement:
+    SpaceDoor | SpaceCeiling;
 
-SpaceDoor:
+SpaceCeiling returns SpaceCeiling:
+    {SpaceCeiling} 'ceiling';
+
+SpaceDoor returns SpaceDoor:
     'door' name=STRING (':' typeRef=TypeReference)? ('{'
         overrides+=SpaceDoorOverride*
     '}')?;

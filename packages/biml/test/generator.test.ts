@@ -211,4 +211,27 @@ describe("JSON IR Generator", () => {
     expect(space.length).toEqual({ value: 15, unit: "m" });
   });
 
+  it("marks ceiling elements in spaces", async () => {
+    const ir = await parseAndGenerate(`
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "L1" {
+              elevation: 0m
+              height: 3m
+              space "Room" {
+                position: [0, 0]
+                area: 20m²
+                ceiling
+              }
+            }
+          }
+        }
+      }
+    `);
+
+    const space = ir.projects![0].sites[0].buildings[0].levels[0].spaces[0];
+    expect(space.ceiling).toBe(true);
+  });
+
 });

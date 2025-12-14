@@ -431,6 +431,12 @@ def _generate_level(
         slab = _create_floor_slab(ifc, context, storey_placement, space.name, geom)
         elements.append(slab)
 
+        if space.ceiling:
+            ceiling = _create_ceiling_covering(
+                ifc, context, storey_placement, space.name, geom, height
+            )
+            elements.append(ceiling)
+
     # Create door openings
     for placement in door_placements:
         if placement.wall_id in wall_entities:
@@ -544,6 +550,40 @@ def _create_floor_slab(
     )
 
     return slab
+
+
+def _create_ceiling_covering(
+    ifc: ifcopenshell.file,
+    context,
+    storey_placement,
+    room_name: str,
+    geom: RoomGeometry,
+    height: float,
+) -> ifcopenshell.entity_instance:
+    """Create ceiling covering for a room."""
+    t = WALL_THICKNESS
+    base_z = max(height - SLAB_THICKNESS, 0.0)
+
+    points = [
+        (geom.x + t, geom.y + t, base_z),
+        (geom.x + geom.width - t, geom.y + t, base_z),
+        (geom.x + geom.width - t, geom.y + geom.length - t, base_z),
+        (geom.x + t, geom.y + geom.length - t, base_z),
+        (geom.x + t, geom.y + t, base_z),
+    ]
+
+    solid = _create_extruded_solid(ifc, points, SLAB_THICKNESS)
+    cover_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
+    cover_shape = ifc.createIfcProductDefinitionShape(None, None, [cover_rep])
+
+    cover_placement = _create_local_placement(ifc, relative_to=storey_placement)
+
+    ceiling = ifc.createIfcCovering(
+        ifcopenshell.guid.new(), None, f"{room_name} - Ceiling", None, None,
+        cover_placement, cover_shape, None, "CEILING"
+    )
+
+    return ceiling
 
 
 def _create_door_with_opening(

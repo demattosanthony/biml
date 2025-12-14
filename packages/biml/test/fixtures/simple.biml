@@ -19,6 +19,7 @@ project "Simple Office" {
         space "Reception" {
           position: [0, 0]
           area: 50m²
+          ceiling
           door "D1": StandardDoor
         }
 
@@ -26,6 +27,7 @@ project "Simple Office" {
           position: [0, 1]
           width: 2m
           length: 10m
+          ceiling
         }
       }
     }

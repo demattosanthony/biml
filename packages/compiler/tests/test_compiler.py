@@ -74,6 +74,7 @@ class TestIR:
         assert reception.position.row == 0
         assert reception.position.col == 0
         assert reception.area.value == 50
+        assert reception.ceiling is True
         assert len(reception.doors) == 1
 
         hallway = spaces[1]
@@ -82,6 +83,7 @@ class TestIR:
         assert hallway.position.col == 1
         assert hallway.width.value == 2
         assert hallway.length.value == 10
+        assert hallway.ceiling is True
 
     def test_parse_doors(self, simple_ir):
         door = simple_ir.projects[0].sites[0].buildings[0].levels[0].spaces[0].doors[0]
@@ -131,6 +133,15 @@ class TestIFCGeneration:
         assert len(slabs) == 2
         assert any("Reception - Floor" in s.Name for s in slabs)
         assert any("Hallway - Floor" in s.Name for s in slabs)
+
+    def test_creates_ceilings(self, simple_ir):
+        ifc = compile_to_ifc(simple_ir)
+        coverings = ifc.by_type("IfcCovering")
+
+        assert len(coverings) == 2
+        assert all(c.PredefinedType == "CEILING" for c in coverings)
+        assert any("Reception - Ceiling" in c.Name for c in coverings)
+        assert any("Hallway - Ceiling" in c.Name for c in coverings)
 
     def test_creates_door_opening(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)

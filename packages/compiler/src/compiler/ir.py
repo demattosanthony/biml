@@ -165,6 +165,7 @@ class SpaceIR:
     area: MeasurementIR | None = None
     width: MeasurementIR | None = None
     length: MeasurementIR | None = None
+    ceiling: bool = False
     doors: list[SpaceDoorIR] = field(default_factory=list)
 
     @classmethod
@@ -175,6 +176,7 @@ class SpaceIR:
             area=MeasurementIR(**data["area"]) if data.get("area") else None,
             width=MeasurementIR(**data["width"]) if data.get("width") else None,
             length=MeasurementIR(**data["length"]) if data.get("length") else None,
+            ceiling=bool(data.get("ceiling", False)),
             doors=[SpaceDoorIR.from_dict(d) for d in data.get("doors", [])],
         )
 
