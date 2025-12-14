@@ -46,7 +46,7 @@ describe("JSON IR Generator", () => {
   it("generates correct JSON IR structure for empty model", async () => {
     const ir = await parseAndGenerate("");
 
-    expect(ir.version).toBe("0.3.0");
+    expect(ir.version).toBe("0.5.0");
     expect(ir.libraries).toBeUndefined();
     expect(ir.projects).toBeUndefined();
   });
@@ -61,7 +61,7 @@ describe("JSON IR Generator", () => {
       }
     `);
 
-    expect(ir.version).toBe("0.3.0");
+    expect(ir.version).toBe("0.5.0");
     expect(ir.libraries).toHaveLength(1);
 
     const lib = ir.libraries![0];

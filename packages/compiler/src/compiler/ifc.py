@@ -1,10 +1,14 @@
-"""IFC generation using IfcOpenShell (v0.3.0 hierarchical)."""
+"""IFC generation using IfcOpenShell (v0.5.0)."""
 
 import ifcopenshell
 import ifcopenshell.api
 import ifcopenshell.guid
 from dataclasses import dataclass
-from .ir import JsonIR, MeasurementIR, LevelIR, SpaceIR
+from .ir import (
+    JsonIR, MeasurementIR, LevelIR, SpaceIR, SpaceDoorIR,
+    DoorOffsetNormalizedIR, DoorOffsetCenterIR, DoorOffsetAbsoluteIR,
+    MaterialIR, ColorIR,
+)
 
 # Coordinate system
 O = [0.0, 0.0, 0.0]
@@ -18,7 +22,8 @@ DEFAULT_GRID_SIZE = 5.0
 DEFAULT_DOOR_WIDTH = 0.9
 DEFAULT_DOOR_HEIGHT = 2.1
 WALL_THICKNESS = 0.2
-SLAB_THICKNESS = 0.2
+DEFAULT_SLAB_THICKNESS = 0.2
+DEFAULT_DOOR_COLOR = ColorIR(red=0.55, green=0.35, blue=0.20)  # Warm wood brown
 
 
 # ============================================================================
@@ -56,11 +61,13 @@ class DoorPlacement:
     name: str
     wall_id: str
     from_room: str
-    to_room: str
+    to_room: str  # "exterior" or room name
     position: float  # Position along wall (from wall start)
     width: float
     height: float
     type_ref: str | None = None
+    swing: str | None = None
+    material: MaterialIR | None = None
 
 
 # ============================================================================
@@ -101,22 +108,7 @@ def _measurement_to_meters(m: MeasurementIR | float | None, default: float) -> f
         return default
     if isinstance(m, (int, float)):
         return float(m)
-
-    value = m.value
-    unit = m.unit.lower()
-
-    if unit == "m":
-        return value
-    elif unit == "cm":
-        return value / 100.0
-    elif unit == "mm":
-        return value / 1000.0
-    elif unit == "ft":
-        return value * 0.3048
-    elif unit == "in":
-        return value * 0.0254
-    else:
-        return value  # Assume meters
+    return m.to_meters()
 
 
 # ============================================================================
@@ -125,12 +117,23 @@ def _measurement_to_meters(m: MeasurementIR | float | None, default: float) -> f
 
 def _calculate_space_geometry(space: SpaceIR, grid_size: float) -> RoomGeometry:
     """Calculate space world position and dimensions from grid position."""
-    # Dimensions
+    # Calculate dimensions
     if space.area:
-        width = length = space.area.value ** 0.5
+        area_m2 = space.area.to_meters()
+        if space.aspect:
+            # Non-square room with aspect ratio
+            # area = width * length
+            # width/length = aspect.width_ratio / aspect.length_ratio
+            # So: width = sqrt(area * aspect.width_ratio / aspect.length_ratio)
+            ratio = space.aspect.width_ratio / space.aspect.length_ratio
+            width = (area_m2 * ratio) ** 0.5
+            length = area_m2 / width
+        else:
+            # Square room
+            width = length = area_m2 ** 0.5
     elif space.width and space.length:
-        width = space.width.value
-        length = space.length.value
+        width = space.width.to_meters()
+        length = space.length.to_meters()
     else:
         width = length = DEFAULT_ROOM_SIZE
 
@@ -214,7 +217,6 @@ def _generate_wall_specs(
 
             if neighbor:
                 # Shared wall - only generate once
-                # Use sorted room names to ensure consistent key regardless of direction
                 shared_key = tuple(sorted([room_name, neighbor]))
                 if shared_key in generated_shared:
                     continue
@@ -247,6 +249,42 @@ def _generate_wall_specs(
     return walls
 
 
+def _calculate_door_offset(
+    door: SpaceDoorIR,
+    wall_length: float,
+    door_width: float,
+) -> float:
+    """Calculate door position along wall based on offset specification."""
+    if door.offset is None:
+        # Default to center
+        return wall_length / 2
+
+    offset = door.offset
+
+    if isinstance(offset, DoorOffsetCenterIR):
+        return wall_length / 2
+
+    if isinstance(offset, DoorOffsetNormalizedIR):
+        # Normalized 0-1 value
+        return wall_length * offset.value
+
+    if isinstance(offset, DoorOffsetAbsoluteIR):
+        # Absolute distance from anchor
+        distance = offset.distance.to_meters()
+        anchor = offset.anchor
+
+        # Map anchor to position
+        if anchor in ("left", "start", "west", "south"):
+            return distance + (door_width / 2)
+        elif anchor in ("right", "end", "east", "north"):
+            return wall_length - distance - (door_width / 2)
+        else:
+            # Default to left
+            return distance + (door_width / 2)
+
+    return wall_length / 2
+
+
 # ============================================================================
 # Type Object Generation
 # ============================================================================
@@ -261,7 +299,6 @@ def _create_door_types(
     for lib in ir.libraries:
         for type_def in lib.types:
             if type_def.family == "Door":
-                # Use ifcopenshell.api for cleaner type creation
                 door_type = ifcopenshell.api.run(
                     "root.create_entity",
                     ifc,
@@ -269,11 +306,98 @@ def _create_door_types(
                     name=type_def.name,
                     predefined_type="DOOR",
                 )
-
-                # Store for later reference
                 door_types[type_def.name] = door_type
 
     return door_types
+
+
+# ============================================================================
+# Material & Style Generation (v0.5.0)
+# ============================================================================
+
+
+def _create_surface_style(
+    ifc: ifcopenshell.file,
+    name: str,
+    color: ColorIR,
+    transparency: float = 0.0,
+) -> ifcopenshell.entity_instance:
+    """Create an IfcSurfaceStyle with color using IfcOpenShell API."""
+    # Use the IfcOpenShell API for proper style creation
+    style = ifcopenshell.api.run("style.add_style", ifc, name=name)
+
+    # Add surface shading with the color
+    ifcopenshell.api.run(
+        "style.add_surface_style",
+        ifc,
+        style=style,
+        ifc_class="IfcSurfaceStyleShading",
+        attributes={
+            "SurfaceColour": {
+                "Name": None,
+                "Red": float(color.red),
+                "Green": float(color.green),
+                "Blue": float(color.blue),
+            },
+            "Transparency": float(transparency),
+        },
+    )
+
+    return style
+
+
+def _create_material_styles(
+    ifc: ifcopenshell.file,
+    ir: JsonIR,
+) -> dict[str, ifcopenshell.entity_instance]:
+    """Create IfcSurfaceStyle entities from all library materials."""
+    styles = {}
+
+    for lib in ir.libraries:
+        for mat in lib.materials:
+            color = mat.color if mat.color else DEFAULT_DOOR_COLOR
+            transparency = mat.transparency if mat.transparency else 0.0
+            style = _create_surface_style(ifc, mat.name, color, transparency)
+            styles[mat.name] = style
+
+    return styles
+
+
+def _apply_style_to_product(
+    ifc: ifcopenshell.file,
+    product: ifcopenshell.entity_instance,
+    style: ifcopenshell.entity_instance,
+) -> None:
+    """Apply a surface style to a product's representation using IfcOpenShell API."""
+    if not product.Representation:
+        return
+
+    for rep in product.Representation.Representations:
+        if rep.RepresentationIdentifier == "Body":
+            ifcopenshell.api.run(
+                "style.assign_representation_styles",
+                ifc,
+                shape_representation=rep,
+                styles=[style],
+            )
+
+
+def _get_door_material(
+    door: SpaceDoorIR,
+    ir: JsonIR,
+) -> MaterialIR | None:
+    """Get the material for a door, checking overrides and type defaults."""
+    # First check for direct material override on door
+    if door.material:
+        return ir.get_material(door.material)
+
+    # Then check the type's material
+    if door.type_ref:
+        type_def = ir.get_type(door.type_ref)
+        if type_def and type_def.material:
+            return ir.get_material(type_def.material)
+
+    return None
 
 
 # ============================================================================
@@ -285,26 +409,32 @@ def compile_to_ifc(ir: JsonIR) -> ifcopenshell.file:
     if not ir.projects:
         raise ValueError("No projects in IR")
 
-    # For now, just compile the first project
     project_ir = ir.projects[0]
 
     ifc = ifcopenshell.api.run("project.create_file", version="IFC4")
 
-    # Create IFC project with name from IR
     project = ifcopenshell.api.run(
         "root.create_entity", ifc, ifc_class="IfcProject", name=project_ir.name
     )
 
     ifcopenshell.api.run("unit.assign_unit", ifc, length={"is_metric": True, "raw": "METERS"})
 
-    # Create geometry context
-    world_origin = _create_axis2placement(ifc)
-    context = ifc.createIfcGeometricRepresentationContext(
-        None, "Model", 3, 1.0e-05, world_origin, None
+    # Create geometry context using proper API for styled representations
+    model3d = ifcopenshell.api.run("context.add_context", ifc, context_type="Model")
+    context = ifcopenshell.api.run(
+        "context.add_context",
+        ifc,
+        context_type="Model",
+        context_identifier="Body",
+        target_view="MODEL_VIEW",
+        parent=model3d,
     )
 
     # Create door types from libraries
     door_types = _create_door_types(ifc, ir)
+
+    # Create material styles from libraries
+    material_styles = _create_material_styles(ifc, ir)
 
     # Generate sites
     for site_ir in project_ir.sites:
@@ -324,11 +454,26 @@ def compile_to_ifc(ir: JsonIR) -> ifcopenshell.file:
             )
             ifc.createIfcRelAggregates(ifcopenshell.guid.new(), None, None, None, site, [building])
 
+            # Track cumulative elevation for auto-stacking
+            cumulative_elevation = 0.0
+
             # Generate levels
             for level_ir in building_ir.levels:
+                # Calculate elevation: use explicit or auto-stack
+                if level_ir.elevation is not None:
+                    elevation = level_ir.elevation.to_meters()
+                else:
+                    elevation = cumulative_elevation
+
+                # Get height for next level calculation
+                height = level_ir.height.to_meters() if level_ir.height else DEFAULT_HEIGHT
+
+                # Update cumulative for next level
+                cumulative_elevation = elevation + height
+
                 _generate_level(
                     ifc, context, building, building_placement,
-                    level_ir, ir, door_types
+                    level_ir, ir, door_types, material_styles, elevation
                 )
 
     return ifc
@@ -342,10 +487,16 @@ def _generate_level(
     level_ir: LevelIR,
     ir: JsonIR,
     door_types: dict[str, ifcopenshell.entity_instance],
+    material_styles: dict[str, ifcopenshell.entity_instance],
+    elevation: float,
 ) -> None:
     """Generate IfcBuildingStorey with spaces, walls and doors."""
-    elevation = level_ir.elevation.value if level_ir.elevation else 0.0
-    height = level_ir.height.value if level_ir.height else DEFAULT_HEIGHT
+    height = level_ir.height.to_meters() if level_ir.height else DEFAULT_HEIGHT
+    slab_thickness = (
+        level_ir.slab_thickness.to_meters()
+        if level_ir.slab_thickness
+        else DEFAULT_SLAB_THICKNESS
+    )
 
     # Create storey
     storey_placement = _create_local_placement(ifc, (0.0, 0.0, elevation), relative_to=building_placement)
@@ -367,54 +518,31 @@ def _generate_level(
     # Generate wall specifications
     wall_specs = _generate_wall_specs(space_geometries, adjacencies)
 
+    # Build map of wall IDs for door placement
+    wall_map = {ws.id: ws for ws in wall_specs}
+
+    # Also create reverse lookup for interior walls (shared between rooms)
+    # This allows doors with "connects" to find the correct wall
+    for ws in wall_specs:
+        if ws.neighbor:
+            # Create aliases so doors from either room can find this wall
+            reverse_id = f"{ws.neighbor}_{_opposite_direction(ws.direction)}_to_{ws.room_name}"
+            wall_map[reverse_id] = ws
+            # Also add simple format for the neighbor side
+            wall_map[f"{ws.neighbor}_{_opposite_direction(ws.direction)}"] = ws
+
     # Collect all doors from spaces
     door_placements = []
     for space in level_ir.spaces:
         for door in space.doors:
-            # For hierarchical, doors are in spaces, so we need to figure out wall placement
-            # For now, use explicit wall if provided, otherwise exterior on south
-            wall_direction = door.wall if door.wall else "south"
-            wall_id = f"{space.name}_{wall_direction}"
-
-            # Find the wall
-            wall_spec = None
-            for ws in wall_specs:
-                if ws.id == wall_id:
-                    wall_spec = ws
-                    break
-
-            if wall_spec:
-                # Get door dimensions from type if available
-                door_width = DEFAULT_DOOR_WIDTH
-                door_height = DEFAULT_DOOR_HEIGHT
-
-                if door.type_ref:
-                    type_def = ir.get_type(door.type_ref)
-                    if type_def:
-                        width_param = type_def.get_parameter("width")
-                        height_param = type_def.get_parameter("height")
-                        door_width = _measurement_to_meters(width_param, DEFAULT_DOOR_WIDTH)
-                        door_height = _measurement_to_meters(height_param, DEFAULT_DOOR_HEIGHT)
-
-                # Override with explicit door dimensions if provided
-                if door.width:
-                    door_width = _measurement_to_meters(door.width, door_width)
-                if door.height:
-                    door_height = _measurement_to_meters(door.height, door_height)
-
-                offset = door.offset if door.offset is not None else 0.5
-                position = wall_spec.length * offset
-
-                door_placements.append(DoorPlacement(
-                    name=door.name,
-                    wall_id=wall_spec.id,
-                    from_room=space.name,
-                    to_room="exterior",  # For now, all hierarchical doors are exterior
-                    position=position,
-                    width=door_width,
-                    height=door_height,
-                    type_ref=door.type_ref,
-                ))
+            placement = _calculate_door_placement(
+                door, space, space_geometries, wall_map, adjacencies, ir
+            )
+            if placement:
+                # Resolve material for this door
+                material = _get_door_material(door, ir)
+                placement.material = material
+                door_placements.append(placement)
 
     # Generate walls and collect elements
     elements = []
@@ -428,19 +556,34 @@ def _generate_level(
     # Generate floor slabs for each space
     for space in level_ir.spaces:
         geom = space_geometries[space.name]
-        slab = _create_floor_slab(ifc, context, storey_placement, space.name, geom)
+        slab = _create_floor_slab(ifc, context, storey_placement, space.name, geom, slab_thickness)
         elements.append(slab)
 
     # Create door openings
     for placement in door_placements:
-        if placement.wall_id in wall_entities:
-            wall_entity, wall_spec = wall_entities[placement.wall_id]
+        wall_id = placement.wall_id
+        # Find the wall - check both the exact ID and aliases
+        wall_data = wall_entities.get(wall_id)
+        if not wall_data:
+            # Try to find by alternate naming
+            for wid, (we, ws) in wall_entities.items():
+                if wid == wall_id or wall_id in wid:
+                    wall_data = (we, ws)
+                    break
+
+        if wall_data:
+            wall_entity, wall_spec = wall_data
             opening, door_entity = _create_door_with_opening(
                 ifc, context, storey_placement,
                 wall_entity, wall_spec, placement
             )
             elements.append(opening)
             elements.append(door_entity)
+
+            # Apply material style to door if available
+            if placement.material and placement.material.name in material_styles:
+                style = material_styles[placement.material.name]
+                _apply_style_to_product(ifc, door_entity, style)
 
             # Link door to type if available
             if placement.type_ref and placement.type_ref in door_types:
@@ -459,6 +602,102 @@ def _generate_level(
         ifc.createIfcRelContainedInSpatialStructure(
             ifcopenshell.guid.new(), None, None, None, elements, storey
         )
+
+
+def _opposite_direction(direction: str) -> str:
+    """Get the opposite wall direction."""
+    opposites = {
+        "north": "south",
+        "south": "north",
+        "east": "west",
+        "west": "east",
+    }
+    return opposites.get(direction, direction)
+
+
+def _calculate_door_placement(
+    door: SpaceDoorIR,
+    space: SpaceIR,
+    space_geometries: dict[str, RoomGeometry],
+    wall_map: dict[str, WallSpec],
+    adjacencies: dict[tuple[str, str], str],
+    ir: JsonIR,
+) -> DoorPlacement | None:
+    """Calculate door placement, handling both exterior and interior doors."""
+    # Determine wall direction
+    wall_direction = door.wall if door.wall else "south"
+
+    # Determine target room
+    if door.connects:
+        # Interior door - connects to another room
+        target_room = door.connects
+        # Check if this is a valid adjacency
+        actual_neighbor = adjacencies.get((space.name, wall_direction))
+        if actual_neighbor != target_room:
+            # Door connects to a room that isn't adjacent on this wall
+            # Try to find the correct wall direction
+            for dir_check in ["north", "south", "east", "west"]:
+                if adjacencies.get((space.name, dir_check)) == target_room:
+                    wall_direction = dir_check
+                    break
+    else:
+        # Exterior door
+        target_room = "exterior"
+
+    # Build wall ID
+    neighbor = adjacencies.get((space.name, wall_direction))
+    if neighbor and (target_room == neighbor or target_room == "exterior"):
+        # Shared wall
+        wall_id = f"{space.name}_{wall_direction}_to_{neighbor}"
+    else:
+        # Exterior wall
+        wall_id = f"{space.name}_{wall_direction}"
+
+    # Get wall spec
+    wall_spec = wall_map.get(wall_id)
+    if not wall_spec:
+        # Try alternate format
+        for wid, ws in wall_map.items():
+            if space.name in wid and wall_direction in wid:
+                wall_spec = ws
+                wall_id = wid
+                break
+
+    if not wall_spec:
+        return None
+
+    # Get door dimensions from type or inline
+    door_width = DEFAULT_DOOR_WIDTH
+    door_height = DEFAULT_DOOR_HEIGHT
+
+    if door.type_ref:
+        type_def = ir.get_type(door.type_ref)
+        if type_def:
+            width_param = type_def.get_parameter("width")
+            height_param = type_def.get_parameter("height")
+            door_width = _measurement_to_meters(width_param, DEFAULT_DOOR_WIDTH)
+            door_height = _measurement_to_meters(height_param, DEFAULT_DOOR_HEIGHT)
+
+    # Override with explicit door dimensions if provided
+    if door.width:
+        door_width = door.width.to_meters()
+    if door.height:
+        door_height = door.height.to_meters()
+
+    # Calculate position along wall
+    position = _calculate_door_offset(door, wall_spec.length, door_width)
+
+    return DoorPlacement(
+        name=door.name,
+        wall_id=wall_id,
+        from_room=space.name,
+        to_room=target_room if target_room != "exterior" else "exterior",
+        position=position,
+        width=door_width,
+        height=door_height,
+        type_ref=door.type_ref,
+        swing=door.swing,
+    )
 
 
 # ============================================================================
@@ -519,6 +758,7 @@ def _create_floor_slab(
     storey_placement,
     room_name: str,
     geom: RoomGeometry,
+    slab_thickness: float = DEFAULT_SLAB_THICKNESS,
 ) -> ifcopenshell.entity_instance:
     """Create floor slab for a room."""
     t = WALL_THICKNESS
@@ -532,7 +772,7 @@ def _create_floor_slab(
         (geom.x + t, geom.y + t, 0.0),
     ]
 
-    solid = _create_extruded_solid(ifc, points, SLAB_THICKNESS)
+    solid = _create_extruded_solid(ifc, points, slab_thickness)
     slab_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
     slab_shape = ifc.createIfcProductDefinitionShape(None, None, [slab_rep])
 
@@ -633,10 +873,15 @@ def _create_door_with_opening(
 
     door_placement = _create_local_placement(ifc, relative_to=storey_placement)
 
+    # Door description includes connection info
+    door_desc = None
+    if placement.to_room != "exterior":
+        door_desc = f"Connects {placement.from_room} to {placement.to_room}"
+
     door_entity = ifc.createIfcDoor(
         ifcopenshell.guid.new(), None,
         placement.name,
-        None, None,
+        door_desc, None,
         door_placement, door_shape, None,
         door_height, door_width
     )

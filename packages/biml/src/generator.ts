@@ -13,6 +13,9 @@ import type {
   Level,
   Space,
   SpaceDoor,
+  DoorOffsetProperty,
+  Material,
+  MaterialColorProperty,
 } from "./generated/ast.js";
 
 // ============================================================================
@@ -29,13 +32,15 @@ export interface MeasurementIR {
 // ============================================================================
 
 export interface ExpressionIR {
-  kind: "literal" | "measurement" | "reference" | "binary";
+  kind: "literal" | "measurement" | "reference" | "binary" | "boolean" | "string";
   value?: number;
   unit?: string;
   ref?: string;
   op?: "+" | "-" | "*" | "/";
   left?: ExpressionIR;
   right?: ExpressionIR;
+  boolValue?: boolean;
+  stringValue?: string;
 }
 
 export interface ParameterIR {
@@ -51,24 +56,53 @@ export interface FamilyIR {
 
 export interface ResolvedParameterIR {
   name: string;
-  value: MeasurementIR | number;
+  value: MeasurementIR | number | boolean | string;
 }
+
+// ============================================================================
+// IR Types - Materials
+// ============================================================================
+
+export interface ColorIR {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+export interface MaterialIR {
+  name: string;
+  color?: ColorIR;
+  transparency?: number;
+}
+
+// ============================================================================
+// IR Types - Type System (Updated)
+// ============================================================================
 
 export interface TypeIR {
   name: string;
   family: string;
+  baseType?: string;
   parameters: ResolvedParameterIR[];
+  material?: string; // Reference to material name
 }
 
 export interface LibraryIR {
   name: string;
   families: FamilyIR[];
   types: TypeIR[];
+  materials: MaterialIR[];
 }
 
 // ============================================================================
 // IR Types - Project Hierarchy
 // ============================================================================
+
+// Door offset can be normalized (0-1), center, or absolute
+export type DoorOffsetIR =
+  | { kind: "normalized"; value: number }
+  | { kind: "center" }
+  | { kind: "absolute"; distance: MeasurementIR; anchor: string };
 
 export interface SpaceDoorIR {
   name: string;
@@ -76,7 +110,10 @@ export interface SpaceDoorIR {
   width?: MeasurementIR;
   height?: MeasurementIR;
   wall?: "north" | "south" | "east" | "west";
-  offset?: number;
+  offset?: DoorOffsetIR;
+  swing?: string;
+  connects?: string;
+  material?: string; // Material override
 }
 
 export interface SpaceIR {
@@ -85,6 +122,7 @@ export interface SpaceIR {
   area?: MeasurementIR;
   width?: MeasurementIR;
   length?: MeasurementIR;
+  aspect?: { widthRatio: number; lengthRatio: number };
   doors: SpaceDoorIR[];
 }
 
@@ -92,6 +130,7 @@ export interface LevelIR {
   name: string;
   elevation?: MeasurementIR;
   height?: MeasurementIR;
+  slabThickness?: MeasurementIR;
   spaces: SpaceIR[];
 }
 
@@ -121,6 +160,31 @@ export interface JsonIR {
 }
 
 // ============================================================================
+// Named Colors Lookup
+// ============================================================================
+
+const NAMED_COLORS: Record<string, ColorIR> = {
+  white: { red: 1.0, green: 1.0, blue: 1.0 },
+  black: { red: 0.0, green: 0.0, blue: 0.0 },
+  red: { red: 1.0, green: 0.0, blue: 0.0 },
+  green: { red: 0.0, green: 0.5, blue: 0.0 },
+  blue: { red: 0.0, green: 0.0, blue: 1.0 },
+  grey: { red: 0.5, green: 0.5, blue: 0.5 },
+  gray: { red: 0.5, green: 0.5, blue: 0.5 },
+  brown: { red: 0.55, green: 0.27, blue: 0.07 },
+  wood: { red: 0.65, green: 0.45, blue: 0.25 }, // Warm wood brown
+  oak: { red: 0.76, green: 0.60, blue: 0.42 },
+  walnut: { red: 0.40, green: 0.26, blue: 0.13 },
+  mahogany: { red: 0.50, green: 0.22, blue: 0.17 },
+  steel: { red: 0.70, green: 0.72, blue: 0.75 },
+  silver: { red: 0.75, green: 0.75, blue: 0.75 },
+  gold: { red: 0.85, green: 0.65, blue: 0.13 },
+  bronze: { red: 0.80, green: 0.50, blue: 0.20 },
+  copper: { red: 0.72, green: 0.45, blue: 0.20 },
+  glass: { red: 0.80, green: 0.90, blue: 1.0 },
+};
+
+// ============================================================================
 // Helpers
 // ============================================================================
 
@@ -129,11 +193,21 @@ function measurement(m: Measurement | AreaMeasurement): MeasurementIR {
 }
 
 function cleanName(name: string): string {
-  // Remove quotes from STRING tokens if present
   if (name.startsWith('"') && name.endsWith('"')) {
     return name.slice(1, -1);
   }
   return name;
+}
+
+function hexToRgb(hex: string): ColorIR {
+  // Remove # prefix if present
+  const cleanHex = hex.replace(/^#/, "");
+  const bigint = parseInt(cleanHex, 16);
+  return {
+    red: ((bigint >> 16) & 255) / 255,
+    green: ((bigint >> 8) & 255) / 255,
+    blue: (bigint & 255) / 255,
+  };
 }
 
 // ============================================================================
@@ -146,6 +220,10 @@ function generateExpression(expr: Expression): ExpressionIR {
       return { kind: "literal", value: expr.value };
     case "MeasurementLiteral":
       return { kind: "measurement", value: expr.value, unit: expr.unit };
+    case "BooleanLiteral":
+      return { kind: "boolean", boolValue: expr.value === "true" };
+    case "StringLiteral":
+      return { kind: "string", stringValue: cleanName(expr.value) };
     case "ParameterRef":
       return { kind: "reference", ref: expr.ref.ref?.name ?? expr.ref.$refText };
     case "BinaryExpression":
@@ -164,15 +242,21 @@ function generateExpression(expr: Expression): ExpressionIR {
 // Expression Evaluator (for resolving type parameters)
 // ============================================================================
 
+type EvaluatedValue = MeasurementIR | number | boolean | string;
+
 function evaluateExpression(
   expr: ExpressionIR,
-  context: Map<string, MeasurementIR | number>
-): MeasurementIR | number {
+  context: Map<string, EvaluatedValue>
+): EvaluatedValue {
   switch (expr.kind) {
     case "literal":
       return expr.value!;
     case "measurement":
       return { value: expr.value!, unit: expr.unit! };
+    case "boolean":
+      return expr.boolValue!;
+    case "string":
+      return expr.stringValue!;
     case "reference": {
       const value = context.get(expr.ref!);
       if (value === undefined) {
@@ -184,10 +268,9 @@ function evaluateExpression(
       const left = evaluateExpression(expr.left!, context);
       const right = evaluateExpression(expr.right!, context);
 
-      // For now, simple numeric operations
-      const leftVal = typeof left === "number" ? left : left.value;
-      const rightVal = typeof right === "number" ? right : right.value;
-      const leftUnit = typeof left === "number" ? undefined : left.unit;
+      const leftVal = typeof left === "number" ? left : (left as MeasurementIR).value;
+      const rightVal = typeof right === "number" ? right : (right as MeasurementIR).value;
+      const leftUnit = typeof left === "number" ? undefined : (left as MeasurementIR).unit;
 
       let result: number;
       switch (expr.op) {
@@ -198,7 +281,6 @@ function evaluateExpression(
         default: throw new Error(`Unknown operator: ${expr.op}`);
       }
 
-      // If left has a unit, preserve it
       if (leftUnit) {
         return { value: result, unit: leftUnit };
       }
@@ -207,6 +289,48 @@ function evaluateExpression(
     default:
       throw new Error(`Unknown expression kind: ${expr.kind}`);
   }
+}
+
+// ============================================================================
+// Material Generator
+// ============================================================================
+
+function generateMaterialColor(colorProp: MaterialColorProperty): ColorIR {
+  switch (colorProp.$type) {
+    case "RgbColor":
+      return {
+        red: colorProp.red,
+        green: colorProp.green,
+        blue: colorProp.blue,
+      };
+    case "HexColor":
+      return hexToRgb(colorProp.value);
+    case "NamedColor":
+      return NAMED_COLORS[colorProp.name] ?? NAMED_COLORS.grey;
+    default:
+      return NAMED_COLORS.grey;
+  }
+}
+
+function generateMaterial(material: Material): MaterialIR {
+  const ir: MaterialIR = {
+    name: material.name,
+  };
+
+  for (const prop of material.properties) {
+    switch (prop.$type) {
+      case "RgbColor":
+      case "HexColor":
+      case "NamedColor":
+        ir.color = generateMaterialColor(prop as MaterialColorProperty);
+        break;
+      case "MaterialTransparencyProperty":
+        ir.transparency = prop.value;
+        break;
+    }
+  }
+
+  return ir;
 }
 
 // ============================================================================
@@ -233,20 +357,47 @@ function generateFamily(family: Family): FamilyIR {
   };
 }
 
-function generateType(type: Type, families: Map<string, FamilyIR>): TypeIR {
-  const familyName = type.base?.ref?.name ?? type.base?.$refText ?? "";
-  const family = families.get(familyName);
-
-  // Build parameter context from family defaults
-  const context = new Map<string, MeasurementIR | number>();
+function generateType(
+  type: Type,
+  families: Map<string, FamilyIR>,
+  types: Map<string, TypeIR>
+): TypeIR {
+  const context = new Map<string, EvaluatedValue>();
   const resolvedParams: ResolvedParameterIR[] = [];
 
-  if (family) {
-    for (const param of family.parameters) {
-      if (param.defaultValue) {
-        const value = evaluateExpression(param.defaultValue, context);
-        context.set(param.name, value);
-        resolvedParams.push({ name: param.name, value });
+  let familyName = "";
+  let baseTypeName: string | undefined;
+  let material: string | undefined;
+
+  // Handle type-extends-family
+  if (type.base?.ref) {
+    familyName = type.base.ref.name;
+    const family = families.get(familyName);
+    if (family) {
+      for (const param of family.parameters) {
+        if (param.defaultValue) {
+          const value = evaluateExpression(param.defaultValue, context);
+          context.set(param.name, value);
+          resolvedParams.push({ name: param.name, value });
+        }
+      }
+    }
+  }
+
+  // Handle type-extends-type (chain inheritance)
+  if (type.baseType?.ref) {
+    baseTypeName = type.baseType.ref.name;
+    const baseType = types.get(baseTypeName);
+    if (baseType) {
+      familyName = baseType.family;
+      // Inherit all parameters from base type
+      for (const param of baseType.parameters) {
+        context.set(param.name, param.value);
+        resolvedParams.push({ name: param.name, value: param.value });
+      }
+      // Inherit material from base type
+      if (baseType.material) {
+        material = baseType.material;
       }
     }
   }
@@ -257,7 +408,6 @@ function generateType(type: Type, families: Map<string, FamilyIR>): TypeIR {
     const value = evaluateExpression(exprIR, context);
     context.set(override.name, value);
 
-    // Update or add the parameter
     const existing = resolvedParams.find(p => p.name === override.name);
     if (existing) {
       existing.value = value;
@@ -266,31 +416,74 @@ function generateType(type: Type, families: Map<string, FamilyIR>): TypeIR {
     }
   }
 
-  return {
+  // Handle material assignment
+  if (type.materialAssignment?.materialRef?.ref) {
+    material = type.materialAssignment.materialRef.ref.name;
+  }
+
+  const ir: TypeIR = {
     name: type.name,
     family: familyName,
     parameters: resolvedParams,
   };
+
+  if (baseTypeName) {
+    ir.baseType = baseTypeName;
+  }
+
+  if (material) {
+    ir.material = material;
+  }
+
+  return ir;
 }
 
 function generateLibrary(library: Library): LibraryIR {
-  // First generate all families
+  // Generate materials first
+  const materialIRs = library.materials.map(generateMaterial);
+
+  // Generate families
   const familyIRs = library.families.map(generateFamily);
   const familyMap = new Map(familyIRs.map(f => [f.name, f]));
 
-  // Then generate types with family context
-  const typeIRs = library.types.map(t => generateType(t, familyMap));
+  // Generate types
+  const typeMap = new Map<string, TypeIR>();
+  const typeIRs: TypeIR[] = [];
+
+  for (const t of library.types) {
+    const typeIR = generateType(t, familyMap, typeMap);
+    typeMap.set(typeIR.name, typeIR);
+    typeIRs.push(typeIR);
+  }
 
   return {
     name: cleanName(library.name),
     families: familyIRs,
     types: typeIRs,
+    materials: materialIRs,
   };
 }
 
 // ============================================================================
 // Project Hierarchy Generators
 // ============================================================================
+
+function generateDoorOffset(offset: DoorOffsetProperty): DoorOffsetIR {
+  switch (offset.$type) {
+    case "DoorOffsetNormalized":
+      return { kind: "normalized", value: offset.value };
+    case "DoorOffsetCenter":
+      return { kind: "center" };
+    case "DoorOffsetAbsolute":
+      return {
+        kind: "absolute",
+        distance: measurement(offset.distance),
+        anchor: offset.anchor,
+      };
+    default:
+      throw new Error(`Unknown offset type: ${(offset as DoorOffsetProperty).$type}`);
+  }
+}
 
 function generateSpaceDoor(door: SpaceDoor): SpaceDoorIR {
   const ir: SpaceDoorIR = {
@@ -312,8 +505,21 @@ function generateSpaceDoor(door: SpaceDoor): SpaceDoorIR {
       case "DoorWallProperty":
         ir.wall = override.direction as "north" | "south" | "east" | "west";
         break;
-      case "DoorOffsetProperty":
-        ir.offset = override.value;
+      case "DoorOffsetNormalized":
+      case "DoorOffsetCenter":
+      case "DoorOffsetAbsolute":
+        ir.offset = generateDoorOffset(override as DoorOffsetProperty);
+        break;
+      case "DoorSwingProperty":
+        ir.swing = override.direction;
+        break;
+      case "DoorConnectsProperty":
+        ir.connects = cleanName(override.targetSpace);
+        break;
+      case "DoorMaterialProperty":
+        if (override.materialRef?.ref) {
+          ir.material = override.materialRef.ref.name;
+        }
         break;
     }
   }
@@ -341,10 +547,12 @@ function generateSpace(space: Space): SpaceIR {
       case "LengthProperty":
         ir.length = measurement(prop.value);
         break;
+      case "AspectProperty":
+        ir.aspect = { widthRatio: prop.widthRatio, lengthRatio: prop.lengthRatio };
+        break;
     }
   }
 
-  // Generate doors
   for (const element of space.elements) {
     if (element.$type === "SpaceDoor") {
       ir.doors.push(generateSpaceDoor(element));
@@ -367,6 +575,9 @@ function generateLevel(level: Level): LevelIR {
         break;
       case "HeightProperty":
         ir.height = measurement(prop.value);
+        break;
+      case "SlabThicknessProperty":
+        ir.slabThickness = measurement(prop.value);
         break;
     }
   }
@@ -403,7 +614,7 @@ function generateProject(project: Project): ProjectIR {
 
 export function generateJsonIR(model: Model): JsonIR {
   const ir: JsonIR = {
-    version: "0.3.0",
+    version: "0.5.0",
   };
 
   if (model.libraries.length > 0) {

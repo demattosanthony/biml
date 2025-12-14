@@ -10,7 +10,7 @@ entry Model:
 
 Library:
     'library' name=STRING '{'
-        (families+=Family | types+=Type)*
+        (families+=Family | types+=Type | materials+=Material)*
     '}';
 
 Family:
@@ -24,20 +24,62 @@ FamilyParameter:
 ParameterType returns string:
     'Length' | 'Area' | 'Number' | 'Boolean' | 'String';
 
+// Types extend families. Use ':' for type inheritance (type-from-type)
+// Example: type SingleDoor extends Door { }
+// Example: type FireDoor : SingleDoor { }  (inherits from SingleDoor type)
 Type:
-    'type' name=ID ('extends' base=[Family:ID])? '{'
+    'type' name=ID (('extends' base=[Family:ID]) | (':' baseType=[Type:ID]))? '{'
         overrides+=ParameterOverride*
+        (materialAssignment=TypeMaterialAssignment)?
     '}';
 
 ParameterOverride:
     name=ParameterName '=' value=Expression;
 
+// Material assignment on types: material: MaterialName
+TypeMaterialAssignment:
+    'material' ':' materialRef=[Material:ID];
+
 // Allow keywords to be used as parameter names
 ParameterName returns string:
-    ID | 'width' | 'height' | 'area' | 'length' | 'offset' | 'wall' | 'position' | 'elevation' | 'floor';
+    ID | 'width' | 'height' | 'area' | 'length' | 'offset' | 'wall' | 'position' | 'elevation' | 'floor' | 'swing' | 'connects' | 'aspect' | 'color' | 'transparency' | 'material';
 
 // ============================================================================
-// EXPRESSIONS (Simple Arithmetic)
+// MATERIALS
+// ============================================================================
+
+// Material definition with color and optional properties
+// Example: material Wood { color: rgb(0.6, 0.4, 0.2) }
+Material:
+    'material' name=ID '{'
+        properties+=MaterialProperty*
+    '}';
+
+MaterialProperty:
+    MaterialColorProperty | MaterialTransparencyProperty;
+
+// Color using rgb() or hex
+// rgb(0.6, 0.4, 0.2) - values 0-1
+// #8B4513 - hex color
+MaterialColorProperty:
+    'color' ':' (
+        {infer RgbColor} 'rgb' '(' red=NUMBER ',' green=NUMBER ',' blue=NUMBER ')' |
+        {infer HexColor} value=HEX_COLOR |
+        {infer NamedColor} name=ColorName
+    );
+
+// Transparency: 0 = opaque, 1 = fully transparent
+MaterialTransparencyProperty:
+    'transparency' ':' value=NUMBER;
+
+// Common color names for convenience
+ColorName returns string:
+    'white' | 'black' | 'red' | 'green' | 'blue' | 'grey' | 'gray' |
+    'brown' | 'wood' | 'steel' | 'glass' | 'oak' | 'walnut' | 'mahogany' |
+    'silver' | 'gold' | 'bronze' | 'copper';
+
+// ============================================================================
+// EXPRESSIONS (Arithmetic + Literals)
 // ============================================================================
 
 Expression:
@@ -53,7 +95,12 @@ PrimaryExpression infers Expression:
     '(' Expression ')' |
     {infer MeasurementLiteral} value=NUMBER unit=LengthUnit |
     {infer NumberLiteral} value=NUMBER |
+    {infer BooleanLiteral} value=BooleanValue |
+    {infer StringLiteral} value=STRING |
     {infer ParameterRef} ref=[FamilyParameter:ParameterName];
+
+BooleanValue returns string:
+    'true' | 'false';
 
 // ============================================================================
 // PROJECT HIERARCHY
@@ -81,7 +128,7 @@ Level:
     '}';
 
 LevelProperty:
-    ElevationProperty | HeightProperty;
+    ElevationProperty | HeightProperty | SlabThicknessProperty;
 
 Space:
     'space' name=STRING '{'
@@ -90,24 +137,27 @@ Space:
     '}';
 
 SpaceProperty:
-    AreaProperty | WidthProperty | LengthProperty | PositionProperty;
+    AreaProperty | WidthProperty | LengthProperty | PositionProperty | AspectProperty;
 
 SpaceElement:
     SpaceDoor;
 
+// Door can have optional type reference, and optional body with overrides
+// Supports: door "D1": TypeName { ... } OR door "D1" { ... } (inline)
 SpaceDoor:
     'door' name=STRING (':' typeRef=TypeReference)? ('{'
         overrides+=SpaceDoorOverride*
     '}')?;
 
 SpaceDoorOverride:
-    DoorWidthProperty | DoorHeightProperty | DoorWallProperty | DoorOffsetProperty;
+    DoorWidthProperty | DoorHeightProperty | DoorWallProperty | DoorOffsetProperty |
+    DoorSwingProperty | DoorConnectsProperty | DoorMaterialProperty;
 
 TypeReference:
     typeName=ID;
 
 // ============================================================================
-// SHARED PROPERTY RULES
+// LEVEL PROPERTY RULES
 // ============================================================================
 
 ElevationProperty:
@@ -115,6 +165,13 @@ ElevationProperty:
 
 HeightProperty:
     'height' ':' value=Measurement;
+
+SlabThicknessProperty:
+    'slab_thickness' ':' value=Measurement;
+
+// ============================================================================
+// SPACE PROPERTY RULES
+// ============================================================================
 
 // Grid position [row, col]
 PositionProperty:
@@ -129,6 +186,14 @@ WidthProperty:
 LengthProperty:
     'length' ':' value=Measurement;
 
+// Aspect ratio for non-square rooms: aspect: 2:1 means width is 2x length
+AspectProperty:
+    'aspect' ':' widthRatio=NUMBER ':' lengthRatio=NUMBER;
+
+// ============================================================================
+// DOOR PROPERTY RULES
+// ============================================================================
+
 DoorWidthProperty:
     'width' ':' value=Measurement;
 
@@ -138,8 +203,34 @@ DoorHeightProperty:
 DoorWallProperty:
     'wall' ':' direction=WallDirection;
 
+// Enhanced offset: supports multiple formats
+// - offset: 0.5 (normalized 0-1)
+// - offset: center
+// - offset: 2m from west (absolute from anchor)
 DoorOffsetProperty:
-    'offset' ':' value=NUMBER;
+    'offset' ':' (
+        {infer DoorOffsetNormalized} value=NUMBER |
+        {infer DoorOffsetCenter} 'center' |
+        {infer DoorOffsetAbsolute} distance=Measurement 'from' anchor=OffsetAnchor
+    );
+
+OffsetAnchor returns string:
+    'left' | 'right' | 'start' | 'end' | 'north' | 'south' | 'east' | 'west';
+
+// Door swing direction: swing: in | out | in-left | in-right | out-left | out-right
+DoorSwingProperty:
+    'swing' ':' direction=SwingDirection;
+
+SwingDirection returns string:
+    'in' | 'out' | 'in-left' | 'in-right' | 'out-left' | 'out-right' | 'double';
+
+// Interior door connection: connects: "RoomName"
+DoorConnectsProperty:
+    'connects' ':' targetSpace=STRING;
+
+// Material override on individual doors: material: MaterialName
+DoorMaterialProperty:
+    'material' ':' materialRef=[Material:ID];
 
 WallDirection returns string:
     'north' | 'south' | 'east' | 'west';
@@ -167,6 +258,7 @@ AreaUnit returns string:
 terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
 terminal STRING: /"[^"]*"/;
 terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+terminal HEX_COLOR: /#[0-9A-Fa-f]{6}/;
 
 hidden terminal WS: /\s+/;
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;

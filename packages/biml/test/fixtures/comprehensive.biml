@@ -1,0 +1,247 @@
+# Comprehensive BIML Example (v0.5.0)
+# Demonstrates all language features for floors, rooms, and doors
+
+# =============================================================================
+# Type Library - Parametric Door Definitions with Materials
+# =============================================================================
+
+library "Standard Doors" {
+  # Material definitions for door finishes
+  material WoodOak {
+    color: oak
+  }
+
+  material WoodWalnut {
+    color: walnut
+  }
+
+  material WoodMahogany {
+    color: mahogany
+  }
+
+  material SteelGray {
+    color: steel
+  }
+
+  material WhitePaint {
+    color: white
+  }
+
+  material GlassFrosted {
+    color: glass
+    transparency: 0.3
+  }
+
+  # Base door family with default parameters
+  family Door {
+    parameter width: Length = 900mm
+    parameter height: Length = 2100mm
+    parameter thickness: Length = 45mm
+    parameter isFireRated: Boolean = false
+  }
+
+  # Standard single door - oak finish
+  type SingleDoor extends Door {
+    material: WoodOak
+  }
+
+  # Double door - walnut finish for premium look
+  type DoubleDoor extends Door {
+    width = 1800mm
+    material: WoodWalnut
+  }
+
+  # Fire-rated door - steel finish (type inherits from type using ':')
+  type FireDoor : SingleDoor {
+    width = 1000mm
+    isFireRated = true
+    material: SteelGray
+  }
+
+  # Wide accessible door - white paint
+  type AccessibleDoor extends Door {
+    width = 1200mm
+    material: WhitePaint
+  }
+
+  # Narrow utility door - steel
+  type UtilityDoor extends Door {
+    width = 760mm
+    height = 2000mm
+    material: SteelGray
+  }
+
+  # Executive door - mahogany for luxury
+  type ExecutiveDoor extends Door {
+    width = 1000mm
+    material: WoodMahogany
+  }
+}
+
+# =============================================================================
+# Project Definition - Multi-Story Office Building
+# =============================================================================
+
+project "Modern Office Building" {
+  site "Downtown Campus" {
+    building "Building A" {
+
+      # Ground Floor - Lobby and Reception
+      level "Ground Floor" {
+        elevation: 0m
+        height: 4m
+        slab_thickness: 250mm
+
+        # Main lobby - large square room
+        space "Main Lobby" {
+          position: [0, 0]
+          area: 100m²
+
+          # Main entrance - double door with center offset
+          door "Main Entry": DoubleDoor {
+            wall: south
+            offset: center
+            swing: out
+          }
+        }
+
+        # Reception - adjacent to lobby (east)
+        space "Reception" {
+          position: [0, 1]
+          area: 40m²
+
+          # Interior door connecting to lobby
+          door "Lobby Door": SingleDoor {
+            wall: west
+            connects: "Main Lobby"
+            swing: in-left
+          }
+        }
+
+        # Long corridor - using aspect ratio for non-square room
+        space "Main Corridor" {
+          position: [1, 0]
+          area: 50m²
+          aspect: 10:1
+
+          # Fire exit at end of corridor
+          door "Fire Exit A": FireDoor {
+            wall: west
+            offset: 1m from south
+          }
+        }
+
+        # Conference room
+        space "Conference Room A" {
+          position: [1, 1]
+          width: 6m
+          length: 8m
+
+          # Door from corridor with absolute offset
+          door "Conf A Entry": SingleDoor {
+            wall: west
+            offset: 2m from north
+            connects: "Main Corridor"
+          }
+        }
+
+        # Utility room
+        space "Electrical Room" {
+          position: [2, 0]
+          area: 15m²
+
+          door "Elec Door": UtilityDoor {
+            wall: north
+            offset: center
+          }
+        }
+      }
+
+      # First Floor - Office Space (auto-elevation from ground)
+      level "First Floor" {
+        height: 3.5m
+        slab_thickness: 200mm
+
+        # Open office area
+        space "Open Office" {
+          position: [0, 0]
+          area: 200m²
+
+          # Stairwell access
+          door "Stair Door 1": FireDoor {
+            wall: south
+            offset: 0.2
+          }
+        }
+
+        # Private offices along corridor
+        space "Office 101" {
+          position: [0, 1]
+          width: 4m
+          length: 5m
+
+          # Door from open office
+          door "Office 101 Door": SingleDoor {
+            wall: west
+            connects: "Open Office"
+            swing: in-right
+          }
+        }
+
+        space "Office 102" {
+          position: [0, 2]
+          width: 4m
+          length: 5m
+
+          door "Office 102 Door": SingleDoor {
+            wall: west
+            connects: "Open Office"
+            offset: center
+          }
+        }
+
+        # Meeting room with accessible door
+        space "Meeting Room 1" {
+          position: [1, 0]
+          area: 30m²
+
+          door "Meeting 1 Entry": AccessibleDoor {
+            wall: north
+            connects: "Open Office"
+            offset: 1.5m from west
+          }
+        }
+      }
+
+      # Second Floor - Executive (auto-elevation continues)
+      level "Second Floor" {
+        height: 3.5m
+
+        # Executive suite
+        space "Executive Suite" {
+          position: [0, 0]
+          area: 50m²
+
+          door "Exec Entry": ExecutiveDoor {
+            wall: south
+            offset: center
+            swing: double
+          }
+        }
+
+        # Board room
+        space "Board Room" {
+          position: [0, 1]
+          width: 8m
+          length: 10m
+
+          door "Board Room Door": DoubleDoor {
+            wall: west
+            connects: "Executive Suite"
+            offset: center
+          }
+        }
+      }
+    }
+  }
+}
