@@ -91,6 +91,7 @@ project "Modern Office Building" {
         elevation: 0m
         height: 4m
         slab_thickness: 250mm
+        ceiling_thickness: 120mm
 
         # Main lobby - large square room
         space "Main Lobby" {
@@ -161,6 +162,7 @@ project "Modern Office Building" {
       level "First Floor" {
         height: 3.5m
         slab_thickness: 200mm
+        ceiling_thickness: 120mm
 
         # Open office area
         space "Open Office" {
@@ -216,6 +218,7 @@ project "Modern Office Building" {
       # Second Floor - Executive (auto-elevation continues)
       level "Second Floor" {
         height: 3.5m
+        ceiling_thickness: 120mm
 
         # Executive suite
         space "Executive Suite" {
