@@ -156,6 +156,14 @@ class TestIFCGeneration:
         # 1 ceiling per room
         assert len(ceilings) == 2
         assert all(c.PredefinedType == "CEILING" for c in ceilings)
+        # Ceilings sit at height minus their thickness
+        level = simple_ir.projects[0].sites[0].buildings[0].levels[0]
+        expected_base = level.height.to_meters() - level.ceiling_thickness.to_meters()
+        z_positions = [
+            c.ObjectPlacement.RelativePlacement.Location.Coordinates[2]
+            for c in ceilings
+        ]
+        assert all(z == pytest.approx(expected_base) for z in z_positions)
 
     def test_creates_doors(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)

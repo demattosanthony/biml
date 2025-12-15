@@ -814,18 +814,20 @@ def _create_ceiling_covering(
     base_z = max(height - thickness, 0.0)
 
     points = [
-        (geom.x + t, geom.y + t, base_z),
-        (geom.x + geom.width - t, geom.y + t, base_z),
-        (geom.x + geom.width - t, geom.y + geom.length - t, base_z),
-        (geom.x + t, geom.y + geom.length - t, base_z),
-        (geom.x + t, geom.y + t, base_z),
+        (geom.x + t, geom.y + t, 0.0),
+        (geom.x + geom.width - t, geom.y + t, 0.0),
+        (geom.x + geom.width - t, geom.y + geom.length - t, 0.0),
+        (geom.x + t, geom.y + geom.length - t, 0.0),
+        (geom.x + t, geom.y + t, 0.0),
     ]
 
     solid = _create_extruded_solid(ifc, points, thickness)
     ceiling_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
     ceiling_shape = ifc.createIfcProductDefinitionShape(None, None, [ceiling_rep])
 
-    ceiling_placement = _create_local_placement(ifc, relative_to=storey_placement)
+    ceiling_placement = _create_local_placement(
+        ifc, point=(0.0, 0.0, base_z), relative_to=storey_placement
+    )
 
     ceiling = ifc.createIfcCovering(
         ifcopenshell.guid.new(), None, f"{room_name} - Ceiling", None, None,
