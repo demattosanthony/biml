@@ -1,30 +1,13 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
-import { spawn } from "bun";
+import { NodeFileSystem } from "langium/node";
+import { URI } from "langium";
 import * as fs from "node:fs";
 import * as path from "node:path";
-
-type Model = unknown;
-
-async function ensureLangiumArtifacts(): Promise<void> {
-  const generatedModule = path.resolve(__dirname, "../src/generated/module.ts");
-  if (fs.existsSync(generatedModule)) {
-    return;
-  }
-
-  console.log("Generating language sources (langium generate)...");
-  const proc = spawn(["bun", "x", "langium", "generate"], {
-    cwd: path.resolve(__dirname, ".."),
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-
-  const exitCode = await proc.exited;
-  if (exitCode !== 0) {
-    console.error("Failed to generate language sources.");
-    process.exit(exitCode);
-  }
-}
+import { spawn } from "bun";
+import { createBimServices } from "../src/language/bim-module";
+import { generateJsonIR } from "../src/generator";
+import type { Model } from "../src/generated/ast";
 
 function exitWithErrors(title: string, errors: { message: string }[]): never {
   console.error(title);
@@ -32,23 +15,7 @@ function exitWithErrors(title: string, errors: { message: string }[]): never {
   process.exit(1);
 }
 
-async function loadLanguageTools() {
-  await ensureLangiumArtifacts();
-
-  const [{ createBimServices }, { generateJsonIR }, { NodeFileSystem }, { URI }] =
-    await Promise.all([
-      import("../src/language/bim-module"),
-      import("../src/generator"),
-      import("langium/node"),
-      import("langium"),
-    ]);
-
-  return { createBimServices, generateJsonIR, NodeFileSystem, URI };
-}
-
 async function parseAndValidate(filePath: string): Promise<Model> {
-  const { createBimServices, NodeFileSystem, URI } = await loadLanguageTools();
-
   const services = createBimServices(NodeFileSystem);
   const uri = URI.file(path.resolve(filePath));
   const document =
@@ -76,8 +43,6 @@ async function parseAction(
   filePath: string,
   options: { output?: string }
 ): Promise<void> {
-  const { generateJsonIR } = await loadLanguageTools();
-
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
     console.error(`File not found: ${absolutePath}`);
@@ -98,8 +63,6 @@ async function compileAction(
   filePath: string,
   options: { output?: string; ir?: boolean }
 ): Promise<void> {
-  const { generateJsonIR } = await loadLanguageTools();
-
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
     console.error(`File not found: ${absolutePath}`);
@@ -108,7 +71,9 @@ async function compileAction(
 
   // Default output path: same name as input with .ifc extension
   // Resolve to absolute path so it works regardless of subprocess cwd
-  const outputPath = path.resolve(options.output ?? absolutePath.replace(/\.biml$/, ".ifc"));
+  const outputPath = path.resolve(
+    options.output ?? absolutePath.replace(/\.biml$/, ".ifc")
+  );
 
   // Parse and generate JSON IR
   const jsonIR = generateJsonIR(await parseAndValidate(absolutePath));
@@ -145,7 +110,10 @@ program
   .description("BIML compiler - compile .biml files to IFC")
   .version("0.1.0")
   .argument("<file>", "Path to .biml file")
-  .option("-o, --output <file>", "Output IFC file path (defaults to input name with .ifc)")
+  .option(
+    "-o, --output <file>",
+    "Output IFC file path (defaults to input name with .ifc)"
+  )
   .option("--ir", "Also output the intermediate JSON IR")
   .action(compileAction);
 
