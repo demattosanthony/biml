@@ -112,6 +112,17 @@ def _measurement_to_meters(m: MeasurementIR | float | None, default: float) -> f
     return m.to_meters()
 
 
+def _room_interior_profile(geom: RoomGeometry, inset: float = WALL_THICKNESS):
+    """Return the inset rectangle for slabs/ceilings inside walls."""
+    return [
+        (geom.x + inset, geom.y + inset, 0.0),
+        (geom.x + geom.width - inset, geom.y + inset, 0.0),
+        (geom.x + geom.width - inset, geom.y + geom.length - inset, 0.0),
+        (geom.x + inset, geom.y + geom.length - inset, 0.0),
+        (geom.x + inset, geom.y + inset, 0.0),
+    ]
+
+
 # ============================================================================
 # Geometry Calculation
 # ============================================================================
@@ -775,16 +786,7 @@ def _create_floor_slab(
     slab_thickness: float = DEFAULT_SLAB_THICKNESS,
 ) -> ifcopenshell.entity_instance:
     """Create floor slab for a room."""
-    t = WALL_THICKNESS
-
-    # Slab inside walls
-    points = [
-        (geom.x + t, geom.y + t, 0.0),
-        (geom.x + geom.width - t, geom.y + t, 0.0),
-        (geom.x + geom.width - t, geom.y + geom.length - t, 0.0),
-        (geom.x + t, geom.y + geom.length - t, 0.0),
-        (geom.x + t, geom.y + t, 0.0),
-    ]
+    points = _room_interior_profile(geom)
 
     solid = _create_extruded_solid(ifc, points, slab_thickness)
     slab_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
@@ -810,16 +812,9 @@ def _create_ceiling_covering(
     thickness: float = DEFAULT_CEILING_THICKNESS,
 ) -> ifcopenshell.entity_instance:
     """Create ceiling covering for a room."""
-    t = WALL_THICKNESS
     base_z = max(height - thickness, 0.0)
 
-    points = [
-        (geom.x + t, geom.y + t, 0.0),
-        (geom.x + geom.width - t, geom.y + t, 0.0),
-        (geom.x + geom.width - t, geom.y + geom.length - t, 0.0),
-        (geom.x + t, geom.y + geom.length - t, 0.0),
-        (geom.x + t, geom.y + t, 0.0),
-    ]
+    points = _room_interior_profile(geom)
 
     solid = _create_extruded_solid(ifc, points, thickness)
     ceiling_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
