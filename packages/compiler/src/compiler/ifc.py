@@ -1,4 +1,4 @@
-"""IFC generation using IfcOpenShell (v0.5.0)."""
+"""IFC generation using IfcOpenShell (v0.6.0)."""
 
 import ifcopenshell
 import ifcopenshell.api
@@ -23,6 +23,7 @@ DEFAULT_DOOR_WIDTH = 0.9
 DEFAULT_DOOR_HEIGHT = 2.1
 WALL_THICKNESS = 0.2
 DEFAULT_SLAB_THICKNESS = 0.2
+DEFAULT_CEILING_THICKNESS = 0.1
 DEFAULT_DOOR_COLOR = ColorIR(red=0.55, green=0.35, blue=0.20)  # Warm wood brown
 
 
@@ -497,6 +498,11 @@ def _generate_level(
         if level_ir.slab_thickness
         else DEFAULT_SLAB_THICKNESS
     )
+    ceiling_thickness = (
+        level_ir.ceiling_thickness.to_meters()
+        if level_ir.ceiling_thickness
+        else DEFAULT_CEILING_THICKNESS
+    )
 
     # Create storey
     storey_placement = _create_local_placement(ifc, (0.0, 0.0, elevation), relative_to=building_placement)
@@ -558,6 +564,14 @@ def _generate_level(
         geom = space_geometries[space.name]
         slab = _create_floor_slab(ifc, context, storey_placement, space.name, geom, slab_thickness)
         elements.append(slab)
+
+    # Generate ceilings for each space
+    for space in level_ir.spaces:
+        geom = space_geometries[space.name]
+        ceiling = _create_ceiling_covering(
+            ifc, context, storey_placement, space.name, geom, height, ceiling_thickness
+        )
+        elements.append(ceiling)
 
     # Create door openings
     for placement in door_placements:
@@ -784,6 +798,41 @@ def _create_floor_slab(
     )
 
     return slab
+
+
+def _create_ceiling_covering(
+    ifc: ifcopenshell.file,
+    context,
+    storey_placement,
+    room_name: str,
+    geom: RoomGeometry,
+    height: float,
+    thickness: float = DEFAULT_CEILING_THICKNESS,
+) -> ifcopenshell.entity_instance:
+    """Create ceiling covering for a room."""
+    t = WALL_THICKNESS
+    base_z = max(height - thickness, 0.0)
+
+    points = [
+        (geom.x + t, geom.y + t, base_z),
+        (geom.x + geom.width - t, geom.y + t, base_z),
+        (geom.x + geom.width - t, geom.y + geom.length - t, base_z),
+        (geom.x + t, geom.y + geom.length - t, base_z),
+        (geom.x + t, geom.y + t, base_z),
+    ]
+
+    solid = _create_extruded_solid(ifc, points, thickness)
+    ceiling_rep = ifc.createIfcShapeRepresentation(context, "Body", "SweptSolid", [solid])
+    ceiling_shape = ifc.createIfcProductDefinitionShape(None, None, [ceiling_rep])
+
+    ceiling_placement = _create_local_placement(ifc, relative_to=storey_placement)
+
+    ceiling = ifc.createIfcCovering(
+        ifcopenshell.guid.new(), None, f"{room_name} - Ceiling", None, None,
+        ceiling_placement, ceiling_shape, None, "CEILING"
+    )
+
+    return ceiling
 
 
 def _create_door_with_opening(

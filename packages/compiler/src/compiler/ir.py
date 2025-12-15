@@ -1,4 +1,4 @@
-"""JSON IR types matching BIML output (v0.5.0)."""
+"""JSON IR types matching BIML output (v0.6.0)."""
 
 from dataclasses import dataclass, field
 from typing import Self, Literal
@@ -333,6 +333,7 @@ class LevelIR:
     elevation: MeasurementIR | None = None
     height: MeasurementIR | None = None
     slab_thickness: MeasurementIR | None = None
+    ceiling_thickness: MeasurementIR | None = None
     spaces: list[SpaceIR] = field(default_factory=list)
 
     @classmethod
@@ -342,6 +343,7 @@ class LevelIR:
             elevation=MeasurementIR(**data["elevation"]) if data.get("elevation") else None,
             height=MeasurementIR(**data["height"]) if data.get("height") else None,
             slab_thickness=MeasurementIR(**data["slabThickness"]) if data.get("slabThickness") else None,
+            ceiling_thickness=MeasurementIR(**data["ceilingThickness"]) if data.get("ceilingThickness") else None,
             spaces=[SpaceIR.from_dict(s) for s in data.get("spaces", [])],
         )
 

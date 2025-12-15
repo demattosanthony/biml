@@ -128,7 +128,7 @@ Level:
     '}';
 
 LevelProperty:
-    ElevationProperty | HeightProperty | SlabThicknessProperty;
+    ElevationProperty | HeightProperty | SlabThicknessProperty | CeilingThicknessProperty;
 
 Space:
     'space' name=STRING '{'
@@ -168,6 +168,9 @@ HeightProperty:
 
 SlabThicknessProperty:
     'slab_thickness' ':' value=Measurement;
+
+CeilingThicknessProperty:
+    'ceiling_thickness' ':' value=Measurement;
 
 // ============================================================================
 // SPACE PROPERTY RULES
