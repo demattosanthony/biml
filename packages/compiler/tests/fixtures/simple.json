@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "libraries": [
     {
       "name": "Doors",
@@ -105,6 +105,7 @@
                   "name": "Ground",
                   "elevation": { "value": 0, "unit": "m" },
                   "height": { "value": 3.5, "unit": "m" },
+                  "ceilingThickness": { "value": 0.15, "unit": "m" },
                   "spaces": [
                     {
                       "name": "Reception",

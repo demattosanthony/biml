@@ -46,7 +46,7 @@ describe("JSON IR Generator", () => {
   it("generates correct JSON IR structure for empty model", async () => {
     const ir = await parseAndGenerate("");
 
-    expect(ir.version).toBe("0.5.0");
+    expect(ir.version).toBe("0.6.0");
     expect(ir.libraries).toBeUndefined();
     expect(ir.projects).toBeUndefined();
   });
@@ -61,7 +61,7 @@ describe("JSON IR Generator", () => {
       }
     `);
 
-    expect(ir.version).toBe("0.5.0");
+    expect(ir.version).toBe("0.6.0");
     expect(ir.libraries).toHaveLength(1);
 
     const lib = ir.libraries![0];
@@ -115,6 +115,7 @@ describe("JSON IR Generator", () => {
             level "Ground" {
               elevation: 0m
               height: 3.5m
+              ceiling_thickness: 150mm
 
               space "Lobby" {
                 position: [0, 0]
@@ -143,6 +144,7 @@ describe("JSON IR Generator", () => {
     expect(level.name).toBe("Ground");
     expect(level.elevation).toEqual({ value: 0, unit: "m" });
     expect(level.height).toEqual({ value: 3.5, unit: "m" });
+    expect(level.ceilingThickness).toEqual({ value: 150, unit: "mm" });
     expect(level.spaces).toHaveLength(1);
 
     const space = level.spaces[0];

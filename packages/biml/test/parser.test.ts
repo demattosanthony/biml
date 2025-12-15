@@ -252,6 +252,31 @@ describe("BIM Parser", () => {
   });
 
   // ============================================================================
+  // v0.6.0 New Features: Ceilings
+  // ============================================================================
+
+  it("parses level with ceiling thickness", async () => {
+    const { model, errors } = await parseText(`
+      project "Test" {
+        site "Site" {
+          building "Bldg" {
+            level "Ground" {
+              elevation: 0m
+              height: 3.0m
+              ceiling_thickness: 120mm
+            }
+          }
+        }
+      }
+    `);
+
+    expect(errors).toHaveLength(0);
+    const level = model.projects[0].sites[0].buildings[0].levels[0];
+    const ceilingProp = level.properties.find(p => p.$type === "CeilingThicknessProperty");
+    expect(ceilingProp).toBeDefined();
+  });
+
+  // ============================================================================
   // Space Tests
   // ============================================================================
 

@@ -1,4 +1,4 @@
-# Simple BIML Example (v0.5.0)
+# Simple BIML Example (v0.6.0)
 # A basic office building with two adjacent rooms, doors, and materials
 
 library "Doors" {

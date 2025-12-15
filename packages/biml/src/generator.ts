@@ -131,6 +131,7 @@ export interface LevelIR {
   elevation?: MeasurementIR;
   height?: MeasurementIR;
   slabThickness?: MeasurementIR;
+  ceilingThickness?: MeasurementIR;
   spaces: SpaceIR[];
 }
 
@@ -579,6 +580,9 @@ function generateLevel(level: Level): LevelIR {
       case "SlabThicknessProperty":
         ir.slabThickness = measurement(prop.value);
         break;
+      case "CeilingThicknessProperty":
+        ir.ceilingThickness = measurement(prop.value);
+        break;
     }
   }
 
@@ -614,7 +618,7 @@ function generateProject(project: Project): ProjectIR {
 
 export function generateJsonIR(model: Model): JsonIR {
   const ir: JsonIR = {
-    version: "0.5.0",
+    version: "0.6.0",
   };
 
   if (model.libraries.length > 0) {

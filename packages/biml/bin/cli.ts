@@ -71,7 +71,9 @@ async function compileAction(
 
   // Default output path: same name as input with .ifc extension
   // Resolve to absolute path so it works regardless of subprocess cwd
-  const outputPath = path.resolve(options.output ?? absolutePath.replace(/\.biml$/, ".ifc"));
+  const outputPath = path.resolve(
+    options.output ?? absolutePath.replace(/\.biml$/, ".ifc")
+  );
 
   // Parse and generate JSON IR
   const jsonIR = generateJsonIR(await parseAndValidate(absolutePath));
@@ -108,7 +110,10 @@ program
   .description("BIML compiler - compile .biml files to IFC")
   .version("0.1.0")
   .argument("<file>", "Path to .biml file")
-  .option("-o, --output <file>", "Output IFC file path (defaults to input name with .ifc)")
+  .option(
+    "-o, --output <file>",
+    "Output IFC file path (defaults to input name with .ifc)"
+  )
   .option("--ir", "Also output the intermediate JSON IR")
   .action(compileAction);
 

@@ -1,4 +1,4 @@
-"""Tests for BIM compiler (v0.5.0 with materials)."""
+"""Tests for BIM compiler (v0.6.0 with ceilings)."""
 
 import pytest
 from pathlib import Path
@@ -15,7 +15,7 @@ def simple_ir():
 
 class TestIR:
     def test_parse_simple_json(self, simple_ir):
-        assert simple_ir.version == "0.5.0"
+        assert simple_ir.version == "0.6.0"
         assert len(simple_ir.libraries) == 1
         assert len(simple_ir.projects) == 1
 
@@ -141,10 +141,11 @@ class TestIFCGeneration:
         assert storeys[0].Name == "Ground"
         assert storeys[0].Elevation == 0.0
 
-    def test_creates_walls_and_slabs(self, simple_ir):
+    def test_creates_walls_slabs_and_ceilings(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
         walls = ifc.by_type("IfcWall")
         slabs = ifc.by_type("IfcSlab")
+        ceilings = ifc.by_type("IfcCovering")
         # With shared wall handling, we should have fewer walls
         # 2 rooms adjacent = 7 walls (3 exterior each + 1 shared)
         assert len(walls) == 7
@@ -152,6 +153,17 @@ class TestIFCGeneration:
         assert len(slabs) == 2
         assert any("Reception - Floor" in s.Name for s in slabs)
         assert any("Hallway - Floor" in s.Name for s in slabs)
+        # 1 ceiling per room
+        assert len(ceilings) == 2
+        assert all(c.PredefinedType == "CEILING" for c in ceilings)
+        # Ceilings sit at height minus their thickness
+        level = simple_ir.projects[0].sites[0].buildings[0].levels[0]
+        expected_base = level.height.to_meters() - level.ceiling_thickness.to_meters()
+        z_positions = [
+            c.ObjectPlacement.RelativePlacement.Location.Coordinates[2]
+            for c in ceilings
+        ]
+        assert all(z == pytest.approx(expected_base) for z in z_positions)
 
     def test_creates_doors(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
@@ -195,7 +207,7 @@ class TestIFCGeneration:
         assert len(fills) == len(doors)
 
     def test_empty_projects_raises(self):
-        ir = JsonIR(version="0.5.0", libraries=[], projects=[])
+        ir = JsonIR(version="0.6.0", libraries=[], projects=[])
         with pytest.raises(ValueError, match="No projects"):
             compile_to_ifc(ir)
 
