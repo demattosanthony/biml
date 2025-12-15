@@ -1,13 +1,30 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
-import { NodeFileSystem } from "langium/node";
-import { URI } from "langium";
+import { spawn } from "bun";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { spawn } from "bun";
-import { createBimServices } from "../src/language/bim-module";
-import { generateJsonIR } from "../src/generator";
-import type { Model } from "../src/generated/ast";
+
+type Model = unknown;
+
+async function ensureLangiumArtifacts(): Promise<void> {
+  const generatedModule = path.resolve(__dirname, "../src/generated/module.ts");
+  if (fs.existsSync(generatedModule)) {
+    return;
+  }
+
+  console.log("Generating language sources (langium generate)...");
+  const proc = spawn(["bun", "x", "langium", "generate"], {
+    cwd: path.resolve(__dirname, ".."),
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
+    console.error("Failed to generate language sources.");
+    process.exit(exitCode);
+  }
+}
 
 function exitWithErrors(title: string, errors: { message: string }[]): never {
   console.error(title);
@@ -15,7 +32,23 @@ function exitWithErrors(title: string, errors: { message: string }[]): never {
   process.exit(1);
 }
 
+async function loadLanguageTools() {
+  await ensureLangiumArtifacts();
+
+  const [{ createBimServices }, { generateJsonIR }, { NodeFileSystem }, { URI }] =
+    await Promise.all([
+      import("../src/language/bim-module"),
+      import("../src/generator"),
+      import("langium/node"),
+      import("langium"),
+    ]);
+
+  return { createBimServices, generateJsonIR, NodeFileSystem, URI };
+}
+
 async function parseAndValidate(filePath: string): Promise<Model> {
+  const { createBimServices, NodeFileSystem, URI } = await loadLanguageTools();
+
   const services = createBimServices(NodeFileSystem);
   const uri = URI.file(path.resolve(filePath));
   const document =
@@ -43,6 +76,8 @@ async function parseAction(
   filePath: string,
   options: { output?: string }
 ): Promise<void> {
+  const { generateJsonIR } = await loadLanguageTools();
+
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
     console.error(`File not found: ${absolutePath}`);
@@ -63,6 +98,8 @@ async function compileAction(
   filePath: string,
   options: { output?: string; ir?: boolean }
 ): Promise<void> {
+  const { generateJsonIR } = await loadLanguageTools();
+
   const absolutePath = path.resolve(filePath);
   if (!fs.existsSync(absolutePath)) {
     console.error(`File not found: ${absolutePath}`);
