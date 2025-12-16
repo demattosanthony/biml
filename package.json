@@ -8,6 +8,7 @@
     "test:biml": "cd packages/biml && bun test",
     "test:compiler": "cd packages/compiler && uv sync --extra dev && uv run pytest",
     "build": "cd packages/biml && bun run build",
-    "build:viewer": "cd packages/ifc-viewer && bun run build"
+    "build:viewer": "cd packages/ifc-viewer && bun run build",
+    "dev:viewer": "cd packages/ifc-viewer-playground && bun run dev"
   }
 }
