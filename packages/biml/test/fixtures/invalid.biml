@@ -1,10 +1,11 @@
-# Invalid BIML v2.1 - for testing error handling
-# Uses types-only model (no families)
+# Invalid BIML - for testing error handling
+
+import "stdlib/elements/doors.biml"
 
 library "Test" {
-  # Base door type with parameters
   type Door {
     param width: Length = 900mm
+    ifc_class: IfcDoor
   }
 
   type TestDoor : Door { }

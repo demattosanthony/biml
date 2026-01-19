@@ -1,0 +1,814 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# LUMINA CONTEMPORARY ART GALLERY
+# A Modern Cultural Center showcasing BIML's full capabilities
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# This example demonstrates:
+#   - Multi-level building with relative elevations
+#   - Custom materials and type extensions
+#   - Complex spatial layouts with functional tags
+#   - Extensive use of stdlib elements
+#   - Structural columns in grid patterns
+#   - Multiple door and window types
+#   - Furniture placement with orientation
+#   - Roof slabs and terraces
+#
+# Building: 50m x 35m footprint, 2 stories + rooftop
+# Location: San Francisco Arts District
+
+import "stdlib/elements/doors.biml"
+import "stdlib/elements/windows.biml"
+import "stdlib/furniture/office.biml"
+import "stdlib/structure/columns.biml"
+import "stdlib/materials/common.biml"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM MATERIAL LIBRARY - Gallery Aesthetic
+# ═══════════════════════════════════════════════════════════════════════════════
+
+library "gallery.materials" {
+  # Wall and ceiling finishes
+  material GalleryWhite {
+    color: #FAFAFA
+  }
+
+  material MuseumGrey {
+    color: #E8E8E8
+  }
+
+  material CharcoalAccent {
+    color: #2D2D2D
+  }
+
+  # Flooring materials
+  material PolishedConcrete {
+    color: #9A9A9A
+  }
+
+  material WhiteOakFlooring {
+    color: #D4C4A8
+  }
+
+  material TerrazzoFloor {
+    color: #C9B99A
+  }
+
+  # Structural materials
+  material ExposedConcrete {
+    color: #8C8C8C
+  }
+
+  material BlackSteel {
+    color: #1A1A1A
+  }
+
+  # Feature materials
+  material CurtenSteel {
+    color: #8B4513
+  }
+
+  material BronzeAccent {
+    color: bronze
+  }
+
+  # Glass types
+  material StructuralGlass {
+    color: #E0F0FF
+    transparency: 0.15
+  }
+
+  material FrostedGlass {
+    color: #F5F5F5
+    transparency: 0.4
+  }
+
+  material TintedGlass {
+    color: #B8D4E8
+    transparency: 0.25
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM DOOR TYPES - Gallery Specific
+# ═══════════════════════════════════════════════════════════════════════════════
+
+library "gallery.doors" {
+  material GlassDoor {
+    color: #E0F0FF
+    transparency: 0.2
+  }
+
+  material SteelDoor {
+    color: #1A1A1A
+  }
+
+  material OakDoor {
+    color: oak
+  }
+
+  # Grand entrance - pivoting glass doors
+  type GrandEntryDoor : DoubleDoor {
+    width = 3000mm
+    height = 3500mm
+    material: GlassDoor
+  }
+
+  # Gallery passage - frameless glass
+  type GalleryDoor : SlidingDoor {
+    width = 2400mm
+    height = 2700mm
+    material: GlassDoor
+  }
+
+  # Service and staff doors
+  type ServiceDoor : SingleDoor {
+    width = 1000mm
+    height = 2100mm
+    material: SteelDoor
+  }
+
+  # Fire exit doors
+  type EmergencyExit : FireDoor {
+    width = 1200mm
+    height = 2200mm
+    material: SteelDoor
+  }
+
+  # Café and shop entrances
+  type RetailDoor : DoubleDoor {
+    width = 1600mm
+    height = 2400mm
+    material: GlassDoor
+  }
+
+  # Office doors
+  type OfficeDoor : SingleDoor {
+    width = 900mm
+    height = 2100mm
+    material: OakDoor
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM WINDOW TYPES - Maximizing Natural Light
+# ═══════════════════════════════════════════════════════════════════════════════
+
+library "gallery.windows" {
+  material GalleryGlass {
+    color: #E0F0FF
+    transparency: 0.1
+  }
+
+  material SkyGlass {
+    color: #D4E8F5
+    transparency: 0.05
+  }
+
+  # Floor-to-ceiling gallery windows
+  type GalleryWindow : PictureWindow {
+    width = 3000mm
+    height = 3500mm
+    sill_height = 0mm
+    material: GalleryGlass
+  }
+
+  # Clerestory for diffused natural light
+  type GalleryClerestory : ClerestoryWindow {
+    width = 2400mm
+    height = 800mm
+    sill_height = 3000mm
+    material: SkyGlass
+  }
+
+  # Standard exhibition windows
+  type ExhibitionWindow : FixedWindow {
+    width = 1800mm
+    height = 2100mm
+    sill_height = 600mm
+    material: GalleryGlass
+  }
+
+  # Café terrace windows
+  type CafeWindow : PictureWindow {
+    width = 2000mm
+    height = 2400mm
+    sill_height = 300mm
+    material: GalleryGlass
+  }
+
+  # Skylight panels
+  type Skylight : Window {
+    width = 2000mm
+    height = 2000mm
+    sill_height = 0mm
+    material: SkyGlass
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM FURNITURE - Gallery and Café
+# ═══════════════════════════════════════════════════════════════════════════════
+
+library "gallery.furniture" {
+  # Reception and information desk
+  type ReceptionDesk : Desk {
+    width = 3000mm
+    depth = 1000mm
+    height = 1100mm
+  }
+
+  # Gallery benches for viewing art
+  type GalleryBench : Table {
+    width = 1800mm
+    depth = 500mm
+    height = 450mm
+  }
+
+  # Café seating
+  type CafeTable : Table {
+    width = 800mm
+    depth = 800mm
+    height = 750mm
+  }
+
+  type CafeChair : Chair {
+    width = 500mm
+    depth = 500mm
+    height = 450mm
+  }
+
+  # Lounge seating
+  type LoungeChair : Chair {
+    width = 800mm
+    depth = 800mm
+    height = 400mm
+  }
+
+  type LoungeSofa : Table {
+    width = 2200mm
+    depth = 900mm
+    height = 400mm
+  }
+
+  # Display and retail
+  type DisplayPedestal : Storage {
+    width = 600mm
+    depth = 600mm
+    height = 1200mm
+  }
+
+  type ShopDisplay : Storage {
+    width = 1200mm
+    depth = 600mm
+    height = 900mm
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BUILDING DEFINITION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+building "Lumina Contemporary Art Gallery" {
+
+  defaults {
+    wall_thickness: 300mm
+    floor_thickness: 250mm
+    ceiling_height: 3500mm
+    door_height: 2400mm
+    window_sill: 600mm
+  }
+
+  site "San Francisco Arts District" at (37.7749, -122.4194)
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # GROUND FLOOR - Public Galleries and Amenities
+  # Elevation: 0m | Height: 5m (generous ceiling for art display)
+  # ═════════════════════════════════════════════════════════════════════════════
+
+  level "Ground Floor" at 0m, height: 5m {
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # EXTERIOR WALLS - The Building Envelope
+    # ─────────────────────────────────────────────────────────────────────────
+
+    wall "South Facade" from (0, 0) to (50, 0) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "East Facade" from (50, 0) to (50, 35) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "North Facade" from (50, 35) to (0, 35) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "West Facade" from (0, 35) to (0, 0) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # INTERIOR WALLS - Spatial Divisions
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Entry zone separation
+    wall "Entry North" from (0, 10) to (18, 10) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    # Gift shop enclosure
+    wall "Shop East" from (12, 0) to (12, 10) {
+      thickness: 150mm
+      material: GalleryWhite
+    }
+
+    # Main gallery east wall
+    wall "Gallery East" from (30, 0) to (30, 22) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    # Sculpture court west wall
+    wall "Court West" from (30, 10) to (30, 35) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    # Café enclosure
+    wall "Cafe North" from (0, 22) to (12, 22) {
+      thickness: 150mm
+      material: GalleryWhite
+    }
+
+    wall "Cafe East" from (12, 10) to (12, 22) {
+      thickness: 150mm
+      material: GalleryWhite
+    }
+
+    # Service corridor
+    wall "Service South" from (12, 22) to (30, 22) {
+      thickness: 150mm
+      material: MuseumGrey
+    }
+
+    # Staff and restroom zone
+    wall "Staff South" from (0, 28) to (14, 28) {
+      thickness: 150mm
+      material: MuseumGrey
+    }
+
+    wall "Staff East" from (14, 22) to (14, 28) {
+      thickness: 150mm
+      material: MuseumGrey
+    }
+
+    wall "Restroom Divider" from (7, 22) to (7, 28) {
+      thickness: 150mm
+      material: MuseumGrey
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # STRUCTURAL COLUMNS - Supporting the Upper Level
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Grid of columns in the sculpture court (open double-height space)
+    column "C1": ConcreteColumn at (35, 15)
+    column "C2": ConcreteColumn at (35, 25)
+    column "C3": ConcreteColumn at (45, 15)
+    column "C4": ConcreteColumn at (45, 25)
+
+    # Entry hall columns
+    column "C5": ConcreteColumn at (9, 5)
+
+    # Main gallery columns
+    column "C6": ConcreteColumn at (21, 5)
+    column "C7": ConcreteColumn at (21, 15)
+
+    # Café columns
+    column "C8": ConcreteColumn at (6, 16)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SPACES - Functional Zones with Tags
+    # ─────────────────────────────────────────────────────────────────────────
+
+    space "Entry Lobby" [public, reception] {
+      bounded_by: ["South Facade", "Entry North", "Shop East", "West Facade"]
+      floor: TerrazzoFloor
+      ceiling: GalleryWhite
+      area: 120m²
+
+      door "Main Entrance": GrandEntryDoor in "South Facade" at 6m {
+        swing: pivot
+        connects: "Entry Lobby" <-> exterior
+      }
+
+      window "Entry Window West": GalleryWindow in "West Facade" at 3m
+      window "Entry Window South": ExhibitionWindow in "South Facade" at 2m
+
+      place ReceptionDesk "Information Desk" at (3, 6), facing south
+      place GalleryBench at (9, 3), facing north
+    }
+
+    space "Museum Shop" [public, retail] {
+      bounded_by: ["South Facade", "Shop East", "Entry North", "Gallery East"]
+      floor: WhiteOakFlooring
+      ceiling: GalleryWhite
+      area: 180m²
+
+      door "Shop Entry": RetailDoor in "Entry North" at 14m {
+        swing: inward
+        connects: "Entry Lobby" <-> "Museum Shop"
+      }
+
+      window "Shop Window 1": ExhibitionWindow in "South Facade" at 16m
+      window "Shop Window 2": ExhibitionWindow in "South Facade" at 22m
+
+      place ShopDisplay at (15, 3), facing west
+      place ShopDisplay at (20, 3), facing west
+      place ShopDisplay at (25, 3), facing west
+      place ShopDisplay at (15, 7), facing east
+      place ShopDisplay at (20, 7), facing east
+    }
+
+    space "Main Gallery Hall" [public, exhibition] {
+      bounded_by: ["Entry North", "Gallery East", "Service South", "Cafe East"]
+      floor: PolishedConcrete
+      ceiling: GalleryWhite
+      area: 216m²
+
+      door "Gallery Entry": GalleryDoor in "Entry North" at 5m {
+        swing: sliding
+        connects: "Entry Lobby" <-> "Main Gallery Hall"
+      }
+
+      door "Sculpture Court Access": GalleryDoor in "Gallery East" at 16m {
+        swing: sliding
+        connects: "Main Gallery Hall" <-> "Sculpture Court"
+      }
+
+      window "Gallery Clerestory 1": GalleryClerestory in "Entry North" at 8m
+      window "Gallery Clerestory 2": GalleryClerestory in "Service South" at 20m
+
+      place GalleryBench at (18, 12), facing east
+      place GalleryBench at (18, 18), facing east
+      place GalleryBench at (24, 15), facing west
+      place DisplayPedestal at (15, 12), facing north
+      place DisplayPedestal at (15, 18), facing north
+      place DisplayPedestal at (27, 12), facing south
+      place DisplayPedestal at (27, 18), facing south
+    }
+
+    space "Sculpture Court" [public, exhibition] {
+      bounded_by: ["Court West", "East Facade", "North Facade", "Service South"]
+      floor: PolishedConcrete
+      ceiling: GalleryWhite
+      area: 325m²
+
+      window "Court Window East 1": GalleryWindow in "East Facade" at 12m
+      window "Court Window East 2": GalleryWindow in "East Facade" at 18m
+      window "Court Window East 3": GalleryWindow in "East Facade" at 24m
+      window "Court Window North 1": GalleryWindow in "North Facade" at 40m
+      window "Court Window North 2": GalleryWindow in "North Facade" at 46m
+
+      door "Emergency Exit East": EmergencyExit in "East Facade" at 30m {
+        swing: outward
+        connects: "Sculpture Court" <-> exterior
+      }
+
+      place GalleryBench at (40, 20), facing south
+      place GalleryBench at (40, 28), facing south
+      place DisplayPedestal at (35, 18), facing east
+      place DisplayPedestal at (35, 25), facing east
+      place DisplayPedestal at (45, 18), facing west
+      place DisplayPedestal at (45, 25), facing west
+    }
+
+    space "Café Lumina" [public, dining] {
+      bounded_by: ["Cafe North", "Cafe East", "Entry North", "West Facade"]
+      floor: WhiteOakFlooring
+      ceiling: GalleryWhite
+      area: 144m²
+
+      door "Cafe Entrance": RetailDoor in "Entry North" at 3m {
+        swing: inward
+        connects: "Entry Lobby" <-> "Café Lumina"
+      }
+
+      window "Cafe Window 1": CafeWindow in "West Facade" at 14m
+      window "Cafe Window 2": CafeWindow in "West Facade" at 18m
+
+      place CafeTable at (3, 13), facing north
+      place CafeChair at (2.5, 12), facing north
+      place CafeChair at (3.5, 12), facing north
+      place CafeTable at (6, 13), facing north
+      place CafeChair at (5.5, 12), facing north
+      place CafeChair at (6.5, 12), facing north
+      place CafeTable at (9, 13), facing north
+      place CafeChair at (8.5, 12), facing north
+      place CafeChair at (9.5, 12), facing north
+      place CafeTable at (3, 18), facing south
+      place CafeChair at (2.5, 19), facing south
+      place CafeChair at (3.5, 19), facing south
+      place CafeTable at (6, 18), facing south
+      place CafeChair at (5.5, 19), facing south
+      place CafeChair at (6.5, 19), facing south
+      place LoungeSofa at (9, 19), facing west
+    }
+
+    space "Restrooms" [public, restroom] {
+      bounded_by: ["Staff South", "Restroom Divider", "Cafe North", "West Facade"]
+      floor: TerrazzoFloor
+      ceiling: MuseumGrey
+      area: 42m²
+
+      door "Restroom Entry": ServiceDoor in "Cafe North" at 3m {
+        swing: inward
+        connects: "Café Lumina" <-> "Restrooms"
+      }
+    }
+
+    space "Service Corridor" [private, circulation] {
+      bounded_by: ["Staff South", "Service South", "Restroom Divider", "Staff East"]
+      floor: PolishedConcrete
+      ceiling: MuseumGrey
+      area: 42m²
+
+      door "Cafe Service": ServiceDoor in "Cafe East" at 18m {
+        swing: inward
+        connects: "Café Lumina" <-> "Service Corridor"
+      }
+
+      door "Gallery Service": ServiceDoor in "Service South" at 16m {
+        swing: inward
+        connects: "Main Gallery Hall" <-> "Service Corridor"
+      }
+    }
+
+    space "Staff Area" [private, office] {
+      bounded_by: ["North Facade", "Staff East", "Staff South", "West Facade"]
+      floor: PolishedConcrete
+      ceiling: MuseumGrey
+      area: 98m²
+
+      door "Staff Entry": ServiceDoor in "Staff South" at 7m {
+        swing: inward
+        connects: "Service Corridor" <-> "Staff Area"
+      }
+
+      door "Staff Exit": EmergencyExit in "North Facade" at 4m {
+        swing: outward
+        connects: "Staff Area" <-> exterior
+      }
+
+      window "Staff Window": FixedWindow in "West Facade" at 30m
+
+      place StandardDesk at (4, 32), facing south
+      place OfficeChair at (4, 31), facing north
+      place StandardDesk at (10, 32), facing south
+      place OfficeChair at (10, 31), facing north
+      place FilingCabinet at (2, 30), facing east
+    }
+  }
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # FIRST FLOOR - Upper Galleries and Terrace
+  # Elevation: 5m | Height: 4.5m
+  # ═════════════════════════════════════════════════════════════════════════════
+
+  level "First Floor" at "Ground Floor".top, height: 4.5m {
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # EXTERIOR WALLS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    wall "Upper South" from (0, 0) to (30, 0) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "Upper East Inner" from (30, 0) to (30, 22) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "Upper North" from (30, 22) to (0, 22) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    wall "Upper West" from (0, 22) to (0, 0) {
+      thickness: 400mm
+      material: ExposedConcrete
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # INTERIOR WALLS - Upper Level Galleries
+    # ─────────────────────────────────────────────────────────────────────────
+
+    wall "Upper Lobby South" from (0, 7) to (12, 7) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    wall "Upper Lobby East" from (12, 0) to (12, 7) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    wall "Contemporary West" from (12, 7) to (12, 22) {
+      thickness: 200mm
+      material: GalleryWhite
+    }
+
+    wall "Photo Gallery South" from (12, 15) to (30, 15) {
+      thickness: 200mm
+      material: CharcoalAccent
+    }
+
+    wall "Education East" from (24, 0) to (24, 8) {
+      thickness: 150mm
+      material: GalleryWhite
+    }
+
+    wall "Education North" from (12, 8) to (24, 8) {
+      thickness: 150mm
+      material: GalleryWhite
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # COLUMNS - Upper Level Structure
+    # ─────────────────────────────────────────────────────────────────────────
+
+    column "UC1": ConcreteColumn at (6, 3)
+    column "UC2": ConcreteColumn at (6, 11)
+    column "UC3": ConcreteColumn at (6, 18)
+    column "UC4": ConcreteColumn at (18, 3)
+    column "UC5": ConcreteColumn at (18, 11)
+    column "UC6": ConcreteColumn at (18, 18)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SPACES - Upper Level
+    # ─────────────────────────────────────────────────────────────────────────
+
+    space "Upper Lobby" [public, circulation] {
+      bounded_by: ["Upper South", "Upper Lobby East", "Upper Lobby South", "Upper West"]
+      floor: TerrazzoFloor
+      ceiling: GalleryWhite
+      area: 84m²
+
+      window "Upper Lobby Window": ExhibitionWindow in "Upper West" at 3m
+
+      place LoungeChair at (3, 3), facing east
+      place LoungeChair at (3, 5), facing east
+      place LoungeSofa at (8, 4), facing west
+    }
+
+    space "Contemporary Gallery" [public, exhibition] {
+      bounded_by: ["Upper Lobby South", "Contemporary West", "Photo Gallery South", "Education North"]
+      floor: PolishedConcrete
+      ceiling: GalleryWhite
+      area: 126m²
+
+      door "Contemporary Entry": GalleryDoor in "Upper Lobby South" at 6m {
+        swing: sliding
+        connects: "Upper Lobby" <-> "Contemporary Gallery"
+      }
+
+      door "To Photography": GalleryDoor in "Photo Gallery South" at 6m {
+        swing: sliding
+        connects: "Contemporary Gallery" <-> "Photography Gallery"
+      }
+
+      window "Contemporary Clerestory 1": GalleryClerestory in "Upper West" at 10m
+      window "Contemporary Clerestory 2": GalleryClerestory in "Upper West" at 16m
+
+      place GalleryBench at (6, 10), facing south
+      place GalleryBench at (6, 13), facing north
+      place DisplayPedestal at (3, 9), facing east
+      place DisplayPedestal at (3, 14), facing east
+      place DisplayPedestal at (9, 9), facing west
+      place DisplayPedestal at (9, 14), facing west
+    }
+
+    space "Photography Gallery" [public, exhibition] {
+      bounded_by: ["Photo Gallery South", "Upper East Inner", "Upper North", "Contemporary West"]
+      floor: PolishedConcrete
+      ceiling: CharcoalAccent
+      area: 126m²
+
+      window "Photo Gallery Clerestory": GalleryClerestory in "Upper North" at 20m
+
+      place GalleryBench at (20, 18), facing south
+      place GalleryBench at (20, 20), facing north
+    }
+
+    space "Education Workshop" [private, meeting] {
+      bounded_by: ["Upper Lobby East", "Education East", "Education North", "Upper Lobby South"]
+      floor: WhiteOakFlooring
+      ceiling: GalleryWhite
+      area: 84m²
+
+      door "Workshop Entry": OfficeDoor in "Upper Lobby East" at 4m {
+        swing: inward
+        connects: "Upper Lobby" <-> "Education Workshop"
+      }
+
+      window "Workshop Window": FixedWindow in "Upper South" at 18m
+
+      place ConferenceTable at (18, 4), facing north
+      place OfficeChair at (16, 3), facing north
+      place OfficeChair at (17, 3), facing north
+      place OfficeChair at (19, 3), facing north
+      place OfficeChair at (20, 3), facing north
+      place OfficeChair at (16, 5), facing south
+      place OfficeChair at (17, 5), facing south
+      place OfficeChair at (19, 5), facing south
+      place OfficeChair at (20, 5), facing south
+    }
+
+    space "Multimedia Room" [public, exhibition] {
+      bounded_by: ["Education North", "Upper East Inner", "Photo Gallery South", "Education East"]
+      floor: PolishedConcrete
+      ceiling: CharcoalAccent
+      area: 42m²
+
+      door "Media Room Entry": ServiceDoor in "Education North" at 18m {
+        swing: inward
+        connects: "Education Workshop" <-> "Multimedia Room"
+      }
+
+      place GalleryBench at (27, 10), facing north
+      place GalleryBench at (27, 13), facing south
+    }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # FLOOR SLAB - Upper Level Floor / Terrace
+    # ─────────────────────────────────────────────────────────────────────────
+
+    slab "First Floor Slab" {
+      boundary: [(0, 0), (30, 0), (30, 22), (0, 22)]
+      thickness: 250mm
+      material: ExposedConcrete
+      type: floor
+    }
+  }
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # ROOFTOP - Sculpture Terrace
+  # Elevation: 9.5m | Height: 0.5m (parapet)
+  # ═════════════════════════════════════════════════════════════════════════════
+
+  level "Rooftop Terrace" at "First Floor".top, height: 1.5m {
+
+    # Parapet walls
+    wall "Roof South Parapet" from (0, 0) to (30, 0) {
+      thickness: 300mm
+      height: 1.2m
+      material: ExposedConcrete
+    }
+
+    wall "Roof East Parapet" from (30, 0) to (30, 22) {
+      thickness: 300mm
+      height: 1.2m
+      material: ExposedConcrete
+    }
+
+    wall "Roof North Parapet" from (30, 22) to (0, 22) {
+      thickness: 300mm
+      height: 1.2m
+      material: ExposedConcrete
+    }
+
+    wall "Roof West Parapet" from (0, 22) to (0, 0) {
+      thickness: 300mm
+      height: 1.2m
+      material: ExposedConcrete
+    }
+
+    space "Sculpture Terrace" [public, exhibition] {
+      bounded_by: ["Roof South Parapet", "Roof East Parapet", "Roof North Parapet", "Roof West Parapet"]
+      floor: PolishedConcrete
+      area: 660m²
+
+      place DisplayPedestal at (8, 6), facing south
+      place DisplayPedestal at (15, 6), facing south
+      place DisplayPedestal at (22, 6), facing south
+      place DisplayPedestal at (8, 16), facing north
+      place DisplayPedestal at (15, 16), facing north
+      place DisplayPedestal at (22, 16), facing north
+      place GalleryBench at (15, 11), facing east
+    }
+
+    slab "Roof Slab" {
+      boundary: [(0, 0), (30, 0), (30, 22), (0, 22)]
+      thickness: 300mm
+      material: ExposedConcrete
+      type: roof
+    }
+  }
+}

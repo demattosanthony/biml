@@ -1,24 +1,15 @@
-# BIML v2.1 (Types-Only)
+# BIML
 
 DSL for BIM model generation with coordinate-based wall definitions.
-
-## What's New in v2.1
-
-**Types-only model**: Removed the separate "family" concept. Types can now:
-- Define parameters directly: `param width: Length = 900mm`
-- Inherit from other types: `type SingleDoor : Door { ... }`
-- Override parameters: `width = 1000mm`
-
-This aligns with IFC's Type/Instance model and removes unnecessary Revit baggage.
 
 ## Quick Start
 
 ```bash
 # Compile .biml directly to IFC
-bun ./bin/cli.ts compile test/fixtures/simple.biml -o model.ifc
+bun ./bin/cli.ts test/fixtures/simple.biml -o model.ifc
 
 # Also output intermediate JSON IR
-bun ./bin/cli.ts compile test/fixtures/simple.biml -o model.ifc --ir
+bun ./bin/cli.ts test/fixtures/simple.biml -o model.ifc --ir
 
 # Or just parse to JSON IR (without IFC generation)
 bun ./bin/cli.ts parse test/fixtures/simple.biml -o output.json
@@ -76,7 +67,7 @@ building "Office Building" {
 
 ## Key Features
 
-### Types-Only System
+### Type System
 
 Types can define parameters, inherit, and override:
 
@@ -134,10 +125,8 @@ Libraries → Types → Building Elements
 ```
 
 - **Libraries**: Contain materials and types
-- **Types**: Define parameters and can inherit from other types  
+- **Types**: Define parameters and can inherit from other types
 - **Building Elements**: Reference types (doors, windows, furniture)
-
-This is simpler than the previous Library → Family → Type → Instance hierarchy.
 
 ## Run Tests
 
@@ -151,34 +140,11 @@ cd ../compiler && uv run pytest
 
 ## Standard Library
 
-The stdlib contains curated parametric types (all using the types-only model):
+Import stdlib files by path:
 
-- `stdlib/elements/doors.biml` - 20+ door types
-- `stdlib/elements/windows.biml` - 20+ window types
-- `stdlib/furniture/office.biml` - Desks, chairs, tables
-- `stdlib/structure/columns.biml` - Column and beam types
-- `stdlib/materials/common.biml` - Material definitions
+- `stdlib/elements/doors.biml`
+- `stdlib/elements/windows.biml`
+- `stdlib/furniture/office.biml`
+- `stdlib/structure/columns.biml`
+- `stdlib/materials/common.biml`
 
-## Migration from v2.0
-
-Replace `family` + `extends` with types-only syntax:
-
-**Before (v2.0):**
-```biml
-family Door {
-  param width: Length = 900mm
-}
-type SingleDoor extends Door {
-  material: Oak
-}
-```
-
-**After (v2.1):**
-```biml
-type Door {
-  param width: Length = 900mm
-}
-type SingleDoor : Door {
-  material: Oak
-}
-```

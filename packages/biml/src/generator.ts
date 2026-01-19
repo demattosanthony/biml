@@ -1,11 +1,6 @@
 /**
- * BIML v2 Generator
+ * BIML Generator
  * Converts the Langium AST to JSON IR for the Python compiler.
- * 
- * Type System: Types only (no families)
- * - Types can define parameters (param name: Type = default)
- * - Types can inherit from other types (type Child : Parent { ... })
- * - Parameters from parent types are inherited and can be overridden
  */
 
 import type {
@@ -19,32 +14,20 @@ import type {
   Wall,
   Space,
   Door,
-  SpaceDoor,
   Window,
-  SpaceWindow,
   Column,
   Furniture,
-  SpaceFurniture,
   Slab,
   Expression,
   MeasurementLiteral,
   NumberLiteral,
   BooleanLiteral,
   StringLiteral,
-  BinaryExpression,
   Point2D,
   DoorPosition,
   WallReference,
   MaterialColorProperty,
-  GeometryExpression,
-  BoxGeometry,
-  CylinderGeometry,
-  ExtrudeGeometry,
-  ProfileExpression,
-  RectangleProfile,
-  CircleProfile,
-  LShapeProfile,
-} from "./generated/ast.js";
+} from "./generated/ast";
 
 // ============================================================================
 // IR Types
@@ -60,11 +43,6 @@ export interface Point2DIR {
   y: number;
 }
 
-export interface Point3DIR {
-  x: number;
-  y: number;
-  z: number;
-}
 
 export interface ColorIR {
   red: number;
@@ -92,11 +70,8 @@ export interface TypeIR {
   baseType?: string;           // Optional inheritance
   parameters: ParameterIR[];   // Parameter definitions (param name: Type = default)
   overrides: Record<string, ExpressionIR>;  // Parameter overrides (name = value)
-  geometry?: GeometryIR;
-  opening?: GeometryIR;
   material?: string;
   ifcClass?: string;
-  properties: Record<string, ExpressionIR>;
 }
 
 export interface LibraryIR {
@@ -106,43 +81,11 @@ export interface LibraryIR {
 }
 
 export interface ExpressionIR {
-  kind: "literal" | "measurement" | "boolean" | "string" | "binary" | "reference" | "conditional" | "unary" | "call";
+  kind: "literal" | "measurement" | "boolean" | "string";
   value?: number;
   unit?: string;
   boolValue?: boolean;
   stringValue?: string;
-  op?: string;
-  left?: ExpressionIR;
-  right?: ExpressionIR;
-  ref?: string[];
-  condition?: ExpressionIR;
-  then?: ExpressionIR;
-  else?: ExpressionIR;
-  operand?: ExpressionIR;
-  name?: string;
-  args?: ExpressionIR[];
-}
-
-export interface GeometryIR {
-  kind: "box" | "cylinder" | "extrude" | "sweep" | "union" | "subtract" | "intersect" | "reference";
-  width?: ExpressionIR;
-  depth?: ExpressionIR;
-  height?: ExpressionIR;
-  radius?: ExpressionIR;
-  profile?: ProfileIR;
-  left?: GeometryIR;
-  right?: GeometryIR;
-  ref?: string;
-}
-
-export interface ProfileIR {
-  kind: "rectangle" | "circle" | "polygon" | "l_shape";
-  width?: ExpressionIR;
-  depth?: ExpressionIR;
-  radius?: ExpressionIR;
-  flange?: ExpressionIR;
-  web?: ExpressionIR;
-  points?: Point2DIR[];
 }
 
 export interface WallIR {
@@ -152,13 +95,11 @@ export interface WallIR {
   thickness?: MeasurementIR;
   height?: MeasurementIR;
   material?: string;
-  alignedWith?: string;
 }
 
 export interface DoorPositionIR {
-  kind: "absolute" | "center" | "from_anchor";
+  kind: "absolute" | "center";
   value?: MeasurementIR;
-  anchor?: string;
 }
 
 export interface DoorIR {
@@ -194,7 +135,6 @@ export interface ColumnIR {
   width?: MeasurementIR;
   depth?: MeasurementIR;
   height?: MeasurementIR;
-  profile?: ProfileIR;
 }
 
 export interface FurnitureIR {
@@ -202,10 +142,7 @@ export interface FurnitureIR {
   typeRef: string;
   position: Point2DIR;
   facing?: string;
-  rotation?: MeasurementIR;
   size?: { width: MeasurementIR; depth: MeasurementIR };
-  count?: number;
-  spacing?: MeasurementIR;
 }
 
 export interface SlabIR {
@@ -218,9 +155,6 @@ export interface SlabIR {
 
 export interface WallReferenceIR {
   wall: string;
-  segmentStart?: MeasurementIR;
-  segmentEnd?: MeasurementIR;
-  reversed?: boolean;
 }
 
 export interface SpaceIR {
@@ -346,44 +280,6 @@ function generateExpression(expr: Expression): ExpressionIR {
       const s = expr as StringLiteral;
       return { kind: "string", stringValue: cleanName(s.value) };
     }
-    case "BinaryExpression": {
-      const bin = expr as BinaryExpression;
-      return {
-        kind: "binary",
-        op: bin.op,
-        left: generateExpression(bin.left),
-        right: generateExpression(bin.right),
-      };
-    }
-    case "ParameterReference": {
-      const ref = expr as { ref: { parts: string[] } };
-      return { kind: "reference", ref: ref.ref.parts };
-    }
-    case "ConditionalExpression": {
-      const cond = expr as { condition: Expression; then: Expression; else: Expression };
-      return {
-        kind: "conditional",
-        condition: generateExpression(cond.condition),
-        then: generateExpression(cond.then),
-        else: generateExpression(cond.else),
-      };
-    }
-    case "UnaryExpression": {
-      const unary = expr as { op: string; operand: Expression };
-      return {
-        kind: "unary",
-        op: unary.op,
-        operand: generateExpression(unary.operand),
-      };
-    }
-    case "FunctionCall": {
-      const call = expr as { name: string; args: Expression[] };
-      return {
-        kind: "call",
-        name: call.name,
-        args: call.args.map(generateExpression),
-      };
-    }
     default:
       throw new Error(`Unknown expression type: ${(expr as Expression).$type}`);
   }
@@ -394,8 +290,10 @@ function evaluateMeasurement(expr: Expression): MeasurementIR | undefined {
     const m = expr as MeasurementLiteral;
     return { value: m.value, unit: m.unit };
   }
-  // For complex expressions, we'd need full evaluation
-  // For now, return undefined and let the compiler handle it
+  if (expr.$type === "NumberLiteral") {
+    const n = expr as NumberLiteral;
+    return { value: n.value, unit: "m" };
+  }
   return undefined;
 }
 
@@ -406,109 +304,12 @@ function evaluateNumber(expr: Expression): number | undefined {
   if (expr.$type === "MeasurementLiteral") {
     return (expr as MeasurementLiteral).value;
   }
+  if (expr.$type === "BooleanLiteral") {
+    return (expr as BooleanLiteral).value === "true" ? 1 : 0;
+  }
   return undefined;
 }
 
-// ============================================================================
-// Geometry Generator
-// ============================================================================
-
-function generateProfile(profile: ProfileExpression): ProfileIR {
-  switch (profile.$type) {
-    case "RectangleProfile": {
-      const r = profile as RectangleProfile;
-      return {
-        kind: "rectangle",
-        width: generateExpression(r.width),
-        depth: generateExpression(r.depth),
-      };
-    }
-    case "CircleProfile": {
-      const c = profile as CircleProfile;
-      return {
-        kind: "circle",
-        radius: generateExpression(c.radius),
-      };
-    }
-    case "LShapeProfile": {
-      const l = profile as LShapeProfile;
-      return {
-        kind: "l_shape",
-        width: generateExpression(l.width),
-        depth: generateExpression(l.depth),
-        flange: generateExpression(l.flange),
-        web: generateExpression(l.web),
-      };
-    }
-    case "PolygonProfile": {
-      const p = profile as { points: Point2D[] };
-      return {
-        kind: "polygon",
-        points: p.points.map(pt => ({
-          x: evaluateNumber(pt.x) ?? 0,
-          y: evaluateNumber(pt.y) ?? 0,
-        })),
-      };
-    }
-    default:
-      throw new Error(`Unknown profile type: ${(profile as ProfileExpression).$type}`);
-  }
-}
-
-function generateGeometry(geom: GeometryExpression): GeometryIR {
-  switch (geom.$type) {
-    case "BoxGeometry": {
-      const b = geom as BoxGeometry;
-      return {
-        kind: "box",
-        width: generateExpression(b.width),
-        depth: generateExpression(b.depth),
-        height: generateExpression(b.height),
-      };
-    }
-    case "CylinderGeometry": {
-      const c = geom as CylinderGeometry;
-      return {
-        kind: "cylinder",
-        radius: generateExpression(c.radius),
-        height: generateExpression(c.height),
-      };
-    }
-    case "ExtrudeGeometry": {
-      const e = geom as ExtrudeGeometry;
-      return {
-        kind: "extrude",
-        profile: generateProfile(e.profile),
-        height: generateExpression(e.height),
-      };
-    }
-    case "GeometryBoolean": {
-      const bool = geom as { left: GeometryExpression; right: GeometryExpression };
-      // Determine which boolean operation based on context
-      // The grammar has union(), subtract(), intersect() as separate patterns
-      // For now, we need to check the actual type
-      if ("$type" in geom && geom.$type === "GeometryBoolean") {
-        // Check parent context for the operation type
-        // This is a simplification - in practice we'd need the operation from the AST
-        return {
-          kind: "union",
-          left: generateGeometry(bool.left),
-          right: generateGeometry(bool.right),
-        };
-      }
-      throw new Error("Unknown boolean geometry type");
-    }
-    case "GeometryReference": {
-      const ref = geom as { ref: string };
-      return {
-        kind: "reference",
-        ref: ref.ref,
-      };
-    }
-    default:
-      throw new Error(`Unknown geometry type: ${(geom as GeometryExpression).$type}`);
-  }
-}
 
 // ============================================================================
 // Material Generator
@@ -561,7 +362,6 @@ function generateType(type: Type): TypeIR {
     name: type.name,
     parameters: [],
     overrides: {},
-    properties: {},
   };
 
   // Handle inheritance
@@ -572,12 +372,10 @@ function generateType(type: Type): TypeIR {
   for (const member of type.members as TypeMember[]) {
     switch (member.$type) {
       case "TypeParameter": {
-        // New: Parameter definitions (param name: Type = default)
-        const param = member as { 
-          name: string; 
-          paramType: string; 
+        const param = member as {
+          name: string;
+          paramType: string;
           defaultValue?: Expression;
-          constraint?: { min: Expression; max: Expression };
         };
         const paramIR: ParameterIR = {
           name: param.name,
@@ -586,10 +384,6 @@ function generateType(type: Type): TypeIR {
         if (param.defaultValue) {
           paramIR.defaultValue = generateExpression(param.defaultValue);
         }
-        if (param.constraint) {
-          paramIR.min = generateExpression(param.constraint.min);
-          paramIR.max = generateExpression(param.constraint.max);
-        }
         ir.parameters.push(paramIR);
         break;
       }
@@ -597,16 +391,6 @@ function generateType(type: Type): TypeIR {
         // Parameter override (name = value)
         const override = member as { name: string; value: Expression };
         ir.overrides[override.name] = generateExpression(override.value);
-        break;
-      }
-      case "TypeGeometry": {
-        const geom = member as { expression: GeometryExpression };
-        ir.geometry = generateGeometry(geom.expression);
-        break;
-      }
-      case "TypeOpening": {
-        const opening = member as { expression: GeometryExpression };
-        ir.opening = generateGeometry(opening.expression);
         break;
       }
       case "TypeMaterial": {
@@ -619,11 +403,6 @@ function generateType(type: Type): TypeIR {
       case "TypeIfcClass": {
         const ifc = member as { className: string };
         ir.ifcClass = ifc.className;
-        break;
-      }
-      case "TypeProperty": {
-        const prop = member as { name: string; value: Expression };
-        ir.properties[prop.name] = generateExpression(prop.value);
         break;
       }
     }
@@ -666,14 +445,6 @@ function generateDoorPosition(position: DoorPosition): DoorPositionIR {
     }
     case "CenterPosition":
       return { kind: "center" };
-    case "FromAnchorPosition": {
-      const anchor = position as { value: Expression; anchor: string };
-      return {
-        kind: "from_anchor",
-        value: evaluateMeasurement(anchor.value),
-        anchor: anchor.anchor,
-      };
-    }
     default:
       return { kind: "center" };
   }
@@ -686,13 +457,9 @@ function generateDoorPosition(position: DoorPosition): DoorPositionIR {
 function generateWall(wall: Wall): WallIR {
   const ir: WallIR = {
     name: cleanName(wall.name),
-    start: wall.start ? generatePoint2D(wall.start) : { x: 0, y: 0 },
-    end: wall.end ? generatePoint2D(wall.end) : { x: 0, y: 0 },
+    start: generatePoint2D(wall.start),
+    end: generatePoint2D(wall.end),
   };
-
-  if (wall.alignedWith?.ref) {
-    ir.alignedWith = cleanName(wall.alignedWith.ref.name);
-  }
 
   if (wall.properties) {
     for (const prop of wall.properties.properties) {
@@ -721,7 +488,7 @@ function generateWall(wall: Wall): WallIR {
 // Door & Window Generators
 // ============================================================================
 
-function generateDoor(door: Door | SpaceDoor): DoorIR {
+function generateDoor(door: Door): DoorIR {
   const ir: DoorIR = {
     name: cleanName(door.name),
     wall: door.wall.ref ? cleanName(door.wall.ref.name) : (door.wall.$refText || ""),
@@ -746,10 +513,10 @@ function generateDoor(door: Door | SpaceDoor): DoorIR {
           ir.swing = (prop as { direction: string }).direction;
           break;
         case "DoorConnectsProperty": {
-          const connects = prop as { from: { ref?: { name: string } }; to: { ref?: { name: string } } };
+          const connects = prop as { from: string; to: string };
           ir.connects = {
-            from: connects.from.ref ? cleanName(connects.from.ref.name) : "this",
-            to: connects.to.ref ? cleanName(connects.to.ref.name) : "exterior",
+            from: cleanName(connects.from),
+            to: cleanName(connects.to),
           };
           break;
         }
@@ -767,7 +534,7 @@ function generateDoor(door: Door | SpaceDoor): DoorIR {
   return ir;
 }
 
-function generateWindow(window: Window | SpaceWindow): WindowIR {
+function generateWindow(window: Window): WindowIR {
   const ir: WindowIR = {
     name: cleanName(window.name),
     wall: window.wall.ref ? cleanName(window.wall.ref.name) : (window.wall.$refText || ""),
@@ -831,11 +598,6 @@ function generateColumn(column: Column): ColumnIR {
         case "ColumnHeightProperty":
           ir.height = evaluateMeasurement((prop as { value: Expression }).value);
           break;
-        case "ColumnProfileProperty": {
-          const profile = prop as { profile: ProfileExpression };
-          ir.profile = generateProfile(profile.profile);
-          break;
-        }
       }
     }
   }
@@ -847,7 +609,7 @@ function generateColumn(column: Column): ColumnIR {
 // Furniture Generator
 // ============================================================================
 
-function generateFurniture(furniture: Furniture | SpaceFurniture): FurnitureIR {
+function generateFurniture(furniture: Furniture): FurnitureIR {
   const ir: FurnitureIR = {
     typeRef: furniture.typeRef.ref?.name || furniture.typeRef.$refText || "",
     position: generatePoint2D(furniture.position),
@@ -861,15 +623,12 @@ function generateFurniture(furniture: Furniture | SpaceFurniture): FurnitureIR {
     // Handle inline properties (from inlineProps)
     const body = furniture.body as { properties?: unknown[]; inlineProps?: unknown[] };
     const props = [...(body.properties ?? []), ...(body.inlineProps ?? [])];
-    
+
     for (const prop of props) {
       const p = prop as { $type: string };
       switch (p.$type) {
         case "FurnitureFacingProperty":
           ir.facing = (prop as { direction: string }).direction;
-          break;
-        case "FurnitureRotationProperty":
-          ir.rotation = evaluateMeasurement((prop as { angle: Expression }).angle);
           break;
         case "FurnitureSizeProperty": {
           const size = prop as { width: Expression; depth: Expression };
@@ -879,12 +638,6 @@ function generateFurniture(furniture: Furniture | SpaceFurniture): FurnitureIR {
           };
           break;
         }
-        case "FurnitureCountProperty":
-          ir.count = (prop as { count: number }).count;
-          break;
-        case "FurnitureSpacingProperty":
-          ir.spacing = evaluateMeasurement((prop as { spacing: Expression }).spacing);
-          break;
       }
     }
   }
@@ -933,20 +686,9 @@ function generateSlab(slab: Slab): SlabIR {
 // ============================================================================
 
 function generateWallReference(ref: WallReference): WallReferenceIR {
-  const ir: WallReferenceIR = {
+  return {
     wall: ref.wall.ref ? cleanName(ref.wall.ref.name) : "",
   };
-
-  if (ref.segment) {
-    if (ref.segment.start && ref.segment.end) {
-      ir.segmentStart = evaluateMeasurement(ref.segment.start);
-      ir.segmentEnd = evaluateMeasurement(ref.segment.end);
-    } else {
-      ir.reversed = true;
-    }
-  }
-
-  return ir;
 }
 
 // ============================================================================
@@ -994,14 +736,14 @@ function generateSpace(space: Space): SpaceIR {
 
   for (const element of space.elements) {
     switch (element.$type) {
-      case "SpaceDoor":
-        ir.doors.push(generateDoor(element as SpaceDoor));
+      case "Door":
+        ir.doors.push(generateDoor(element as Door));
         break;
-      case "SpaceWindow":
-        ir.windows.push(generateWindow(element as SpaceWindow));
+      case "Window":
+        ir.windows.push(generateWindow(element as Window));
         break;
-      case "SpaceFurniture":
-        ir.furniture.push(generateFurniture(element as SpaceFurniture));
+      case "Furniture":
+        ir.furniture.push(generateFurniture(element as Furniture));
         break;
     }
   }
@@ -1131,7 +873,7 @@ function generateBuilding(building: Building): BuildingIR {
 
 export function generateJsonIR(model: Model): JsonIR {
   return {
-    version: "2.1.0",  // Bumped version for types-only model
+    version: "1.0.0",
     libraries: model.libraries.map(generateLibrary),
     buildings: model.buildings.map(generateBuilding),
   };

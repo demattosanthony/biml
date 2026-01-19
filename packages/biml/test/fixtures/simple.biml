@@ -1,6 +1,8 @@
-# Simple BIML v2.1 Example
+# Simple BIML Example
 # A basic office with two rooms and connecting door
-# Uses types-only model (no families)
+
+import "stdlib/elements/doors.biml"
+import "stdlib/materials/common.biml"
 
 library "Doors" {
   material WarmOak {
@@ -11,19 +13,16 @@ library "Doors" {
     color: white
   }
 
-  # Base door type with default parameters
   type Door {
     param width: Length = 900mm
     param height: Length = 2100mm
     ifc_class: IfcDoor
   }
 
-  # Inherits from Door, uses oak material
   type SingleDoor : Door {
     material: WarmOak
   }
 
-  # Interior door with narrower width
   type InteriorDoor : Door {
     width = 800mm
     material: WhitePaint
@@ -46,7 +45,7 @@ building "Simple Office" {
 
     # Reception space on the left
     space "Reception" [public, reception] {
-      bounded_by: ["South".part(0m, 8m), "Interior", "North".part(0m, 8m), "West"]
+      bounded_by: ["South", "Interior", "North", "West"]
 
       door "Main Entry": SingleDoor in "South" at 4m {
         swing: outward
@@ -55,7 +54,7 @@ building "Simple Office" {
 
     # Office space on the right
     space "Office" [private, office] {
-      bounded_by: ["South".part(8m, 15m), "East", "North".part(8m, 15m), "Interior"]
+      bounded_by: ["South", "East", "North", "Interior"]
 
       door "Office Door": InteriorDoor in "Interior" at 5m {
         swing: inward

@@ -1,48 +1,13 @@
-# BIML Standard Library (v2.1)
-# 
-# This file serves as documentation for the stdlib structure.
-# Individual library files can be imported as needed.
+# BIML Standard Library
 #
-# Type System:
-#   BIML uses a types-only model (no families). Types can:
-#   - Define parameters with defaults: param width: Length = 900mm
-#   - Inherit from other types: type SingleDoor : Door { ... }
-#   - Override parameter values: width = 1000mm
+# Import by file path:
+#   import "stdlib/elements/doors.biml"
+#   import "stdlib/elements/windows.biml"
+#   import "stdlib/furniture/office.biml"
+#   import "stdlib/structure/columns.biml"
+#   import "stdlib/materials/common.biml"
 #
-# Available libraries:
-#
-# Materials:
-#   - stdlib.materials (common materials: wood, metal, glass, etc.)
-#
-# Elements:
-#   - stdlib.doors (20+ door types)
-#   - stdlib.windows (20+ window types)
-#
-# Furniture:
-#   - stdlib.furniture.office (desks, chairs, tables, storage)
-#
-# Structure:
-#   - stdlib.structure (columns, beams)
-#
-# Usage:
-#   import stdlib.doors.{ SingleDoor, DoubleDoor, FireDoor }
-#   import stdlib.windows.{ CasementWindow, FixedWindow }
-#   import stdlib.furniture.office.{ StandardDesk, OfficeChair }
-#
-# Or import everything from a library:
-#   import stdlib.doors.*
-#
-# Inheritance Example:
-#   type Door {
-#     param width: Length = 900mm
-#     param height: Length = 2100mm
-#   }
-#
-#   type SingleDoor : Door {
-#     material: WarmOak
-#   }
-#
-#   type FireDoor : SingleDoor {
-#     width = 1000mm
-#     material: SteelGray
-#   }
+# Example:
+#   type Door { param width: Length = 900mm }
+#   type SingleDoor : Door { material: DoorOak }
+#   type FireDoor : Door { width = 1000mm }

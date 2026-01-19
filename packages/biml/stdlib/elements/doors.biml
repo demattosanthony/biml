@@ -1,23 +1,13 @@
 # Standard Door Library
 # Common door types for architectural design
-# Uses types-only model (no families)
 
 library "stdlib.doors" {
-  # Materials for doors
   material DoorOak {
     color: oak
   }
 
-  material DoorWalnut {
-    color: walnut
-  }
-
   material DoorSteel {
     color: steel
-  }
-
-  material DoorWhite {
-    color: white
   }
 
   material DoorGlass {
@@ -25,145 +15,30 @@ library "stdlib.doors" {
     transparency: 0.2
   }
 
-  # Base door type with standard parameters
   type Door {
-    param width: Length = 900mm in 600mm..2400mm
-    param height: Length = 2100mm in 1800mm..3000mm
-    param thickness: Length = 45mm in 35mm..55mm
+    param width: Length = 900mm
+    param height: Length = 2100mm
+    param thickness: Length = 45mm
     ifc_class: IfcDoor
   }
 
-  # ============================================================================
-  # Single Doors
-  # ============================================================================
-
-  # Standard single door - most common residential/commercial door
   type SingleDoor : Door {
     material: DoorOak
   }
 
-  # Single door with glass panel
-  type SingleDoorGlass : Door {
-    material: DoorGlass
-  }
-
-  # Narrow utility door
-  type UtilityDoor : Door {
-    width = 760mm
-    height = 2000mm
-    material: DoorSteel
-  }
-
-  # Wide accessible door (ADA compliant)
-  type AccessibleDoor : Door {
-    width = 1000mm
-    material: DoorOak
-  }
-
-  # ============================================================================
-  # Double Doors
-  # ============================================================================
-
-  # Standard double door
   type DoubleDoor : Door {
     width = 1800mm
     material: DoorOak
   }
 
-  # Wide double door for main entrances
-  type DoubleDoorWide : Door {
-    width = 2100mm
-    material: DoorWalnut
-  }
-
-  # French doors with glass
-  type FrenchDoor : Door {
-    width = 1800mm
-    material: DoorGlass
-  }
-
-  # ============================================================================
-  # Fire-Rated Doors
-  # ============================================================================
-
-  # 60-minute fire-rated door
   type FireDoor : Door {
     width = 1000mm
     thickness = 54mm
     material: DoorSteel
   }
 
-  # Fire exit door with panic hardware
-  type FireExitDoor : Door {
-    width = 1000mm
-    thickness = 54mm
-    material: DoorSteel
-  }
-
-  # ============================================================================
-  # Specialty Doors
-  # ============================================================================
-
-  # Sliding door
   type SlidingDoor : Door {
     width = 1800mm
     material: DoorGlass
-  }
-
-  # Pocket door (slides into wall)
-  type PocketDoor : Door {
-    width = 900mm
-    material: DoorWhite
-  }
-
-  # Barn door (surface mounted sliding)
-  type BarnDoor : Door {
-    width = 1000mm
-    material: DoorOak
-  }
-
-  # Bi-fold door
-  type BiFoldDoor : Door {
-    width = 1800mm
-    material: DoorOak
-  }
-
-  # Revolving door
-  type RevolvingDoor : Door {
-    width = 2400mm
-    height = 2400mm
-    material: DoorGlass
-  }
-
-  # ============================================================================
-  # Commercial Doors
-  # ============================================================================
-
-  # Storefront entry
-  type StorefrontDoor : Door {
-    width = 1000mm
-    height = 2400mm
-    material: DoorGlass
-  }
-
-  # Automatic sliding door
-  type AutomaticDoor : Door {
-    width = 1800mm
-    height = 2400mm
-    material: DoorGlass
-  }
-
-  # Service door (loading dock, etc.)
-  type ServiceDoor : Door {
-    width = 1200mm
-    height = 2400mm
-    material: DoorSteel
-  }
-
-  # Overhead door (garage)
-  type OverheadDoor : Door {
-    width = 2700mm
-    height = 2100mm
-    material: DoorSteel
   }
 }

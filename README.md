@@ -1,9 +1,9 @@
-# Building Information Modeling Language (BIML) v2
+# Building Information Modeling Language (BIML)
 
 BIML is a domain-specific language designed for BIM model generation.
 
 - **Compiles to IFC:** Easily integrates with existing BIM tools
-- **Parametric design:** Define families with parameters, create types that inherit and override values
+- **Parametric design:** Define types with parameters, extend types to inherit and override values
 - **Coordinate-based:** Walls defined by explicit coordinates, not grids
 - **AI-friendly:** Designed for AI agents to generate BIM models
 - **Standard library:** Curated types for doors, windows, furniture, and structure
@@ -40,13 +40,16 @@ bun install
 ### Usage
 
 ```bash
-# Compile .biml directly to IFC
+# Compile .biml to IFC (defaults to input name with .ifc)
+bun run bimlc packages/biml/test/fixtures/simple.biml
+
+# Compile and choose output path
 bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc
 
-# Also output intermediate JSON IR
+# Also output intermediate JSON IR (writes alongside .ifc as .json)
 bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc --ir
 
-# Or just parse to JSON IR (without IFC generation)
+# Parse to JSON IR only (defaults to stdout)
 bun run bimlc parse packages/biml/test/fixtures/simple.biml -o output.json
 ```
 
@@ -59,16 +62,20 @@ library "Doors" {
     color: oak
   }
 
-  family Door {
+  # Base type with parameters
+  type Door {
     param width: Length = 900mm
     param height: Length = 2100mm
+    param thickness: Length = 45mm
+    ifc_class: IfcDoor
   }
 
-  type SingleDoor extends Door {
+  # Types extend other types with `: ParentType`
+  type SingleDoor : Door {
     material: Oak
   }
 
-  type DoubleDoor extends Door {
+  type DoubleDoor : Door {
     width = 1800mm
     material: Oak
   }
@@ -81,6 +88,8 @@ building "Office Building" {
     ceiling_height: 2700mm
   }
 
+  site "Main Campus" at (37.7749, -122.4194)
+
   level "Ground" at 0m, height: 3.5m {
     # Walls defined by start/end coordinates
     wall "North" from (0, 10) to (15, 10)
@@ -92,14 +101,18 @@ building "Office Building" {
     # Spaces bounded by walls
     space "Lobby" [public, reception] {
       bounded_by: ["South", "Interior", "North", "West"]
+      floor: Concrete
+      ceiling: White
 
       # Doors placed in walls at specific positions
       door "Main Entry": DoubleDoor in "South" at 4m {
         swing: outward
       }
+
+      place ReceptionDesk at (3, 5), facing north
     }
 
-    space "Office" [private] {
+    space "Office" [private, office] {
       bounded_by: ["South", "East", "North", "Interior"]
 
       door "Office Door": SingleDoor in "Interior" at 5m {
@@ -109,12 +122,22 @@ building "Office Building" {
 
       window "W1": CasementWindow in "East" at 3m
     }
+
+    column "C1" at (8, 5) {
+      width: 400mm
+      depth: 400mm
+    }
   }
 
   level "Level 1" at "Ground".top, height: 3m {
-    # Walls can align with lower level
     wall "North" from (0, 10) to (15, 10)
-    # ... more walls
+    wall "East" from (15, 10) to (15, 0)
+    wall "South" from (15, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 10)
+
+    space "Upper Office" [office] {
+      bounded_by: ["South", "East", "North", "West"]
+    }
   }
 }
 ```
@@ -123,37 +146,51 @@ building "Office Building" {
 
 ### Type Libraries
 
-Libraries define parametric families, types, and materials:
+Libraries define materials and types. Types are unified - they can define parameters AND extend other types:
 
 ```biml
 library "MyLibrary" {
-  # Materials with colors
+  # Materials with named colors
   material Wood {
     color: oak
   }
 
+  # Materials with hex colors
+  material CustomGray {
+    color: #808080
+  }
+
+  # Materials with transparency
   material Glass {
     color: glass
     transparency: 0.2
   }
 
-  # Families define parameters with defaults and constraints
-  family Door {
-    param width: Length = 900mm in 600mm..1200mm
+  # Base type with parameters
+  type Door {
+    param width: Length = 900mm
     param height: Length = 2100mm
+    param thickness: Length = 45mm
+    ifc_class: IfcDoor
   }
 
-  # Types extend families with specific values
-  type SingleDoor extends Door {
+  # Types extend other types with `: ParentType`
+  type SingleDoor : Door {
     material: Wood
   }
 
-  # Types can extend other types
+  # Types can override inherited parameters
   type FireDoor : SingleDoor {
     width = 1000mm
   }
 }
 ```
+
+Available named colors: `white`, `black`, `red`, `green`, `blue`, `grey`, `gray`, `brown`, `wood`, `steel`, `glass`, `oak`, `walnut`, `mahogany`, `silver`, `gold`, `bronze`, `copper`, `concrete`, `brick`
+
+Parameter types: `Length`, `Area`, `Number`, `Boolean`, `String`
+
+Units: `m`, `cm`, `mm`, `ft`, `in` (length), `m²`, `ft²`, `sqm`, `sqft` (area)
 
 ### Buildings and Levels
 
@@ -161,7 +198,10 @@ library "MyLibrary" {
 building "Building Name" {
   defaults {
     wall_thickness: 200mm
+    floor_thickness: 200mm
     ceiling_height: 2700mm
+    door_height: 2100mm
+    window_sill: 900mm
   }
 
   site "Site Name" at (lat, long)
@@ -171,7 +211,7 @@ building "Building Name" {
   }
 
   level "Next Level" at "Level Name".top, height: 3m {
-    # Relative elevation
+    # Relative elevation using previous level
   }
 }
 ```
@@ -193,15 +233,14 @@ wall "Thick" from (0, 0) to (10, 0), thickness: 300mm
 Spaces are bounded by wall references:
 
 ```biml
-space "Room Name" [tags] {
+space "Room Name" [public, office] {
   bounded_by: ["Wall1", "Wall2", "Wall3", "Wall4"]
-  
+
   # Optional properties
-  area: 50m²
+  floor: ConcreteMaterial
+  ceiling: GypsumMaterial
   height: 3m
-  floor: Concrete
-  ceiling: Gypsum
-  
+
   # Elements within the space
   door "D1": DoorType in "Wall1" at 2m
   window "W1": WindowType in "Wall2" at center
@@ -209,9 +248,11 @@ space "Room Name" [tags] {
 }
 ```
 
+Available space tags: `public`, `private`, `circulation`, `service`, `technical`, `reception`, `office`, `meeting`, `storage`, `restroom`, `kitchen`, `dining`, `residential`, `retail`, `parking`
+
 ### Door Placement
 
-Doors are placed in walls with position:
+Doors are placed in walls with position (distance from wall start or `center`):
 
 ```biml
 # Absolute position (distance from wall start)
@@ -220,15 +261,14 @@ door "D1": SingleDoor in "South" at 5m
 # Center of wall
 door "D2": DoubleDoor in "North" at center
 
-# From an anchor point
-door "D3": FireDoor in "East" at 2m from start
-
 # With properties
-door "D4": SingleDoor in "West" at 3m {
+door "D3": SingleDoor in "West" at 3m {
   swing: inward
   connects: "Lobby" <-> "Office"
 }
 ```
+
+Swing directions: `inward`, `outward`, `left`, `right`, `double`, `sliding`, `pivot`
 
 ### Window Placement
 
@@ -242,14 +282,22 @@ window "W2": CasementWindow in "East" at center {
 ### Furniture Placement
 
 ```biml
+# Basic placement
+place DeskType at (3, 4)
+
+# With optional name
 place DeskType "My Desk" at (3, 4)
+
+# Inline facing direction
 place ChairType at (3, 5), facing north
+
+# Block syntax with facing
 place TableType at (5, 5) {
-  rotation: 45deg
-  count: 4
-  spacing: 2m
+  facing south
 }
 ```
+
+Facing directions: `north`, `south`, `east`, `west`
 
 ### Columns
 
@@ -269,8 +317,8 @@ stdlib/
 ├── materials/
 │   └── common.biml      # Wood, metal, glass, masonry materials
 ├── elements/
-│   ├── doors.biml       # 20+ door types
-│   └── windows.biml     # 20+ window types
+│   ├── doors.biml       # SingleDoor, DoubleDoor, FireDoor, SlidingDoor
+│   └── windows.biml     # FixedWindow, PictureWindow, ClerestoryWindow
 ├── furniture/
 │   └── office.biml      # Desks, chairs, tables, storage
 └── structure/

@@ -5,14 +5,11 @@ import {
   type DefaultSharedCoreModuleContext,
   type LangiumCoreServices,
   type LangiumSharedCoreServices,
-  type ValidationChecks,
 } from "langium";
 import {
   BimGeneratedModule,
   BimLangGeneratedSharedModule,
-} from "../generated/module.js";
-import { registerValidationChecks } from "./bim-validator.js";
-import type { BimLangAstType } from "../generated/ast.js";
+} from "../generated/module";
 
 /**
  * Combined services type for BIML.
@@ -34,11 +31,6 @@ export function createBimServices(context: DefaultSharedCoreModuleContext): {
   );
 
   shared.ServiceRegistry.register(Bim);
-
-  // Register validation checks
-  const checks: ValidationChecks<BimLangAstType> = {};
-  registerValidationChecks(checks);
-  Bim.validation.ValidationRegistry.register(checks);
 
   return { shared, Bim };
 }

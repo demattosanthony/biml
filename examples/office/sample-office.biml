@@ -1,0 +1,342 @@
+# Sample Office Building
+# Demonstrates many BIML features
+
+import "stdlib/materials/common.biml"
+import "stdlib/elements/doors.biml"
+import "stdlib/elements/windows.biml"
+import "stdlib/furniture/office.biml"
+import "stdlib/structure/columns.biml"
+
+# Custom materials for this project
+library "ProjectMaterials" {
+  material WalnutWood {
+    color: walnut
+  }
+
+  material FrostedGlass {
+    color: glass
+    transparency: 0.4
+  }
+
+  material BrushedSteel {
+    color: steel
+  }
+
+  material WhitePaint {
+    color: white
+  }
+}
+
+# Custom door types extending stdlib
+library "ProjectDoors" {
+  material ExecutiveOak {
+    color: mahogany
+  }
+
+  type ExecutiveDoor : Door {
+    width = 1000mm
+    height = 2400mm
+    material: ExecutiveOak
+  }
+
+  type GlassPartitionDoor : Door {
+    width = 900mm
+    material: FrostedGlass
+  }
+}
+
+# Custom window types
+library "ProjectWindows" {
+  type FloorToCeilingWindow : Window {
+    width = 1500mm
+    height = 2700mm
+    sill_height = 0mm
+    material: WindowGlass
+  }
+
+  type CornerWindow : Window {
+    width = 2000mm
+    height = 2000mm
+    sill_height = 800mm
+    material: WindowGlass
+  }
+}
+
+# Custom furniture
+library "ProjectFurniture" {
+  type ExecutiveDesk : Desk {
+    width = 2000mm
+    depth = 1000mm
+  }
+
+  type RoundTable : Table {
+    width = 1200mm
+    depth = 1200mm
+  }
+
+  type Sofa {
+    param width: Length = 2000mm
+    param depth: Length = 900mm
+    param height: Length = 800mm
+    ifc_class: IfcFurniture
+  }
+
+  type LoungeChair : Chair {
+    width = 800mm
+    depth = 800mm
+  }
+
+  type Bookshelf : Storage {
+    width = 1200mm
+    depth = 350mm
+    height = 2000mm
+  }
+}
+
+building "Tech Startup HQ" {
+  defaults {
+    wall_thickness: 150mm
+    floor_thickness: 200mm
+    ceiling_height: 2800mm
+    door_height: 2100mm
+    window_sill: 900mm
+  }
+
+  site "Innovation District" at (37.7849, -122.4094)
+
+  # Ground Floor - Reception, Open Office, Meeting Rooms
+  level "Ground Floor" at 0m, height: 4m {
+    # Exterior walls (20m x 15m building footprint)
+    wall "North" from (0, 15) to (20, 15)
+    wall "East" from (20, 15) to (20, 0)
+    wall "South" from (20, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 15)
+
+    # Interior walls
+    wall "Reception-Divider" from (0, 10) to (6, 10)
+    wall "Office-North" from (6, 10) to (20, 10)
+    wall "Meeting-West" from (6, 10) to (6, 15)
+    wall "Kitchen-Wall" from (14, 10) to (14, 15)
+
+    # Reception/Lobby
+    space "Reception" [public, reception] {
+      bounded_by: ["South", "Reception-Divider", "Meeting-West", "West"]
+      floor: WhitePaint
+      ceiling: WhitePaint
+
+      door "Main Entrance": DoubleDoor in "South" at 3m {
+        swing: outward
+      }
+
+      place StandardDesk "Reception Desk" at (3, 7), facing south
+      place OfficeChair at (3, 8), facing south
+      place Sofa at (1.5, 2), facing east
+      place LoungeChair at (4, 2), facing west
+    }
+
+    # Open Office Area
+    space "Open Office" [office] {
+      bounded_by: ["Reception-Divider", "Office-North", "East", "South"]
+
+      door "Office Entry": GlassPartitionDoor in "Reception-Divider" at 4m {
+        swing: inward
+        connects: "Reception" <-> "Open Office"
+      }
+
+      window "W1": FixedWindow in "South" at 10m
+      window "W2": FixedWindow in "South" at 14m
+      window "W3": FixedWindow in "South" at 18m
+      window "W4": PictureWindow in "East" at 3m
+
+      # Workstations row 1
+      place StandardDesk at (8, 3)
+      place OfficeChair at (8, 2), facing north
+      place StandardDesk at (11, 3)
+      place OfficeChair at (11, 2), facing north
+      place StandardDesk at (14, 3)
+      place OfficeChair at (14, 2), facing north
+      place StandardDesk at (17, 3)
+      place OfficeChair at (17, 2), facing north
+
+      # Workstations row 2
+      place StandardDesk at (8, 7)
+      place OfficeChair at (8, 8), facing south
+      place StandardDesk at (11, 7)
+      place OfficeChair at (11, 8), facing south
+      place StandardDesk at (14, 7)
+      place OfficeChair at (14, 8), facing south
+      place StandardDesk at (17, 7)
+      place OfficeChair at (17, 8), facing south
+
+      place FilingCabinet at (19, 5)
+    }
+
+    # Meeting Room
+    space "Meeting Room A" [meeting] {
+      bounded_by: ["Meeting-West", "North", "Kitchen-Wall", "Office-North"]
+
+      door "Meeting Door": SingleDoor in "Meeting-West" at 2m {
+        swing: inward
+        connects: "Reception" <-> "Meeting Room A"
+      }
+
+      window "W5": FixedWindow in "North" at 8m
+
+      place ConferenceTable at (10, 12.5)
+      place OfficeChair at (8, 12.5), facing east
+      place OfficeChair at (12, 12.5), facing west
+      place OfficeChair at (10, 11), facing north
+      place OfficeChair at (10, 14), facing south
+    }
+
+    # Kitchen/Break Room
+    space "Kitchen" [service, kitchen] {
+      bounded_by: ["Kitchen-Wall", "North", "East", "Office-North"]
+
+      door "Kitchen Entry": SingleDoor in "Kitchen-Wall" at 2m {
+        swing: double
+      }
+
+      window "W6": ClerestoryWindow in "North" at 17m
+      window "W7": FixedWindow in "East" at 12m
+    }
+
+    # Structural columns
+    column "C1" at (5, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+
+    column "C2" at (10, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+
+    column "C3" at (15, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+  }
+
+  # First Floor - Executive Offices, Conference, Lounge
+  level "First Floor" at "Ground Floor".top, height: 3.5m {
+    # Exterior walls (same footprint)
+    wall "North" from (0, 15) to (20, 15)
+    wall "East" from (20, 15) to (20, 0)
+    wall "South" from (20, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 15)
+
+    # Interior walls
+    wall "Corridor" from (0, 7.5) to (20, 7.5)
+    wall "Office1-East" from (5, 7.5) to (5, 15)
+    wall "Office2-East" from (10, 7.5) to (10, 15)
+    wall "Conf-West" from (14, 7.5) to (14, 15)
+
+    # CEO Office
+    space "CEO Office" [private, office] {
+      bounded_by: ["West", "North", "Office1-East", "Corridor"]
+
+      door "CEO Door": ExecutiveDoor in "Corridor" at 2.5m {
+        swing: inward
+      }
+
+      window "W8": FloorToCeilingWindow in "West" at 7m
+      window "W9": CornerWindow in "North" at 2m
+
+      place ExecutiveDesk at (2.5, 11), facing south
+      place OfficeChair at (2.5, 12), facing south
+      place LoungeChair at (1.5, 9), facing east
+      place Bookshelf at (4.5, 14)
+    }
+
+    # CTO Office
+    space "CTO Office" [private, office] {
+      bounded_by: ["Office1-East", "North", "Office2-East", "Corridor"]
+
+      door "CTO Door": ExecutiveDoor in "Corridor" at 7.5m {
+        swing: inward
+      }
+
+      window "W10": FixedWindow in "North" at 7m
+
+      place ExecutiveDesk at (7.5, 11), facing south
+      place OfficeChair at (7.5, 12), facing south
+      place FilingCabinet at (9.5, 14)
+    }
+
+    # Large Conference Room
+    space "Board Room" [meeting] {
+      bounded_by: ["Office2-East", "North", "East", "Conf-West"]
+
+      door "Board Room Door": DoubleDoor in "Conf-West" at 3m {
+        swing: inward
+      }
+
+      window "W11": PictureWindow in "North" at 15m
+      window "W12": PictureWindow in "East" at 12m
+
+      place ConferenceTable at (15, 11)
+      place OfficeChair at (13, 11), facing east
+      place OfficeChair at (17, 11), facing west
+      place OfficeChair at (14, 9.5), facing north
+      place OfficeChair at (16, 9.5), facing north
+      place OfficeChair at (14, 12.5), facing south
+      place OfficeChair at (16, 12.5), facing south
+    }
+
+    # Staff Lounge
+    space "Lounge" [public, circulation] {
+      bounded_by: ["West", "Corridor", "Conf-West", "South"]
+
+      door "Lounge Entry": GlassPartitionDoor in "Corridor" at 12m {
+        swing: double
+      }
+
+      door "Fire Exit": FireDoor in "West" at 5m {
+        swing: outward
+      }
+
+      window "W13": FixedWindow in "South" at 5m
+      window "W14": FixedWindow in "South" at 10m
+
+      place Sofa at (3, 2), facing north
+      place Sofa at (8, 2), facing north
+      place RoundTable at (5.5, 5)
+      place LoungeChair at (4, 5), facing east
+      place LoungeChair at (7, 5), facing west
+    }
+
+    # Open workspace on first floor
+    space "Hot Desks" [office] {
+      bounded_by: ["Conf-West", "Corridor", "East", "South"]
+
+      window "W15": FixedWindow in "South" at 16m
+      window "W16": FixedWindow in "East" at 3m
+
+      place StandardDesk at (16, 2)
+      place OfficeChair at (16, 1), facing north
+      place StandardDesk at (18, 2)
+      place OfficeChair at (18, 1), facing north
+      place StandardDesk at (16, 5)
+      place OfficeChair at (16, 6), facing south
+      place StandardDesk at (18, 5)
+      place OfficeChair at (18, 6), facing south
+    }
+
+    # Structural columns (aligned with ground floor)
+    column "C4" at (5, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+
+    column "C5" at (10, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+
+    column "C6" at (15, 5) {
+      width: 400mm
+      depth: 400mm
+    }
+  }
+}

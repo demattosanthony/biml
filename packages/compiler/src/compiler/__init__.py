@@ -1,4 +1,4 @@
-"""BIML v2.1 Compiler - JSON IR to IFC transformation (types-only model)."""
+"""BIML Compiler - JSON IR to IFC transformation."""
 
 from .ir import (
     JsonIR,

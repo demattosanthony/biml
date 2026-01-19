@@ -1,241 +1,46 @@
 # Standard Office Furniture Library
 # Common furniture types for office design
-# Uses types-only model (no families)
 
 library "stdlib.furniture.office" {
-  # ============================================================================
-  # Desks
-  # ============================================================================
-
-  # Base desk type
   type Desk {
-    param width: Length = 1600mm in 1000mm..2400mm
-    param depth: Length = 800mm in 600mm..1000mm
-    param height: Length = 720mm in 680mm..760mm
+    param width: Length = 1600mm
+    param depth: Length = 800mm
+    param height: Length = 720mm
+    ifc_class: IfcFurniture
   }
 
-  # Standard office desk
   type StandardDesk : Desk { }
 
-  # Executive desk (larger)
-  type ExecutiveDesk : Desk {
-    width = 2000mm
-    depth = 900mm
-  }
-
-  # Compact desk (small office)
-  type CompactDesk : Desk {
-    width = 1200mm
-    depth = 600mm
-  }
-
-  # L-shaped desk
-  type LShapedDesk : Desk {
-    width = 1800mm
-    depth = 1800mm
-  }
-
-  # Standing desk
-  type StandingDesk : Desk {
-    width = 1600mm
-    depth = 800mm
-    height = 1100mm
-  }
-
-  # Adjustable height desk
-  type AdjustableDesk : Desk {
-    width = 1600mm
-    depth = 800mm
-  }
-
-  # Reception desk
-  type ReceptionDesk : Desk {
-    width = 2400mm
-    depth = 800mm
-    height = 1100mm
-  }
-
-  # ============================================================================
-  # Chairs
-  # ============================================================================
-
-  # Base chair type
   type Chair {
-    param width: Length = 600mm in 450mm..800mm
-    param depth: Length = 600mm in 500mm..700mm
-    param height: Length = 450mm in 400mm..550mm
+    param width: Length = 600mm
+    param depth: Length = 600mm
+    param height: Length = 450mm
+    ifc_class: IfcFurniture
   }
 
-  # Standard office chair
   type OfficeChair : Chair { }
 
-  # Executive chair
-  type ExecutiveChair : Chair {
-    width = 700mm
-    depth = 700mm
-  }
-
-  # Task chair (smaller)
-  type TaskChair : Chair {
-    width = 500mm
-    depth = 500mm
-  }
-
-  # Guest chair
-  type GuestChair : Chair {
-    width = 550mm
-    depth = 550mm
-  }
-
-  # Stool (for standing desks)
-  type Stool : Chair {
-    width = 400mm
-    depth = 400mm
-    height = 650mm
-  }
-
-  # ============================================================================
-  # Tables
-  # ============================================================================
-
-  # Base table type
   type Table {
-    param width: Length = 1200mm in 600mm..4000mm
-    param depth: Length = 800mm in 600mm..2000mm
-    param height: Length = 720mm in 680mm..760mm
+    param width: Length = 1200mm
+    param depth: Length = 800mm
+    param height: Length = 720mm
+    ifc_class: IfcFurniture
   }
 
-  # Conference table (small)
-  type SmallConferenceTable : Table {
-    width = 1800mm
-    depth = 900mm
-  }
-
-  # Conference table (medium)
-  type MediumConferenceTable : Table {
-    width = 2400mm
+  type ConferenceTable : Table {
+    width = 3000mm
     depth = 1200mm
   }
 
-  # Conference table (large)
-  type LargeConferenceTable : Table {
-    width = 3600mm
-    depth = 1500mm
-  }
-
-  # Round meeting table
-  type RoundMeetingTable : Table {
-    width = 1200mm
-    depth = 1200mm
-  }
-
-  # Coffee table
-  type CoffeeTable : Table {
-    width = 1000mm
-    depth = 600mm
-    height = 450mm
-  }
-
-  # Side table
-  type SideTable : Table {
-    width = 500mm
-    depth = 500mm
-    height = 550mm
-  }
-
-  # ============================================================================
-  # Storage
-  # ============================================================================
-
-  # Base storage type
   type Storage {
-    param width: Length = 800mm in 400mm..1200mm
-    param depth: Length = 450mm in 300mm..600mm
-    param height: Length = 1800mm in 700mm..2200mm
+    param width: Length = 800mm
+    param depth: Length = 450mm
+    param height: Length = 1800mm
+    ifc_class: IfcFurniture
   }
 
-  # Filing cabinet (2 drawer)
-  type FilingCabinet2 : Storage {
+  type FilingCabinet : Storage {
     width = 450mm
-    depth = 600mm
-    height = 700mm
-  }
-
-  # Filing cabinet (4 drawer)
-  type FilingCabinet4 : Storage {
-    width = 450mm
-    depth = 600mm
-    height = 1350mm
-  }
-
-  # Bookshelf
-  type Bookshelf : Storage {
-    width = 900mm
-    depth = 350mm
-    height = 1800mm
-  }
-
-  # Credenza
-  type Credenza : Storage {
-    width = 1800mm
-    depth = 450mm
-    height = 750mm
-  }
-
-  # Wardrobe/Locker
-  type Wardrobe : Storage {
-    width = 600mm
-    depth = 550mm
-    height = 1800mm
-  }
-
-  # Pedestal (under desk)
-  type Pedestal : Storage {
-    width = 400mm
-    depth = 500mm
-    height = 600mm
-  }
-
-  # ============================================================================
-  # Seating Areas
-  # ============================================================================
-
-  # Base seating type
-  type Seating {
-    param width: Length = 1800mm in 800mm..3000mm
-    param depth: Length = 800mm in 600mm..1000mm
-    param height: Length = 450mm in 400mm..500mm
-  }
-
-  # Two-seater sofa
-  type Loveseat : Seating {
-    width = 1400mm
-    depth = 850mm
-  }
-
-  # Three-seater sofa
-  type Sofa : Seating {
-    width = 2100mm
-    depth = 850mm
-  }
-
-  # Lounge chair
-  type LoungeChair : Seating {
-    width = 800mm
-    depth = 850mm
-  }
-
-  # Bench
-  type Bench : Seating {
-    width = 1500mm
-    depth = 450mm
-    height = 450mm
-  }
-
-  # Ottoman
-  type Ottoman : Seating {
-    width = 600mm
-    depth = 600mm
-    height = 400mm
+    height = 1400mm
   }
 }

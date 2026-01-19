@@ -1,7 +1,6 @@
 import type { ValidationAcceptor, ValidationChecks } from "langium";
 import type {
   BimLangAstType,
-  Model,
   Library,
   Type,
   Building,
@@ -9,22 +8,18 @@ import type {
   Wall,
   Space,
   Door,
-  SpaceDoor,
   Window,
-  SpaceWindow,
-  DoorConnectsProperty,
   BoundedByProperty,
-} from "../generated/ast.js";
+} from "../generated/ast";
 
 /**
- * BIML v2.1 Semantic Validator (types-only model)
+ * BIML Semantic Validator
  *
  * Validates semantic correctness of BIML models:
  * - Type references resolve correctly
  * - No duplicate names within scope
  * - Wall references in bounded_by exist
  * - Door/window wall references exist
- * - Connects references valid spaces
  */
 
 export function registerValidationChecks(checks: ValidationChecks<BimLangAstType>) {
@@ -33,9 +28,7 @@ export function registerValidationChecks(checks: ValidationChecks<BimLangAstType
 
   // Door/Window validations
   checks.Door = [checkDoorWallReference, checkDoorTypeReference];
-  checks.SpaceDoor = [checkSpaceDoorWallReference, checkSpaceDoorTypeReference, checkDoorConnectsReference];
   checks.Window = [checkWindowWallReference, checkWindowTypeReference];
-  checks.SpaceWindow = [checkSpaceWindowWallReference, checkSpaceWindowTypeReference];
 
   // Space validations
   checks.Space = [checkSpaceBoundedBy];
@@ -51,7 +44,7 @@ export function registerValidationChecks(checks: ValidationChecks<BimLangAstType
 // ============================================================================
 
 function checkTypeBaseReference(type: Type, accept: ValidationAcceptor): void {
-  // Check that the base type reference resolves (types-only model)
+  // Check that the base type reference resolves
   if (type.baseType && !type.baseType.ref) {
     accept("error", `Type '${type.baseType.$refText}' not found.`, {
       node: type,
@@ -82,56 +75,6 @@ function checkDoorTypeReference(door: Door, accept: ValidationAcceptor): void {
   }
 }
 
-function checkSpaceDoorWallReference(door: SpaceDoor, accept: ValidationAcceptor): void {
-  if (!door.wall.ref) {
-    accept("error", `Wall '${door.wall.$refText}' not found on this level.`, {
-      node: door,
-      property: "wall",
-    });
-  }
-}
-
-function checkSpaceDoorTypeReference(door: SpaceDoor, accept: ValidationAcceptor): void {
-  if (door.typeRef && !door.typeRef.ref) {
-    accept("error", `Door type '${door.typeRef.$refText}' not found in any library.`, {
-      node: door,
-      property: "typeRef",
-    });
-  }
-}
-
-function checkDoorConnectsReference(door: SpaceDoor, accept: ValidationAcceptor): void {
-  if (!door.body) return;
-
-  const connectsProperty = door.body.properties.find(
-    (p) => p.$type === "DoorConnectsProperty"
-  ) as DoorConnectsProperty | undefined;
-
-  if (!connectsProperty) return;
-
-  // Check 'from' reference
-  if (connectsProperty.from && !connectsProperty.from.ref) {
-    const refText = (connectsProperty.from as unknown as { $refText?: string }).$refText;
-    if (refText && refText !== "this" && refText !== "exterior") {
-      accept("error", `Space '${refText}' not found on this level.`, {
-        node: connectsProperty,
-        property: "from",
-      });
-    }
-  }
-
-  // Check 'to' reference
-  if (connectsProperty.to && !connectsProperty.to.ref) {
-    const refText = (connectsProperty.to as unknown as { $refText?: string }).$refText;
-    if (refText && refText !== "this" && refText !== "exterior") {
-      accept("error", `Space '${refText}' not found on this level.`, {
-        node: connectsProperty,
-        property: "to",
-      });
-    }
-  }
-}
-
 // ============================================================================
 // Window Validations
 // ============================================================================
@@ -154,32 +97,14 @@ function checkWindowTypeReference(window: Window, accept: ValidationAcceptor): v
   }
 }
 
-function checkSpaceWindowWallReference(window: SpaceWindow, accept: ValidationAcceptor): void {
-  if (!window.wall.ref) {
-    accept("error", `Wall '${window.wall.$refText}' not found on this level.`, {
-      node: window,
-      property: "wall",
-    });
-  }
-}
-
-function checkSpaceWindowTypeReference(window: SpaceWindow, accept: ValidationAcceptor): void {
-  if (window.typeRef && !window.typeRef.ref) {
-    accept("error", `Window type '${window.typeRef.$refText}' not found in any library.`, {
-      node: window,
-      property: "typeRef",
-    });
-  }
-}
-
 // ============================================================================
 // Space Validations
 // ============================================================================
 
 function checkSpaceBoundedBy(space: Space, accept: ValidationAcceptor): void {
   const boundedByProp = space.properties.find(
-    (p) => p.$type === "BoundedByProperty"
-  ) as BoundedByProperty | undefined;
+    (p): p is BoundedByProperty => p.$type === "BoundedByProperty"
+  );
 
   if (!boundedByProp) return;
 

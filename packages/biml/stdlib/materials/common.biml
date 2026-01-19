@@ -2,91 +2,24 @@
 # Common materials for architectural elements
 
 library "stdlib.materials" {
-  # Wood Materials
   material Oak {
     color: oak
   }
 
-  material Walnut {
-    color: walnut
-  }
-
-  material Mahogany {
-    color: mahogany
-  }
-
-  material Pine {
-    color: rgb(0.85, 0.75, 0.55)
-  }
-
-  material Birch {
-    color: rgb(0.90, 0.85, 0.70)
-  }
-
-  # Metal Materials
   material Steel {
     color: steel
   }
 
-  material Aluminum {
-    color: silver
-  }
-
-  material Bronze {
-    color: bronze
-  }
-
-  material Copper {
-    color: copper
-  }
-
-  material BrushedSteel {
-    color: rgb(0.65, 0.67, 0.70)
-  }
-
-  # Paint Colors
-  material WhitePaint {
-    color: white
-  }
-
-  material BlackPaint {
-    color: black
-  }
-
-  material GrayPaint {
-    color: gray
-  }
-
-  # Glass Materials
-  material ClearGlass {
-    color: glass
-    transparency: 0.1
-  }
-
-  material FrostedGlass {
-    color: glass
-    transparency: 0.4
-  }
-
-  material TintedGlass {
-    color: rgb(0.4, 0.5, 0.6)
-    transparency: 0.2
-  }
-
-  # Masonry Materials
   material Concrete {
     color: concrete
   }
 
-  material Brick {
-    color: brick
+  material WhitePaint {
+    color: white
   }
 
-  material Stone {
-    color: rgb(0.65, 0.63, 0.60)
-  }
-
-  material Marble {
-    color: rgb(0.95, 0.93, 0.90)
+  material ClearGlass {
+    color: glass
+    transparency: 0.1
   }
 }

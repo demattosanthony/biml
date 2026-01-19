@@ -1,4 +1,4 @@
-"""JSON IR types for BIML v2.1 (types-only model, no families)."""
+"""JSON IR types for BIML."""
 
 from dataclasses import dataclass, field
 from typing import Self, Literal, Any
@@ -8,6 +8,7 @@ import json
 # ============================================================================
 # Basic Types
 # ============================================================================
+
 
 @dataclass
 class MeasurementIR:
@@ -48,17 +49,6 @@ class Point2DIR:
 
 
 @dataclass
-class Point3DIR:
-    x: float
-    y: float
-    z: float
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(x=data["x"], y=data["y"], z=data["z"])
-
-
-@dataclass
 class ColorIR:
     red: float
     green: float
@@ -75,6 +65,7 @@ class ColorIR:
 # Expression IR
 # ============================================================================
 
+
 @dataclass
 class ExpressionIR:
     kind: str
@@ -82,16 +73,6 @@ class ExpressionIR:
     unit: str | None = None
     bool_value: bool | None = None
     string_value: str | None = None
-    op: str | None = None
-    left: "ExpressionIR | None" = None
-    right: "ExpressionIR | None" = None
-    ref: list[str] | None = None
-    condition: "ExpressionIR | None" = None
-    then_expr: "ExpressionIR | None" = None
-    else_expr: "ExpressionIR | None" = None
-    operand: "ExpressionIR | None" = None
-    name: str | None = None
-    args: list["ExpressionIR"] | None = None
 
     @classmethod
     def from_dict(cls, data: dict | None) -> Self | None:
@@ -103,136 +84,39 @@ class ExpressionIR:
             unit=data.get("unit"),
             bool_value=data.get("boolValue"),
             string_value=data.get("stringValue"),
-            op=data.get("op"),
-            left=cls.from_dict(data.get("left")),
-            right=cls.from_dict(data.get("right")),
-            ref=data.get("ref"),
-            condition=cls.from_dict(data.get("condition")),
-            then_expr=cls.from_dict(data.get("then")),
-            else_expr=cls.from_dict(data.get("else")),
-            operand=cls.from_dict(data.get("operand")),
-            name=data.get("name"),
-            args=[cls.from_dict(a) for a in data.get("args", [])] if data.get("args") else None,
         )
 
-    def evaluate(self, context: dict[str, Any] | None = None) -> float | bool | str | MeasurementIR:
+    def evaluate(
+        self, context: dict[str, Any] | None = None
+    ) -> float | bool | str | MeasurementIR:
         """Evaluate expression to a concrete value."""
-        context = context or {}
-        
         if self.kind == "literal":
             return self.value or 0
-        elif self.kind == "measurement":
+        if self.kind == "measurement":
             return MeasurementIR(value=self.value or 0, unit=self.unit or "m")
-        elif self.kind == "boolean":
+        if self.kind == "boolean":
             return self.bool_value or False
-        elif self.kind == "string":
+        if self.kind == "string":
             return self.string_value or ""
-        elif self.kind == "reference":
-            if self.ref:
-                # Look up in context
-                key = ".".join(self.ref)
-                return context.get(key, 0)
-            return 0
-        elif self.kind == "binary":
-            left = self.left.evaluate(context) if self.left else 0
-            right = self.right.evaluate(context) if self.right else 0
-            
-            # Handle measurements
-            left_val = left.value if isinstance(left, MeasurementIR) else left
-            right_val = right.value if isinstance(right, MeasurementIR) else right
-            
-            if self.op == "+":
-                result = left_val + right_val
-            elif self.op == "-":
-                result = left_val - right_val
-            elif self.op == "*":
-                result = left_val * right_val
-            elif self.op == "/":
-                result = left_val / right_val if right_val != 0 else 0
-            else:
-                result = 0
-            
-            # Preserve unit if left was a measurement
-            if isinstance(left, MeasurementIR):
-                return MeasurementIR(value=result, unit=left.unit)
-            return result
-        elif self.kind == "unary":
-            operand = self.operand.evaluate(context) if self.operand else 0
-            if self.op == "-":
-                if isinstance(operand, MeasurementIR):
-                    return MeasurementIR(value=-operand.value, unit=operand.unit)
-                return -operand
-            return operand
-        elif self.kind == "conditional":
-            cond = self.condition.evaluate(context) if self.condition else False
-            if cond:
-                return self.then_expr.evaluate(context) if self.then_expr else 0
-            return self.else_expr.evaluate(context) if self.else_expr else 0
-        
         return 0
 
 
-# ============================================================================
-# Geometry IR
-# ============================================================================
-
 @dataclass
-class ProfileIR:
-    kind: str
-    width: ExpressionIR | None = None
-    depth: ExpressionIR | None = None
-    radius: ExpressionIR | None = None
-    flange: ExpressionIR | None = None
-    web: ExpressionIR | None = None
-    points: list[Point2DIR] | None = None
+class ParameterIR:
+    """Parameter definition within a type."""
+
+    name: str
+    type: str
+    default_value: ExpressionIR | None = None
 
     @classmethod
-    def from_dict(cls, data: dict | None) -> Self | None:
-        if data is None:
-            return None
+    def from_dict(cls, data: dict) -> Self:
         return cls(
-            kind=data["kind"],
-            width=ExpressionIR.from_dict(data.get("width")),
-            depth=ExpressionIR.from_dict(data.get("depth")),
-            radius=ExpressionIR.from_dict(data.get("radius")),
-            flange=ExpressionIR.from_dict(data.get("flange")),
-            web=ExpressionIR.from_dict(data.get("web")),
-            points=[Point2DIR.from_dict(p) for p in data.get("points", [])] if data.get("points") else None,
+            name=data["name"],
+            type=data["type"],
+            default_value=ExpressionIR.from_dict(data.get("defaultValue")),
         )
 
-
-@dataclass
-class GeometryIR:
-    kind: str
-    width: ExpressionIR | None = None
-    depth: ExpressionIR | None = None
-    height: ExpressionIR | None = None
-    radius: ExpressionIR | None = None
-    profile: ProfileIR | None = None
-    left: "GeometryIR | None" = None
-    right: "GeometryIR | None" = None
-    ref: str | None = None
-
-    @classmethod
-    def from_dict(cls, data: dict | None) -> Self | None:
-        if data is None:
-            return None
-        return cls(
-            kind=data["kind"],
-            width=ExpressionIR.from_dict(data.get("width")),
-            depth=ExpressionIR.from_dict(data.get("depth")),
-            height=ExpressionIR.from_dict(data.get("height")),
-            radius=ExpressionIR.from_dict(data.get("radius")),
-            profile=ProfileIR.from_dict(data.get("profile")),
-            left=cls.from_dict(data.get("left")),
-            right=cls.from_dict(data.get("right")),
-            ref=data.get("ref"),
-        )
-
-
-# ============================================================================
-# Material IR
-# ============================================================================
 
 @dataclass
 class MaterialIR:
@@ -249,48 +133,16 @@ class MaterialIR:
         )
 
 
-# ============================================================================
-# Type IR (unified - no families)
-# ============================================================================
-
-@dataclass
-class ParameterIR:
-    """Parameter definition within a type."""
-    name: str
-    type: str
-    default_value: ExpressionIR | None = None
-    min_value: ExpressionIR | None = None
-    max_value: ExpressionIR | None = None
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(
-            name=data["name"],
-            type=data["type"],
-            default_value=ExpressionIR.from_dict(data.get("defaultValue")),
-            min_value=ExpressionIR.from_dict(data.get("min")),
-            max_value=ExpressionIR.from_dict(data.get("max")),
-        )
-
-
 @dataclass
 class TypeIR:
-    """
-    Unified type: can define parameters AND/OR inherit from other types.
-    
-    - parameters: List of parameter definitions (param name: Type = default)
-    - overrides: Dict of parameter value overrides (name = value)
-    - baseType: Optional parent type for inheritance
-    """
+    """Unified type definition (no families)."""
+
     name: str
     base_type: str | None = None
     parameters: list[ParameterIR] = field(default_factory=list)
     overrides: dict[str, ExpressionIR] = field(default_factory=dict)
-    geometry: GeometryIR | None = None
-    opening: GeometryIR | None = None
     material: str | None = None
     ifc_class: str | None = None
-    properties: dict[str, ExpressionIR] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -298,24 +150,27 @@ class TypeIR:
         # and old format (parameters as dict) for backward compatibility
         parameters_data = data.get("parameters", [])
         overrides_data = data.get("overrides", {})
-        
+
         if isinstance(parameters_data, list):
             parameters = [ParameterIR.from_dict(p) for p in parameters_data]
         else:
             # Old format: parameters was a dict of overrides
             parameters = []
             overrides_data = parameters_data
-        
+
+        overrides: dict[str, ExpressionIR] = {}
+        for key, value in overrides_data.items():
+            expr = ExpressionIR.from_dict(value)
+            if expr is not None:
+                overrides[str(key)] = expr
+
         return cls(
             name=data["name"],
             base_type=data.get("baseType"),
             parameters=parameters,
-            overrides={k: ExpressionIR.from_dict(v) for k, v in overrides_data.items()},
-            geometry=GeometryIR.from_dict(data.get("geometry")),
-            opening=GeometryIR.from_dict(data.get("opening")),
+            overrides=overrides,
             material=data.get("material"),
             ifc_class=data.get("ifcClass"),
-            properties={k: ExpressionIR.from_dict(v) for k, v in data.get("properties", {}).items()},
         )
 
     def get_parameter_default(self, name: str) -> ExpressionIR | None:
@@ -325,24 +180,27 @@ class TypeIR:
                 return param.default_value
         return None
 
-    def get_parameter_value(self, name: str, context: dict[str, Any] | None = None) -> MeasurementIR | float | bool | str | None:
+    def get_parameter_value(
+        self, name: str, context: dict[str, Any] | None = None
+    ) -> MeasurementIR | float | bool | str | None:
         """Get resolved parameter value (override or default)."""
         # First check overrides
         if name in self.overrides:
             result = self.overrides[name].evaluate(context)
             return result
-        
+
         # Then check parameter defaults
         default = self.get_parameter_default(name)
         if default:
             return default.evaluate(context)
-        
+
         return None
 
 
 @dataclass
 class LibraryIR:
     """Library containing materials and types."""
+
     name: str
     materials: list[MaterialIR] = field(default_factory=list)
     types: list[TypeIR] = field(default_factory=list)
@@ -372,6 +230,7 @@ class LibraryIR:
 # Building Elements IR
 # ============================================================================
 
+
 @dataclass
 class WallIR:
     name: str
@@ -380,7 +239,6 @@ class WallIR:
     thickness: MeasurementIR | None = None
     height: MeasurementIR | None = None
     material: str | None = None
-    aligned_with: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -391,7 +249,6 @@ class WallIR:
             thickness=MeasurementIR.from_dict(data.get("thickness")),
             height=MeasurementIR.from_dict(data.get("height")),
             material=data.get("material"),
-            aligned_with=data.get("alignedWith"),
         )
 
     def length(self) -> float:
@@ -491,7 +348,6 @@ class ColumnIR:
     width: MeasurementIR | None = None
     depth: MeasurementIR | None = None
     height: MeasurementIR | None = None
-    profile: ProfileIR | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -502,7 +358,6 @@ class ColumnIR:
             width=MeasurementIR.from_dict(data.get("width")),
             depth=MeasurementIR.from_dict(data.get("depth")),
             height=MeasurementIR.from_dict(data.get("height")),
-            profile=ProfileIR.from_dict(data.get("profile")),
         )
 
 
@@ -515,10 +370,11 @@ class FurnitureSizeIR:
     def from_dict(cls, data: dict | None) -> Self | None:
         if data is None:
             return None
-        return cls(
-            width=MeasurementIR.from_dict(data["width"]),
-            depth=MeasurementIR.from_dict(data["depth"]),
-        )
+        width = MeasurementIR.from_dict(data.get("width"))
+        depth = MeasurementIR.from_dict(data.get("depth"))
+        if not width or not depth:
+            return None
+        return cls(width=width, depth=depth)
 
 
 @dataclass
@@ -527,10 +383,7 @@ class FurnitureIR:
     position: Point2DIR
     name: str | None = None
     facing: str | None = None
-    rotation: MeasurementIR | None = None
     size: FurnitureSizeIR | None = None
-    count: int | None = None
-    spacing: MeasurementIR | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -539,10 +392,7 @@ class FurnitureIR:
             position=Point2DIR.from_dict(data["position"]),
             name=data.get("name"),
             facing=data.get("facing"),
-            rotation=MeasurementIR.from_dict(data.get("rotation")),
             size=FurnitureSizeIR.from_dict(data.get("size")),
-            count=data.get("count"),
-            spacing=MeasurementIR.from_dict(data.get("spacing")),
         )
 
 
@@ -600,7 +450,9 @@ class SpaceIR:
         return cls(
             name=data["name"],
             tags=data.get("tags", []),
-            bounded_by=[WallReferenceIR.from_dict(w) for w in data.get("boundedBy", [])] if data.get("boundedBy") else None,
+            bounded_by=[WallReferenceIR.from_dict(w) for w in data.get("boundedBy", [])]
+            if data.get("boundedBy")
+            else None,
             area=MeasurementIR.from_dict(data.get("area")),
             height=MeasurementIR.from_dict(data.get("height")),
             floor=data.get("floor"),
@@ -614,6 +466,7 @@ class SpaceIR:
 @dataclass
 class ElevationIR:
     """Elevation can be absolute or relative to another level."""
+
     value: MeasurementIR | None = None
     ref: str | None = None
 
@@ -713,6 +566,7 @@ class BuildingIR:
 # Top-level IR
 # ============================================================================
 
+
 @dataclass
 class JsonIR:
     version: str
@@ -737,19 +591,19 @@ class JsonIR:
 
     def resolve_type_inheritance(self, type_ir: TypeIR) -> TypeIR:
         """
-        Resolve type inheritance, returning a flattened type with all inherited 
-        parameters and properties.
+        Resolve type inheritance, returning a flattened type with all inherited
+        parameters.
         """
         if not type_ir.base_type:
             return type_ir
-        
+
         base = self.get_type(type_ir.base_type)
         if not base:
             return type_ir
-        
+
         # Recursively resolve base type
         resolved_base = self.resolve_type_inheritance(base)
-        
+
         # Merge: child overrides parent
         merged_params = list(resolved_base.parameters)
         for param in type_ir.parameters:
@@ -762,25 +616,18 @@ class JsonIR:
                     break
             if not found:
                 merged_params.append(param)
-        
+
         # Merge overrides
         merged_overrides = dict(resolved_base.overrides)
         merged_overrides.update(type_ir.overrides)
-        
-        # Merge properties
-        merged_properties = dict(resolved_base.properties)
-        merged_properties.update(type_ir.properties)
-        
+
         return TypeIR(
             name=type_ir.name,
             base_type=type_ir.base_type,
             parameters=merged_params,
             overrides=merged_overrides,
-            geometry=type_ir.geometry or resolved_base.geometry,
-            opening=type_ir.opening or resolved_base.opening,
             material=type_ir.material or resolved_base.material,
             ifc_class=type_ir.ifc_class or resolved_base.ifc_class,
-            properties=merged_properties,
         )
 
     @classmethod
