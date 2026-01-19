@@ -1,5 +1,6 @@
-# Simple BIML v2 Example
+# Simple BIML v2.1 Example
 # A basic office with two rooms and connecting door
+# Uses types-only model (no families)
 
 library "Doors" {
   material WarmOak {
@@ -10,16 +11,20 @@ library "Doors" {
     color: white
   }
 
-  family Door {
+  # Base door type with default parameters
+  type Door {
     param width: Length = 900mm
     param height: Length = 2100mm
+    ifc_class: IfcDoor
   }
 
-  type SingleDoor extends Door {
+  # Inherits from Door, uses oak material
+  type SingleDoor : Door {
     material: WarmOak
   }
 
-  type InteriorDoor extends Door {
+  # Interior door with narrower width
+  type InteriorDoor : Door {
     width = 800mm
     material: WhitePaint
   }

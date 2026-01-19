@@ -1,4 +1,4 @@
-"""Tests for BIML v2.0 compiler."""
+"""Tests for BIML v2.1 compiler (types-only model)."""
 
 import pytest
 from pathlib import Path
@@ -17,7 +17,7 @@ class TestIR:
     """Tests for IR parsing."""
 
     def test_parse_version(self, simple_ir):
-        assert simple_ir.version == "2.0.0"
+        assert simple_ir.version == "2.1.0"
 
     def test_parse_libraries(self, simple_ir):
         assert len(simple_ir.libraries) == 1
@@ -35,31 +35,66 @@ class TestIR:
         assert abs(oak.color.green - 0.60) < 0.01
         assert abs(oak.color.blue - 0.42) < 0.01
 
-    def test_parse_families(self, simple_ir):
-        lib = simple_ir.libraries[0]
-        assert len(lib.families) == 1
-        
-        door_family = lib.get_family("Door")
-        assert door_family is not None
-        assert len(door_family.parameters) == 2
-
     def test_parse_types(self, simple_ir):
+        """Test types-only model (no families)."""
         lib = simple_ir.libraries[0]
-        assert len(lib.types) == 2
+        # 3 types: Door (base), SingleDoor, InteriorDoor
+        assert len(lib.types) == 3
 
+        # Base Door type should have parameters
+        door_type = lib.get_type("Door")
+        assert door_type is not None
+        assert len(door_type.parameters) == 2
+
+        # SingleDoor inherits from Door
         single_door = lib.get_type("SingleDoor")
         assert single_door is not None
-        assert single_door.base_family == "Door"
+        assert single_door.base_type == "Door"
         assert single_door.material == "WarmOak"
 
-    def test_get_type_parameter(self, simple_ir):
-        door_type = simple_ir.get_type("SingleDoor")
+    def test_type_parameters(self, simple_ir):
+        """Test parameter definitions on base type."""
+        door_type = simple_ir.get_type("Door")
         assert door_type is not None
+        assert len(door_type.parameters) == 2
+        
+        width_param = next(p for p in door_type.parameters if p.name == "width")
+        assert width_param is not None
+        assert width_param.type == "Length"
+        assert width_param.default_value is not None
 
-        width = door_type.get_parameter("width")
+    def test_type_overrides(self, simple_ir):
+        """Test parameter overrides on derived type."""
+        interior_door = simple_ir.get_type("InteriorDoor")
+        assert interior_door is not None
+        assert "width" in interior_door.overrides
+        
+        width_override = interior_door.overrides["width"]
+        result = width_override.evaluate()
+        assert isinstance(result, MeasurementIR)
+        assert result.value == 800
+
+    def test_get_type_parameter_value(self, simple_ir):
+        """Test get_parameter_value method with inheritance resolution."""
+        resolved = simple_ir.resolve_type_inheritance(simple_ir.get_type("SingleDoor"))
+        
+        # SingleDoor inherits width from Door
+        width = resolved.get_parameter_value("width")
         assert width is not None
         assert isinstance(width, MeasurementIR)
         assert width.value == 900
+
+    def test_type_inheritance_resolution(self, simple_ir):
+        """Test that type inheritance is properly resolved."""
+        interior_door = simple_ir.get_type("InteriorDoor")
+        resolved = simple_ir.resolve_type_inheritance(interior_door)
+        
+        # Should have inherited parameters from Door
+        assert len(resolved.parameters) == 2
+        
+        # Override should take precedence
+        width = resolved.get_parameter_value("width")
+        assert width.value == 800  # Overridden value
 
     def test_parse_building(self, simple_ir):
         assert len(simple_ir.buildings) == 1
@@ -192,9 +227,11 @@ class TestIFCGeneration:
     def test_creates_door_types(self, simple_ir):
         ifc = compile_to_ifc(simple_ir)
         door_types = ifc.by_type("IfcDoorType")
-        assert len(door_types) == 2
+        # Door, SingleDoor, InteriorDoor all identified as door types
+        assert len(door_types) == 3
 
         type_names = {t.Name for t in door_types}
+        assert "Door" in type_names
         assert "SingleDoor" in type_names
         assert "InteriorDoor" in type_names
 
@@ -217,7 +254,7 @@ class TestIFCGeneration:
         assert len(type_rels) == len(doors)
 
     def test_empty_buildings_raises(self):
-        ir = JsonIR(version="2.0.0", libraries=[], buildings=[])
+        ir = JsonIR(version="2.1.0", libraries=[], buildings=[])
         with pytest.raises(ValueError, match="No buildings"):
             compile_to_ifc(ir)
 
@@ -292,7 +329,7 @@ class TestDoorPlacement:
         doors = ifc.by_type("IfcDoor")
         
         main_entry = next(d for d in doors if d.Name == "Main Entry")
-        # Height should be 2.1m (from type)
+        # Height should be 2.1m (from inherited Door type)
         assert abs(main_entry.OverallHeight - 2.1) < 0.01
 
     def test_door_width_matches_type(self, simple_ir):
@@ -300,9 +337,33 @@ class TestDoorPlacement:
         doors = ifc.by_type("IfcDoor")
         
         main_entry = next(d for d in doors if d.Name == "Main Entry")
-        # Width should be 0.9m (from type)
+        # Width should be 0.9m (from inherited Door type)
         assert abs(main_entry.OverallWidth - 0.9) < 0.01
 
         office_door = next(d for d in doors if d.Name == "Office Door")
-        # Width should be 0.8m (InteriorDoor type)
+        # Width should be 0.8m (InteriorDoor type override)
         assert abs(office_door.OverallWidth - 0.8) < 0.01
+
+
+class TestTypeInheritance:
+    """Tests for type inheritance resolution."""
+
+    def test_single_level_inheritance(self, simple_ir):
+        """Test SingleDoor inheriting from Door."""
+        single_door = simple_ir.get_type("SingleDoor")
+        resolved = simple_ir.resolve_type_inheritance(single_door)
+        
+        assert resolved.base_type == "Door"
+        assert len(resolved.parameters) == 2  # Inherited from Door
+        assert resolved.material == "WarmOak"
+
+    def test_override_in_child(self, simple_ir):
+        """Test InteriorDoor overriding Door's width."""
+        interior_door = simple_ir.get_type("InteriorDoor")
+        resolved = simple_ir.resolve_type_inheritance(interior_door)
+        
+        width = resolved.get_parameter_value("width")
+        assert width.value == 800  # Overridden
+        
+        height = resolved.get_parameter_value("height")
+        assert height.value == 2100  # Inherited default

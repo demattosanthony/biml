@@ -1,5 +1,6 @@
-# Comprehensive BIML v2 Example
+# Comprehensive BIML v2.1 Example
 # Multi-story office building with all features
+# Uses types-only model (no families)
 
 library "Materials" {
   material Oak {
@@ -37,27 +38,33 @@ library "Doors" {
     color: steel
   }
 
-  family Door {
+  # Base door type with parameters
+  type Door {
     param width: Length = 900mm
     param height: Length = 2100mm
     param thickness: Length = 45mm
+    ifc_class: IfcDoor
   }
 
-  type SingleDoor extends Door {
+  # Single door inherits from Door
+  type SingleDoor : Door {
     material: WoodOak
   }
 
-  type DoubleDoor extends Door {
+  # Double door with wider width
+  type DoubleDoor : Door {
     width = 1800mm
     material: WoodOak
   }
 
+  # Fire door inherits from SingleDoor (multi-level inheritance)
   type FireDoor : SingleDoor {
     width = 1000mm
     material: SteelGray
   }
 
-  type AccessibleDoor extends Door {
+  # Accessible door with ADA-compliant width
+  type AccessibleDoor : Door {
     width = 1100mm
     material: WoodOak
   }
@@ -69,44 +76,50 @@ library "Windows" {
     transparency: 0.1
   }
 
-  family Window {
+  # Base window type
+  type Window {
     param width: Length = 1200mm
     param height: Length = 1500mm
     param sill_height: Length = 900mm
+    ifc_class: IfcWindow
   }
 
-  type FixedWindow extends Window {
+  type FixedWindow : Window {
     material: GlassClear
   }
 
-  type CasementWindow extends Window {
+  type CasementWindow : Window {
     width = 900mm
     material: GlassClear
   }
 }
 
 library "Furniture" {
-  family Desk {
+  # Desk base type
+  type Desk {
     param width: Length = 1600mm
     param depth: Length = 800mm
     param height: Length = 720mm
   }
 
-  family Chair {
+  # Chair base type
+  type Chair {
     param width: Length = 600mm
     param depth: Length = 600mm
     param height: Length = 450mm
   }
 
-  family ConferenceTable {
+  # Conference table base type
+  type ConferenceTable {
     param width: Length = 3000mm
     param depth: Length = 1200mm
     param height: Length = 720mm
   }
 
-  type StandardDesk extends Desk { }
-  type OfficeChair extends Chair { }
-  type LargeConferenceTable extends ConferenceTable { }
+  # Concrete types that can be placed
+  type StandardDesk : Desk { }
+  type OfficeChair : Chair { }
+  type LargeConferenceTable : ConferenceTable { }
 }
 
 building "Modern Office Building" {

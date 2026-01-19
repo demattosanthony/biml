@@ -1,14 +1,17 @@
 /**
  * BIML v2 Generator
  * Converts the Langium AST to JSON IR for the Python compiler.
+ * 
+ * Type System: Types only (no families)
+ * - Types can define parameters (param name: Type = default)
+ * - Types can inherit from other types (type Child : Parent { ... })
+ * - Parameters from parent types are inherited and can be overridden
  */
 
 import type {
   Model,
   Library,
   Material,
-  Family,
-  FamilyParameter,
   Type,
   TypeMember,
   Building,
@@ -83,19 +86,12 @@ export interface ParameterIR {
   max?: ExpressionIR;
 }
 
-export interface FamilyIR {
-  name: string;
-  parameters: ParameterIR[];
-  geometry?: GeometryIR;
-  opening?: GeometryIR;
-  properties: Record<string, ExpressionIR>;
-}
-
+// Unified Type IR - contains both parameter definitions and overrides
 export interface TypeIR {
   name: string;
-  baseFamily?: string;
-  baseType?: string;
-  parameters: Record<string, ExpressionIR>;
+  baseType?: string;           // Optional inheritance
+  parameters: ParameterIR[];   // Parameter definitions (param name: Type = default)
+  overrides: Record<string, ExpressionIR>;  // Parameter overrides (name = value)
   geometry?: GeometryIR;
   opening?: GeometryIR;
   material?: string;
@@ -106,7 +102,6 @@ export interface TypeIR {
 export interface LibraryIR {
   name: string;
   materials: MaterialIR[];
-  families: FamilyIR[];
   types: TypeIR[];
 }
 
@@ -558,20 +553,32 @@ function generateMaterial(material: Material): MaterialIR {
 }
 
 // ============================================================================
-// Family & Type Generators
+// Type Generator (unified - handles both parameter definitions and overrides)
 // ============================================================================
 
-function generateFamily(family: Family): FamilyIR {
-  const ir: FamilyIR = {
-    name: family.name,
+function generateType(type: Type): TypeIR {
+  const ir: TypeIR = {
+    name: type.name,
     parameters: [],
+    overrides: {},
     properties: {},
   };
 
-  for (const member of family.members) {
+  // Handle inheritance
+  if (type.baseType?.ref) {
+    ir.baseType = type.baseType.ref.name;
+  }
+
+  for (const member of type.members as TypeMember[]) {
     switch (member.$type) {
-      case "FamilyParameter": {
-        const param = member as FamilyParameter;
+      case "TypeParameter": {
+        // New: Parameter definitions (param name: Type = default)
+        const param = member as { 
+          name: string; 
+          paramType: string; 
+          defaultValue?: Expression;
+          constraint?: { min: Expression; max: Expression };
+        };
         const paramIR: ParameterIR = {
           name: param.name,
           type: param.paramType,
@@ -586,46 +593,10 @@ function generateFamily(family: Family): FamilyIR {
         ir.parameters.push(paramIR);
         break;
       }
-      case "FamilyGeometry": {
-        const geom = member as { expression: GeometryExpression };
-        ir.geometry = generateGeometry(geom.expression);
-        break;
-      }
-      case "FamilyOpening": {
-        const opening = member as { expression: GeometryExpression };
-        ir.opening = generateGeometry(opening.expression);
-        break;
-      }
-      case "FamilyProperty": {
-        const prop = member as { name: string; value: Expression };
-        ir.properties[prop.name] = generateExpression(prop.value);
-        break;
-      }
-    }
-  }
-
-  return ir;
-}
-
-function generateType(type: Type): TypeIR {
-  const ir: TypeIR = {
-    name: type.name,
-    parameters: {},
-    properties: {},
-  };
-
-  if (type.baseFamily?.ref) {
-    ir.baseFamily = type.baseFamily.ref.name;
-  }
-  if (type.baseType?.ref) {
-    ir.baseType = type.baseType.ref.name;
-  }
-
-  for (const member of type.members as TypeMember[]) {
-    switch (member.$type) {
       case "TypeParameterOverride": {
+        // Parameter override (name = value)
         const override = member as { name: string; value: Expression };
-        ir.parameters[override.name] = generateExpression(override.value);
+        ir.overrides[override.name] = generateExpression(override.value);
         break;
       }
       case "TypeGeometry": {
@@ -665,7 +636,6 @@ function generateLibrary(library: Library): LibraryIR {
   return {
     name: cleanName(library.name),
     materials: library.materials.map(generateMaterial),
-    families: library.families.map(generateFamily),
     types: library.types.map(generateType),
   };
 }
@@ -1161,7 +1131,7 @@ function generateBuilding(building: Building): BuildingIR {
 
 export function generateJsonIR(model: Model): JsonIR {
   return {
-    version: "2.0.0",
+    version: "2.1.0",  // Bumped version for types-only model
     libraries: model.libraries.map(generateLibrary),
     buildings: model.buildings.map(generateBuilding),
   };

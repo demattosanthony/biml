@@ -1,53 +1,55 @@
 # Standard Office Furniture Library
 # Common furniture types for office design
+# Uses types-only model (no families)
 
 library "stdlib.furniture.office" {
   # ============================================================================
   # Desks
   # ============================================================================
 
-  family Desk {
+  # Base desk type
+  type Desk {
     param width: Length = 1600mm in 1000mm..2400mm
     param depth: Length = 800mm in 600mm..1000mm
     param height: Length = 720mm in 680mm..760mm
   }
 
   # Standard office desk
-  type StandardDesk extends Desk { }
+  type StandardDesk : Desk { }
 
   # Executive desk (larger)
-  type ExecutiveDesk extends Desk {
+  type ExecutiveDesk : Desk {
     width = 2000mm
     depth = 900mm
   }
 
   # Compact desk (small office)
-  type CompactDesk extends Desk {
+  type CompactDesk : Desk {
     width = 1200mm
     depth = 600mm
   }
 
   # L-shaped desk
-  type LShapedDesk extends Desk {
+  type LShapedDesk : Desk {
     width = 1800mm
     depth = 1800mm
   }
 
   # Standing desk
-  type StandingDesk extends Desk {
+  type StandingDesk : Desk {
     width = 1600mm
     depth = 800mm
     height = 1100mm
   }
 
   # Adjustable height desk
-  type AdjustableDesk extends Desk {
+  type AdjustableDesk : Desk {
     width = 1600mm
     depth = 800mm
   }
 
   # Reception desk
-  type ReceptionDesk extends Desk {
+  type ReceptionDesk : Desk {
     width = 2400mm
     depth = 800mm
     height = 1100mm
@@ -57,35 +59,36 @@ library "stdlib.furniture.office" {
   # Chairs
   # ============================================================================
 
-  family Chair {
+  # Base chair type
+  type Chair {
     param width: Length = 600mm in 450mm..800mm
     param depth: Length = 600mm in 500mm..700mm
     param height: Length = 450mm in 400mm..550mm
   }
 
   # Standard office chair
-  type OfficeChair extends Chair { }
+  type OfficeChair : Chair { }
 
   # Executive chair
-  type ExecutiveChair extends Chair {
+  type ExecutiveChair : Chair {
     width = 700mm
     depth = 700mm
   }
 
   # Task chair (smaller)
-  type TaskChair extends Chair {
+  type TaskChair : Chair {
     width = 500mm
     depth = 500mm
   }
 
   # Guest chair
-  type GuestChair extends Chair {
+  type GuestChair : Chair {
     width = 550mm
     depth = 550mm
   }
 
   # Stool (for standing desks)
-  type Stool extends Chair {
+  type Stool : Chair {
     width = 400mm
     depth = 400mm
     height = 650mm
@@ -95,45 +98,46 @@ library "stdlib.furniture.office" {
   # Tables
   # ============================================================================
 
-  family Table {
+  # Base table type
+  type Table {
     param width: Length = 1200mm in 600mm..4000mm
     param depth: Length = 800mm in 600mm..2000mm
     param height: Length = 720mm in 680mm..760mm
   }
 
   # Conference table (small)
-  type SmallConferenceTable extends Table {
+  type SmallConferenceTable : Table {
     width = 1800mm
     depth = 900mm
   }
 
   # Conference table (medium)
-  type MediumConferenceTable extends Table {
+  type MediumConferenceTable : Table {
     width = 2400mm
     depth = 1200mm
   }
 
   # Conference table (large)
-  type LargeConferenceTable extends Table {
+  type LargeConferenceTable : Table {
     width = 3600mm
     depth = 1500mm
   }
 
   # Round meeting table
-  type RoundMeetingTable extends Table {
+  type RoundMeetingTable : Table {
     width = 1200mm
     depth = 1200mm
   }
 
   # Coffee table
-  type CoffeeTable extends Table {
+  type CoffeeTable : Table {
     width = 1000mm
     depth = 600mm
     height = 450mm
   }
 
   # Side table
-  type SideTable extends Table {
+  type SideTable : Table {
     width = 500mm
     depth = 500mm
     height = 550mm
@@ -143,49 +147,50 @@ library "stdlib.furniture.office" {
   # Storage
   # ============================================================================
 
-  family Storage {
+  # Base storage type
+  type Storage {
     param width: Length = 800mm in 400mm..1200mm
     param depth: Length = 450mm in 300mm..600mm
     param height: Length = 1800mm in 700mm..2200mm
   }
 
   # Filing cabinet (2 drawer)
-  type FilingCabinet2 extends Storage {
+  type FilingCabinet2 : Storage {
     width = 450mm
     depth = 600mm
     height = 700mm
   }
 
   # Filing cabinet (4 drawer)
-  type FilingCabinet4 extends Storage {
+  type FilingCabinet4 : Storage {
     width = 450mm
     depth = 600mm
     height = 1350mm
   }
 
   # Bookshelf
-  type Bookshelf extends Storage {
+  type Bookshelf : Storage {
     width = 900mm
     depth = 350mm
     height = 1800mm
   }
 
   # Credenza
-  type Credenza extends Storage {
+  type Credenza : Storage {
     width = 1800mm
     depth = 450mm
     height = 750mm
   }
 
   # Wardrobe/Locker
-  type Wardrobe extends Storage {
+  type Wardrobe : Storage {
     width = 600mm
     depth = 550mm
     height = 1800mm
   }
 
   # Pedestal (under desk)
-  type Pedestal extends Storage {
+  type Pedestal : Storage {
     width = 400mm
     depth = 500mm
     height = 600mm
@@ -195,39 +200,40 @@ library "stdlib.furniture.office" {
   # Seating Areas
   # ============================================================================
 
-  family Seating {
+  # Base seating type
+  type Seating {
     param width: Length = 1800mm in 800mm..3000mm
     param depth: Length = 800mm in 600mm..1000mm
     param height: Length = 450mm in 400mm..500mm
   }
 
   # Two-seater sofa
-  type Loveseat extends Seating {
+  type Loveseat : Seating {
     width = 1400mm
     depth = 850mm
   }
 
   # Three-seater sofa
-  type Sofa extends Seating {
+  type Sofa : Seating {
     width = 2100mm
     depth = 850mm
   }
 
   # Lounge chair
-  type LoungeChair extends Seating {
+  type LoungeChair : Seating {
     width = 800mm
     depth = 850mm
   }
 
   # Bench
-  type Bench extends Seating {
+  type Bench : Seating {
     width = 1500mm
     depth = 450mm
     height = 450mm
   }
 
   # Ottoman
-  type Ottoman extends Seating {
+  type Ottoman : Seating {
     width = 600mm
     depth = 600mm
     height = 400mm

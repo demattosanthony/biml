@@ -1,4 +1,4 @@
-"""IFC generation for BIML v2.0 using IfcOpenShell."""
+"""IFC generation for BIML v2.1 using IfcOpenShell (types-only model)."""
 
 import math
 import ifcopenshell
@@ -222,6 +222,52 @@ def _apply_style_to_product(
 
 
 # ============================================================================
+# Type Classification Helper
+# ============================================================================
+
+def _is_door_type(type_def: TypeIR, ir: JsonIR) -> bool:
+    """Check if a type is a door type (through inheritance or naming)."""
+    # Check ifc_class
+    if type_def.ifc_class and "Door" in type_def.ifc_class:
+        return True
+    
+    # Check name pattern
+    name_lower = type_def.name.lower()
+    door_keywords = ["door", "entry", "exit", "gate", "portal"]
+    if any(kw in name_lower for kw in door_keywords):
+        return True
+    
+    # Check inheritance chain
+    if type_def.base_type:
+        base = ir.get_type(type_def.base_type)
+        if base:
+            return _is_door_type(base, ir)
+    
+    return False
+
+
+def _is_window_type(type_def: TypeIR, ir: JsonIR) -> bool:
+    """Check if a type is a window type (through inheritance or naming)."""
+    # Check ifc_class
+    if type_def.ifc_class and "Window" in type_def.ifc_class:
+        return True
+    
+    # Check name pattern
+    name_lower = type_def.name.lower()
+    window_keywords = ["window", "glazing", "skylight", "clerestory"]
+    if any(kw in name_lower for kw in window_keywords):
+        return True
+    
+    # Check inheritance chain
+    if type_def.base_type:
+        base = ir.get_type(type_def.base_type)
+        if base:
+            return _is_window_type(base, ir)
+    
+    return False
+
+
+# ============================================================================
 # Type Object Creation
 # ============================================================================
 
@@ -233,8 +279,7 @@ def _create_door_types(
     door_types = {}
     for lib in ir.libraries:
         for type_def in lib.types:
-            # Check if this type is a door (has Door family or is named *Door*)
-            if type_def.base_family == "Door" or "Door" in type_def.name:
+            if _is_door_type(type_def, ir):
                 door_type = ifcopenshell.api.run(
                     "root.create_entity",
                     ifc,
@@ -254,7 +299,7 @@ def _create_window_types(
     window_types = {}
     for lib in ir.libraries:
         for type_def in lib.types:
-            if type_def.base_family == "Window" or "Window" in type_def.name:
+            if _is_window_type(type_def, ir):
                 window_type = ifcopenshell.api.run(
                     "root.create_entity",
                     ifc,
@@ -264,6 +309,23 @@ def _create_window_types(
                 )
                 window_types[type_def.name] = window_type
     return window_types
+
+
+# ============================================================================
+# Type Parameter Resolution
+# ============================================================================
+
+def _get_type_parameter(type_def: TypeIR, name: str, ir: JsonIR) -> MeasurementIR | float | None:
+    """Get a resolved parameter value from a type, following inheritance chain."""
+    # Resolve full inheritance chain
+    resolved = ir.resolve_type_inheritance(type_def)
+    value = resolved.get_parameter_value(name)
+    
+    if isinstance(value, MeasurementIR):
+        return value
+    elif isinstance(value, (int, float)):
+        return MeasurementIR(value=value, unit="m")
+    return None
 
 
 # ============================================================================
@@ -310,16 +372,12 @@ def _create_door_with_opening(
     if door.type_ref:
         type_def = ir.get_type(door.type_ref)
         if type_def:
-            width_val = type_def.get_parameter("width")
-            height_val = type_def.get_parameter("height")
+            width_val = _get_type_parameter(type_def, "width", ir)
+            height_val = _get_type_parameter(type_def, "height", ir)
             if isinstance(width_val, MeasurementIR):
                 door_width = width_val.to_meters()
-            elif isinstance(width_val, (int, float)):
-                door_width = width_val / 1000  # Assume mm if no unit
             if isinstance(height_val, MeasurementIR):
                 door_height = height_val.to_meters()
-            elif isinstance(height_val, (int, float)):
-                door_height = height_val / 1000
     
     if door.width:
         door_width = door.width.to_meters()
@@ -440,9 +498,9 @@ def _create_window_with_opening(
     if window.type_ref:
         type_def = ir.get_type(window.type_ref)
         if type_def:
-            width_val = type_def.get_parameter("width")
-            height_val = type_def.get_parameter("height")
-            sill_val = type_def.get_parameter("sill") or type_def.get_parameter("sill_height")
+            width_val = _get_type_parameter(type_def, "width", ir)
+            height_val = _get_type_parameter(type_def, "height", ir)
+            sill_val = _get_type_parameter(type_def, "sill", ir) or _get_type_parameter(type_def, "sill_height", ir)
             if isinstance(width_val, MeasurementIR):
                 window_width = width_val.to_meters()
             if isinstance(height_val, MeasurementIR):
@@ -639,9 +697,9 @@ def _create_furniture(
     if furniture.type_ref:
         type_def = ir.get_type(furniture.type_ref)
         if type_def:
-            w = type_def.get_parameter("width")
-            d = type_def.get_parameter("depth")
-            h = type_def.get_parameter("height")
+            w = _get_type_parameter(type_def, "width", ir)
+            d = _get_type_parameter(type_def, "depth", ir)
+            h = _get_type_parameter(type_def, "height", ir)
             if isinstance(w, MeasurementIR):
                 width = w.to_meters()
             if isinstance(d, MeasurementIR):

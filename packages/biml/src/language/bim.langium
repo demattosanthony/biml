@@ -23,10 +23,11 @@ Import:
 // ============================================================================
 // TYPE LIBRARY
 // ============================================================================
+// Libraries contain materials and types (no families - types handle everything)
 
 Library:
     'library' name=STRING '{'
-        (materials+=Material | families+=Family | types+=Type)*
+        (materials+=Material | types+=Type)*
     '}';
 
 // ----------------------------------------------------------------------------
@@ -60,69 +61,60 @@ ColorName returns string:
     'silver' | 'gold' | 'bronze' | 'copper' | 'concrete' | 'brick';
 
 // ----------------------------------------------------------------------------
-// Families (base parametric definitions)
+// Types (unified: can define parameters AND/OR extend other types)
 // ----------------------------------------------------------------------------
+// Examples:
+//   type Door { param width: Length = 900mm }           - base type with params
+//   type SingleDoor : Door { material: Oak }            - extends Door
+//   type FireDoor : SingleDoor { width = 1000mm }       - extends SingleDoor
 
-Family:
-    'family' name=ID '{'
-        members+=FamilyMember*
+Type:
+    'type' name=ID (':' baseType=[Type:ID])? '{'
+        members+=TypeMember*
     '}';
 
-FamilyMember:
-    FamilyParameter | FamilyGeometry | FamilyOpening | FamilyProperty;
+TypeMember:
+    TypeParameter | TypeParameterOverride | TypeGeometry | TypeOpening | 
+    TypeProperty | TypeMaterial | TypeIfcClass;
 
-FamilyParameter:
-    'param' name=ParameterName ':' paramType=TypeName ('=' defaultValue=Expression)? constraint=ParameterConstraint?;
+// Parameter definition (like what family used to have)
+TypeParameter:
+    'param' name=ParameterName ':' paramType=ParamTypeName ('=' defaultValue=Expression)? constraint=ParameterConstraint?;
 
 // Allow keywords to be used as parameter names
 ParameterName returns string:
     ID | 'width' | 'height' | 'depth' | 'thickness' | 'radius' | 'area' | 'length' |
     'sill' | 'offset' | 'position' | 'elevation' | 'floor' | 'ceiling' | 'material' |
-    'color' | 'transparency' | 'profile' | 'boundary' | 'type' | 'name';
+    'color' | 'transparency' | 'profile' | 'boundary' | 'type' | 'name' | 'sill_height';
+
+ParamTypeName returns string:
+    'Length' | 'Area' | 'Angle' | 'Number' | 'Boolean' | 'String' | 
+    'Material' | 'Profile' | 'Geometry' | ID;
 
 ParameterConstraint:
     'in' min=Expression '..' max=Expression;
 
-FamilyGeometry:
-    'geometry' ':' expression=GeometryExpression;
-
-FamilyOpening:
-    'opening' ':' expression=GeometryExpression;
-
-FamilyProperty:
-    'property' name=ParameterName ':' value=Expression;
-
-TypeName returns string:
-    'Length' | 'Area' | 'Angle' | 'Number' | 'Boolean' | 'String' | 
-    'Material' | 'Profile' | 'Geometry' | ID;
-
-// ----------------------------------------------------------------------------
-// Types (concrete implementations of families)
-// ----------------------------------------------------------------------------
-
-Type:
-    'type' name=ID ((':' baseType=[Type:ID]) | ('extends' baseFamily=[Family:ID]))? '{'
-        members+=TypeMember*
-    '}';
-
-TypeMember:
-    TypeParameterOverride | TypeGeometry | TypeOpening | TypeProperty | TypeMaterial | TypeIfcClass;
-
+// Parameter override (setting a value for an inherited parameter)
 TypeParameterOverride:
     name=ParameterName '=' value=Expression;
 
+// Geometry definition
 TypeGeometry:
-    'geometry' '{' expression=GeometryExpression '}';
+    'geometry' ('{' expression=GeometryExpression '}' | ':' expression=GeometryExpression);
 
+// Opening geometry (for doors/windows)
 TypeOpening:
-    'opening' '{' expression=GeometryExpression '}';
+    'opening' ('{' expression=GeometryExpression '}' | ':' expression=GeometryExpression);
 
+// Custom property
 TypeProperty:
-    'property' name=ID ':' value=Expression;
+    'property' name=ParameterName ':' value=Expression;
 
+// Material assignment
 TypeMaterial:
     'material' ':' materialRef=[Material:ID];
 
+// IFC class mapping
 TypeIfcClass:
     'ifc_class' ':' className=IFC_CLASS;
 
@@ -586,12 +578,13 @@ AngleUnit returns string:
 // TERMINALS
 // ============================================================================
 
+// IFC_CLASS must come before ID to match "IfcDoor", "IfcWindow", etc.
+terminal IFC_CLASS: /Ifc[A-Z][a-zA-Z]*/;
 terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
 terminal STRING: /"[^"]*"/;
 terminal NUMBER returns number: /-?[0-9]+(\.[0-9]+)?/;
 terminal INT returns number: /[0-9]+/;
 terminal HEX_COLOR: /#[0-9A-Fa-f]{6}/;
-terminal IFC_CLASS: /Ifc[A-Z][a-zA-Z]*/;
 
 hidden terminal WS: /\s+/;
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;

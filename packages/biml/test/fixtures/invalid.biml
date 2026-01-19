@@ -1,11 +1,13 @@
-# Invalid BIML v2 - for testing error handling
+# Invalid BIML v2.1 - for testing error handling
+# Uses types-only model (no families)
 
 library "Test" {
-  family Door {
+  # Base door type with parameters
+  type Door {
     param width: Length = 900mm
   }
 
-  type TestDoor extends Door { }
+  type TestDoor : Door { }
 }
 
 building "Test Building" {

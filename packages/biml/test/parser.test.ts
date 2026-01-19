@@ -1,5 +1,5 @@
 /**
- * Parser tests for BIML v2
+ * Parser tests for BIML v2.1 (types-only model)
  */
 
 import { describe, test, expect, beforeAll } from "bun:test";
@@ -45,7 +45,7 @@ async function parseFile(filePath: string): Promise<{
   };
 }
 
-describe("BIML v2 Parser", () => {
+describe("BIML v2.1 Parser (types-only)", () => {
   describe("Simple fixture", () => {
     test("parses without syntax errors", async () => {
       const { model, errors } = await parseFile(path.join(FIXTURES, "simple.biml"));
@@ -53,7 +53,7 @@ describe("BIML v2 Parser", () => {
       expect(model).not.toBeNull();
     });
 
-    test("parses library with materials and types", async () => {
+    test("parses library with materials and types (no families)", async () => {
       const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
       expect(model).not.toBeNull();
       expect(model!.libraries.length).toBe(1);
@@ -61,8 +61,29 @@ describe("BIML v2 Parser", () => {
       const lib = model!.libraries[0];
       expect(lib.name).toBe("Doors");
       expect(lib.materials.length).toBe(2);
-      expect(lib.families.length).toBe(1);
-      expect(lib.types.length).toBe(2);
+      // Types-only: no families, only types
+      expect(lib.types.length).toBe(3); // Door, SingleDoor, InteriorDoor
+    });
+
+    test("parses type with parameters", async () => {
+      const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
+      const lib = model!.libraries[0];
+      
+      const doorType = lib.types.find(t => t.name === "Door");
+      expect(doorType).toBeDefined();
+      
+      // Check that Door type has parameters
+      const params = doorType!.members.filter(m => m.$type === "TypeParameter");
+      expect(params.length).toBe(2); // width, height
+    });
+
+    test("parses type inheritance (: syntax)", async () => {
+      const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
+      const lib = model!.libraries[0];
+      
+      const singleDoor = lib.types.find(t => t.name === "SingleDoor");
+      expect(singleDoor).toBeDefined();
+      expect(singleDoor!.baseType?.$refText).toBe("Door");
     });
 
     test("parses building with level and walls", async () => {
@@ -128,13 +149,17 @@ describe("BIML v2 Parser", () => {
       expect(libNames).toContain("Furniture");
     });
 
-    test("parses type inheritance", async () => {
+    test("parses multi-level type inheritance", async () => {
       const { model } = await parseFile(path.join(FIXTURES, "comprehensive.biml"));
       const doorsLib = model!.libraries.find(l => l.name === "Doors");
       
+      // FireDoor : SingleDoor : Door (multi-level inheritance)
       const fireDoor = doorsLib!.types.find(t => t.name === "FireDoor");
       expect(fireDoor).toBeDefined();
       expect(fireDoor!.baseType?.$refText).toBe("SingleDoor");
+      
+      const singleDoor = doorsLib!.types.find(t => t.name === "SingleDoor");
+      expect(singleDoor!.baseType?.$refText).toBe("Door");
     });
 
     test("parses building with site", async () => {
@@ -208,14 +233,14 @@ describe("BIML v2 Parser", () => {
   });
 });
 
-describe("BIML v2 Generator", () => {
+describe("BIML v2.1 Generator (types-only)", () => {
   test("generates valid JSON IR from simple fixture", async () => {
     const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
     expect(model).not.toBeNull();
     
     const ir = generateJsonIR(model!);
     
-    expect(ir.version).toBe("2.0.0");
+    expect(ir.version).toBe("2.1.0");
     expect(ir.libraries.length).toBe(1);
     expect(ir.buildings.length).toBe(1);
   });
@@ -227,11 +252,17 @@ describe("BIML v2 Generator", () => {
     const lib = ir.libraries[0];
     expect(lib.name).toBe("Doors");
     expect(lib.materials.length).toBe(2);
-    expect(lib.types.length).toBe(2);
+    expect(lib.types.length).toBe(3); // Door, SingleDoor, InteriorDoor
     
+    // Check base type Door has parameters
+    const doorType = lib.types.find(t => t.name === "Door");
+    expect(doorType).toBeDefined();
+    expect(doorType!.parameters.length).toBe(2); // width, height
+    
+    // Check SingleDoor inherits from Door
     const singleDoor = lib.types.find(t => t.name === "SingleDoor");
     expect(singleDoor).toBeDefined();
-    expect(singleDoor!.baseFamily).toBe("Door");
+    expect(singleDoor!.baseType).toBe("Door");
     expect(singleDoor!.material).toBe("WarmOak");
   });
 
@@ -287,5 +318,33 @@ describe("BIML v2 Generator", () => {
     // Check relative elevation
     const level1 = building.levels[1];
     expect(level1.elevation).toHaveProperty("ref");
+  });
+
+  test("type parameters are correctly serialized", async () => {
+    const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
+    const ir = generateJsonIR(model!);
+    
+    const lib = ir.libraries[0];
+    const doorType = lib.types.find(t => t.name === "Door");
+    
+    // Check parameter definitions
+    expect(doorType!.parameters.length).toBe(2);
+    const widthParam = doorType!.parameters.find(p => p.name === "width");
+    expect(widthParam).toBeDefined();
+    expect(widthParam!.type).toBe("Length");
+    expect(widthParam!.defaultValue?.kind).toBe("measurement");
+  });
+
+  test("type overrides are correctly serialized", async () => {
+    const { model } = await parseFile(path.join(FIXTURES, "simple.biml"));
+    const ir = generateJsonIR(model!);
+    
+    const lib = ir.libraries[0];
+    const interiorDoor = lib.types.find(t => t.name === "InteriorDoor");
+    
+    // Check parameter override
+    expect(interiorDoor!.overrides).toHaveProperty("width");
+    expect(interiorDoor!.overrides.width.kind).toBe("measurement");
+    expect(interiorDoor!.overrides.width.value).toBe(800);
   });
 });

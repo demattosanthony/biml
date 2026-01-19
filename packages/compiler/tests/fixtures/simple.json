@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "libraries": [
     {
       "name": "Doors",
@@ -13,7 +13,7 @@
           "color": { "red": 1.0, "green": 1.0, "blue": 1.0 }
         }
       ],
-      "families": [
+      "types": [
         {
           "name": "Door",
           "parameters": [
@@ -28,26 +28,23 @@
               "defaultValue": { "kind": "measurement", "value": 2100, "unit": "mm" }
             }
           ],
+          "overrides": {},
           "properties": {}
-        }
-      ],
-      "types": [
+        },
         {
           "name": "SingleDoor",
-          "baseFamily": "Door",
-          "parameters": {
-            "width": { "kind": "measurement", "value": 900, "unit": "mm" },
-            "height": { "kind": "measurement", "value": 2100, "unit": "mm" }
-          },
+          "baseType": "Door",
+          "parameters": [],
+          "overrides": {},
           "material": "WarmOak",
           "properties": {}
         },
         {
           "name": "InteriorDoor",
-          "baseFamily": "Door",
-          "parameters": {
-            "width": { "kind": "measurement", "value": 800, "unit": "mm" },
-            "height": { "kind": "measurement", "value": 2100, "unit": "mm" }
+          "baseType": "Door",
+          "parameters": [],
+          "overrides": {
+            "width": { "kind": "measurement", "value": 800, "unit": "mm" }
           },
           "material": "WhitePaint",
           "properties": {}

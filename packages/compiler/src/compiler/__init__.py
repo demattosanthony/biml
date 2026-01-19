@@ -1,10 +1,10 @@
-"""BIML v2.0 Compiler - JSON IR to IFC transformation."""
+"""BIML v2.1 Compiler - JSON IR to IFC transformation (types-only model)."""
 
 from .ir import (
     JsonIR,
     MeasurementIR,
     LibraryIR,
-    FamilyIR,
+    ParameterIR,
     TypeIR,
     MaterialIR,
     BuildingIR,
@@ -23,7 +23,7 @@ __all__ = [
     "JsonIR",
     "MeasurementIR",
     "LibraryIR",
-    "FamilyIR",
+    "ParameterIR",
     "TypeIR",
     "MaterialIR",
     "BuildingIR",

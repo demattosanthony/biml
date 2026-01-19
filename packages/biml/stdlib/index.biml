@@ -1,7 +1,13 @@
-# BIML Standard Library
+# BIML Standard Library (v2.1)
 # 
 # This file serves as documentation for the stdlib structure.
 # Individual library files can be imported as needed.
+#
+# Type System:
+#   BIML uses a types-only model (no families). Types can:
+#   - Define parameters with defaults: param width: Length = 900mm
+#   - Inherit from other types: type SingleDoor : Door { ... }
+#   - Override parameter values: width = 1000mm
 #
 # Available libraries:
 #
@@ -25,3 +31,18 @@
 #
 # Or import everything from a library:
 #   import stdlib.doors.*
+#
+# Inheritance Example:
+#   type Door {
+#     param width: Length = 900mm
+#     param height: Length = 2100mm
+#   }
+#
+#   type SingleDoor : Door {
+#     material: WarmOak
+#   }
+#
+#   type FireDoor : SingleDoor {
+#     width = 1000mm
+#     material: SteelGray
+#   }

@@ -1,4 +1,4 @@
-"""JSON IR types for BIML v2.0."""
+"""JSON IR types for BIML v2.1 (types-only model, no families)."""
 
 from dataclasses import dataclass, field
 from typing import Self, Literal, Any
@@ -250,11 +250,12 @@ class MaterialIR:
 
 
 # ============================================================================
-# Family & Type IR
+# Type IR (unified - no families)
 # ============================================================================
 
 @dataclass
 class ParameterIR:
+    """Parameter definition within a type."""
     name: str
     type: str
     default_value: ExpressionIR | None = None
@@ -273,30 +274,18 @@ class ParameterIR:
 
 
 @dataclass
-class FamilyIR:
-    name: str
-    parameters: list[ParameterIR] = field(default_factory=list)
-    geometry: GeometryIR | None = None
-    opening: GeometryIR | None = None
-    properties: dict[str, ExpressionIR] = field(default_factory=dict)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        return cls(
-            name=data["name"],
-            parameters=[ParameterIR.from_dict(p) for p in data.get("parameters", [])],
-            geometry=GeometryIR.from_dict(data.get("geometry")),
-            opening=GeometryIR.from_dict(data.get("opening")),
-            properties={k: ExpressionIR.from_dict(v) for k, v in data.get("properties", {}).items()},
-        )
-
-
-@dataclass
 class TypeIR:
+    """
+    Unified type: can define parameters AND/OR inherit from other types.
+    
+    - parameters: List of parameter definitions (param name: Type = default)
+    - overrides: Dict of parameter value overrides (name = value)
+    - baseType: Optional parent type for inheritance
+    """
     name: str
-    base_family: str | None = None
     base_type: str | None = None
-    parameters: dict[str, ExpressionIR] = field(default_factory=dict)
+    parameters: list[ParameterIR] = field(default_factory=list)
+    overrides: dict[str, ExpressionIR] = field(default_factory=dict)
     geometry: GeometryIR | None = None
     opening: GeometryIR | None = None
     material: str | None = None
@@ -305,11 +294,23 @@ class TypeIR:
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
+        # Handle both new format (parameters as list, overrides as dict)
+        # and old format (parameters as dict) for backward compatibility
+        parameters_data = data.get("parameters", [])
+        overrides_data = data.get("overrides", {})
+        
+        if isinstance(parameters_data, list):
+            parameters = [ParameterIR.from_dict(p) for p in parameters_data]
+        else:
+            # Old format: parameters was a dict of overrides
+            parameters = []
+            overrides_data = parameters_data
+        
         return cls(
             name=data["name"],
-            base_family=data.get("baseFamily"),
             base_type=data.get("baseType"),
-            parameters={k: ExpressionIR.from_dict(v) for k, v in data.get("parameters", {}).items()},
+            parameters=parameters,
+            overrides={k: ExpressionIR.from_dict(v) for k, v in overrides_data.items()},
             geometry=GeometryIR.from_dict(data.get("geometry")),
             opening=GeometryIR.from_dict(data.get("opening")),
             material=data.get("material"),
@@ -317,20 +318,33 @@ class TypeIR:
             properties={k: ExpressionIR.from_dict(v) for k, v in data.get("properties", {}).items()},
         )
 
-    def get_parameter(self, name: str) -> MeasurementIR | float | bool | str | None:
-        """Get a resolved parameter value."""
-        expr = self.parameters.get(name)
-        if expr:
-            result = expr.evaluate()
+    def get_parameter_default(self, name: str) -> ExpressionIR | None:
+        """Get the default value for a parameter definition."""
+        for param in self.parameters:
+            if param.name == name:
+                return param.default_value
+        return None
+
+    def get_parameter_value(self, name: str, context: dict[str, Any] | None = None) -> MeasurementIR | float | bool | str | None:
+        """Get resolved parameter value (override or default)."""
+        # First check overrides
+        if name in self.overrides:
+            result = self.overrides[name].evaluate(context)
             return result
+        
+        # Then check parameter defaults
+        default = self.get_parameter_default(name)
+        if default:
+            return default.evaluate(context)
+        
         return None
 
 
 @dataclass
 class LibraryIR:
+    """Library containing materials and types."""
     name: str
     materials: list[MaterialIR] = field(default_factory=list)
-    families: list[FamilyIR] = field(default_factory=list)
     types: list[TypeIR] = field(default_factory=list)
 
     @classmethod
@@ -338,7 +352,6 @@ class LibraryIR:
         return cls(
             name=data["name"],
             materials=[MaterialIR.from_dict(m) for m in data.get("materials", [])],
-            families=[FamilyIR.from_dict(f) for f in data.get("families", [])],
             types=[TypeIR.from_dict(t) for t in data.get("types", [])],
         )
 
@@ -352,12 +365,6 @@ class LibraryIR:
         for t in self.types:
             if t.name == name:
                 return t
-        return None
-
-    def get_family(self, name: str) -> FamilyIR | None:
-        for f in self.families:
-            if f.name == name:
-                return f
         return None
 
 
@@ -728,13 +735,53 @@ class JsonIR:
                 return m
         return None
 
-    def get_family(self, name: str) -> FamilyIR | None:
-        """Look up a family by name across all libraries."""
-        for lib in self.libraries:
-            f = lib.get_family(name)
-            if f:
-                return f
-        return None
+    def resolve_type_inheritance(self, type_ir: TypeIR) -> TypeIR:
+        """
+        Resolve type inheritance, returning a flattened type with all inherited 
+        parameters and properties.
+        """
+        if not type_ir.base_type:
+            return type_ir
+        
+        base = self.get_type(type_ir.base_type)
+        if not base:
+            return type_ir
+        
+        # Recursively resolve base type
+        resolved_base = self.resolve_type_inheritance(base)
+        
+        # Merge: child overrides parent
+        merged_params = list(resolved_base.parameters)
+        for param in type_ir.parameters:
+            # Check if parameter already exists in base
+            found = False
+            for i, base_param in enumerate(merged_params):
+                if base_param.name == param.name:
+                    merged_params[i] = param
+                    found = True
+                    break
+            if not found:
+                merged_params.append(param)
+        
+        # Merge overrides
+        merged_overrides = dict(resolved_base.overrides)
+        merged_overrides.update(type_ir.overrides)
+        
+        # Merge properties
+        merged_properties = dict(resolved_base.properties)
+        merged_properties.update(type_ir.properties)
+        
+        return TypeIR(
+            name=type_ir.name,
+            base_type=type_ir.base_type,
+            parameters=merged_params,
+            overrides=merged_overrides,
+            geometry=type_ir.geometry or resolved_base.geometry,
+            opening=type_ir.opening or resolved_base.opening,
+            material=type_ir.material or resolved_base.material,
+            ifc_class=type_ir.ifc_class or resolved_base.ifc_class,
+            properties=merged_properties,
+        )
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:

@@ -1,5 +1,6 @@
 # Standard Door Library
 # Common door types for architectural design
+# Uses types-only model (no families)
 
 library "stdlib.doors" {
   # Materials for doors
@@ -24,11 +25,12 @@ library "stdlib.doors" {
     transparency: 0.2
   }
 
-  # Base door family with standard parameters
-  family Door {
+  # Base door type with standard parameters
+  type Door {
     param width: Length = 900mm in 600mm..2400mm
     param height: Length = 2100mm in 1800mm..3000mm
     param thickness: Length = 45mm in 35mm..55mm
+    ifc_class: IfcDoor
   }
 
   # ============================================================================
@@ -36,24 +38,24 @@ library "stdlib.doors" {
   # ============================================================================
 
   # Standard single door - most common residential/commercial door
-  type SingleDoor extends Door {
+  type SingleDoor : Door {
     material: DoorOak
   }
 
   # Single door with glass panel
-  type SingleDoorGlass extends Door {
+  type SingleDoorGlass : Door {
     material: DoorGlass
   }
 
   # Narrow utility door
-  type UtilityDoor extends Door {
+  type UtilityDoor : Door {
     width = 760mm
     height = 2000mm
     material: DoorSteel
   }
 
   # Wide accessible door (ADA compliant)
-  type AccessibleDoor extends Door {
+  type AccessibleDoor : Door {
     width = 1000mm
     material: DoorOak
   }
@@ -63,19 +65,19 @@ library "stdlib.doors" {
   # ============================================================================
 
   # Standard double door
-  type DoubleDoor extends Door {
+  type DoubleDoor : Door {
     width = 1800mm
     material: DoorOak
   }
 
   # Wide double door for main entrances
-  type DoubleDoorWide extends Door {
+  type DoubleDoorWide : Door {
     width = 2100mm
     material: DoorWalnut
   }
 
   # French doors with glass
-  type FrenchDoor extends Door {
+  type FrenchDoor : Door {
     width = 1800mm
     material: DoorGlass
   }
@@ -85,14 +87,14 @@ library "stdlib.doors" {
   # ============================================================================
 
   # 60-minute fire-rated door
-  type FireDoor extends Door {
+  type FireDoor : Door {
     width = 1000mm
     thickness = 54mm
     material: DoorSteel
   }
 
   # Fire exit door with panic hardware
-  type FireExitDoor extends Door {
+  type FireExitDoor : Door {
     width = 1000mm
     thickness = 54mm
     material: DoorSteel
@@ -103,31 +105,31 @@ library "stdlib.doors" {
   # ============================================================================
 
   # Sliding door
-  type SlidingDoor extends Door {
+  type SlidingDoor : Door {
     width = 1800mm
     material: DoorGlass
   }
 
   # Pocket door (slides into wall)
-  type PocketDoor extends Door {
+  type PocketDoor : Door {
     width = 900mm
     material: DoorWhite
   }
 
   # Barn door (surface mounted sliding)
-  type BarnDoor extends Door {
+  type BarnDoor : Door {
     width = 1000mm
     material: DoorOak
   }
 
   # Bi-fold door
-  type BiFoldDoor extends Door {
+  type BiFoldDoor : Door {
     width = 1800mm
     material: DoorOak
   }
 
   # Revolving door
-  type RevolvingDoor extends Door {
+  type RevolvingDoor : Door {
     width = 2400mm
     height = 2400mm
     material: DoorGlass
@@ -138,28 +140,28 @@ library "stdlib.doors" {
   # ============================================================================
 
   # Storefront entry
-  type StorefrontDoor extends Door {
+  type StorefrontDoor : Door {
     width = 1000mm
     height = 2400mm
     material: DoorGlass
   }
 
   # Automatic sliding door
-  type AutomaticDoor extends Door {
+  type AutomaticDoor : Door {
     width = 1800mm
     height = 2400mm
     material: DoorGlass
   }
 
   # Service door (loading dock, etc.)
-  type ServiceDoor extends Door {
+  type ServiceDoor : Door {
     width = 1200mm
     height = 2400mm
     material: DoorSteel
   }
 
   # Overhead door (garage)
-  type OverheadDoor extends Door {
+  type OverheadDoor : Door {
     width = 2700mm
     height = 2100mm
     material: DoorSteel

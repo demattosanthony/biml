@@ -17,7 +17,7 @@ import type {
 } from "../generated/ast.js";
 
 /**
- * BIML v2 Semantic Validator
+ * BIML v2.1 Semantic Validator (types-only model)
  *
  * Validates semantic correctness of BIML models:
  * - Type references resolve correctly
@@ -41,7 +41,7 @@ export function registerValidationChecks(checks: ValidationChecks<BimLangAstType
   checks.Space = [checkSpaceBoundedBy];
 
   // Duplicate name validations
-  checks.Library = [checkDuplicateFamilyNames, checkDuplicateTypeNames, checkDuplicateMaterialNames];
+  checks.Library = [checkDuplicateTypeNames, checkDuplicateMaterialNames];
   checks.Level = [checkDuplicateWallNames, checkDuplicateSpaceNames];
   checks.Building = [checkDuplicateLevelNames];
 }
@@ -51,13 +51,7 @@ export function registerValidationChecks(checks: ValidationChecks<BimLangAstType
 // ============================================================================
 
 function checkTypeBaseReference(type: Type, accept: ValidationAcceptor): void {
-  if (type.baseFamily && !type.baseFamily.ref) {
-    accept("error", `Family '${type.baseFamily.$refText}' not found.`, {
-      node: type,
-      property: "baseFamily",
-    });
-  }
-
+  // Check that the base type reference resolves (types-only model)
   if (type.baseType && !type.baseType.ref) {
     accept("error", `Type '${type.baseType.$refText}' not found.`, {
       node: type,
@@ -202,19 +196,6 @@ function checkSpaceBoundedBy(space: Space, accept: ValidationAcceptor): void {
 // ============================================================================
 // Duplicate Name Validations
 // ============================================================================
-
-function checkDuplicateFamilyNames(library: Library, accept: ValidationAcceptor): void {
-  const seen = new Set<string>();
-  for (const family of library.families) {
-    if (seen.has(family.name)) {
-      accept("error", `Duplicate family name '${family.name}'.`, {
-        node: family,
-        property: "name",
-      });
-    }
-    seen.add(family.name);
-  }
-}
 
 function checkDuplicateTypeNames(library: Library, accept: ValidationAcceptor): void {
   const seen = new Set<string>();

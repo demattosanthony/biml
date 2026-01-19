@@ -1,42 +1,45 @@
 # Standard Structural Elements Library
 # Column and beam types for structural design
+# Uses types-only model (no families)
 
 library "stdlib.structure" {
   # ============================================================================
   # Columns
   # ============================================================================
 
-  family Column {
+  # Base column type
+  type Column {
     param width: Length = 400mm in 200mm..1000mm
     param depth: Length = 400mm in 200mm..1000mm
+    ifc_class: IfcColumn
   }
 
   # Square concrete column
-  type ConcreteColumnSquare extends Column {
+  type ConcreteColumnSquare : Column {
     width = 400mm
     depth = 400mm
   }
 
   # Rectangular concrete column
-  type ConcreteColumnRect extends Column {
+  type ConcreteColumnRect : Column {
     width = 400mm
     depth = 600mm
   }
 
   # Large concrete column
-  type ConcreteColumnLarge extends Column {
+  type ConcreteColumnLarge : Column {
     width = 600mm
     depth = 600mm
   }
 
   # Steel W-section column
-  type SteelColumnW extends Column {
+  type SteelColumnW : Column {
     width = 300mm
     depth = 300mm
   }
 
   # Steel pipe column
-  type SteelColumnPipe extends Column {
+  type SteelColumnPipe : Column {
     width = 300mm
     depth = 300mm
   }
@@ -45,31 +48,33 @@ library "stdlib.structure" {
   # Beams
   # ============================================================================
 
-  family Beam {
+  # Base beam type
+  type Beam {
     param width: Length = 300mm in 150mm..600mm
     param height: Length = 600mm in 300mm..1200mm
+    ifc_class: IfcBeam
   }
 
   # Concrete beam
-  type ConcreteBeam extends Beam {
+  type ConcreteBeam : Beam {
     width = 300mm
     height = 600mm
   }
 
   # Deep concrete beam
-  type ConcreteBeamDeep extends Beam {
+  type ConcreteBeamDeep : Beam {
     width = 300mm
     height = 900mm
   }
 
   # Steel W-section beam
-  type SteelBeamW extends Beam {
+  type SteelBeamW : Beam {
     width = 200mm
     height = 500mm
   }
 
   # Steel channel beam
-  type SteelBeamChannel extends Beam {
+  type SteelBeamChannel : Beam {
     width = 150mm
     height = 300mm
   }
