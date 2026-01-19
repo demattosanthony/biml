@@ -1,5 +1,5 @@
 {
-  "version": "0.6.0",
+  "version": "2.0.0",
   "libraries": [
     {
       "name": "Doors",
@@ -9,11 +9,7 @@
           "color": { "red": 0.76, "green": 0.60, "blue": 0.42 }
         },
         {
-          "name": "DarkWalnut",
-          "color": { "red": 0.40, "green": 0.26, "blue": 0.13 }
-        },
-        {
-          "name": "WhitePainted",
+          "name": "WhitePaint",
           "color": { "red": 1.0, "green": 1.0, "blue": 1.0 }
         }
       ],
@@ -23,132 +19,134 @@
           "parameters": [
             {
               "name": "width",
-              "paramType": "Length",
-              "defaultValue": {
-                "kind": "measurement",
-                "value": 900,
-                "unit": "mm"
-              }
+              "type": "Length",
+              "defaultValue": { "kind": "measurement", "value": 900, "unit": "mm" }
             },
             {
               "name": "height",
-              "paramType": "Length",
-              "defaultValue": {
-                "kind": "measurement",
-                "value": 2100,
-                "unit": "mm"
-              }
+              "type": "Length",
+              "defaultValue": { "kind": "measurement", "value": 2100, "unit": "mm" }
             }
-          ]
+          ],
+          "properties": {}
         }
       ],
       "types": [
         {
-          "name": "StandardDoor",
-          "family": "Door",
+          "name": "SingleDoor",
+          "baseFamily": "Door",
+          "parameters": {
+            "width": { "kind": "measurement", "value": 900, "unit": "mm" },
+            "height": { "kind": "measurement", "value": 2100, "unit": "mm" }
+          },
           "material": "WarmOak",
-          "parameters": [
-            {
-              "name": "width",
-              "value": { "value": 900, "unit": "mm" }
-            },
-            {
-              "name": "height",
-              "value": { "value": 2100, "unit": "mm" }
-            }
-          ]
+          "properties": {}
         },
         {
           "name": "InteriorDoor",
-          "family": "Door",
-          "material": "WhitePainted",
-          "parameters": [
-            {
-              "name": "width",
-              "value": { "value": 800, "unit": "mm" }
-            },
-            {
-              "name": "height",
-              "value": { "value": 2100, "unit": "mm" }
-            }
-          ]
-        },
-        {
-          "name": "WalnutDoor",
-          "family": "Door",
-          "material": "DarkWalnut",
-          "parameters": [
-            {
-              "name": "width",
-              "value": { "value": 900, "unit": "mm" }
-            },
-            {
-              "name": "height",
-              "value": { "value": 2100, "unit": "mm" }
-            }
-          ]
+          "baseFamily": "Door",
+          "parameters": {
+            "width": { "kind": "measurement", "value": 800, "unit": "mm" },
+            "height": { "kind": "measurement", "value": 2100, "unit": "mm" }
+          },
+          "material": "WhitePaint",
+          "properties": {}
         }
       ]
     }
   ],
-  "projects": [
+  "buildings": [
     {
       "name": "Simple Office",
-      "sites": [
+      "defaults": {
+        "wallThickness": { "value": 0.2, "unit": "m" },
+        "ceilingHeight": { "value": 2.7, "unit": "m" }
+      },
+      "levels": [
         {
-          "name": "Main Site",
-          "buildings": [
+          "name": "Ground",
+          "elevation": { "value": 0, "unit": "m" },
+          "height": { "value": 3.5, "unit": "m" },
+          "walls": [
             {
-              "name": "Office Building",
-              "levels": [
-                {
-                  "name": "Ground",
-                  "elevation": { "value": 0, "unit": "m" },
-                  "height": { "value": 3.5, "unit": "m" },
-                  "ceilingThickness": { "value": 0.15, "unit": "m" },
-                  "spaces": [
-                    {
-                      "name": "Reception",
-                      "position": { "row": 0, "col": 0 },
-                      "area": { "value": 50, "unit": "m²" },
-                      "doors": [
-                        {
-                          "name": "Main Entry",
-                          "typeRef": "StandardDoor",
-                          "wall": "south",
-                          "offset": { "kind": "center" }
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Hallway",
-                      "position": { "row": 0, "col": 1 },
-                      "width": { "value": 2, "unit": "m" },
-                      "length": { "value": 10, "unit": "m" },
-                      "doors": [
-                        {
-                          "name": "D1",
-                          "typeRef": "InteriorDoor",
-                          "wall": "west",
-                          "connects": "Reception"
-                        },
-                        {
-                          "name": "D2",
-                          "typeRef": "WalnutDoor",
-                          "wall": "east",
-                          "offset": {
-                            "kind": "absolute",
-                            "distance": { "value": 3, "unit": "m" },
-                            "anchor": "north"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "name": "North",
+              "start": { "x": 0, "y": 10 },
+              "end": { "x": 15, "y": 10 }
+            },
+            {
+              "name": "East",
+              "start": { "x": 15, "y": 10 },
+              "end": { "x": 15, "y": 0 }
+            },
+            {
+              "name": "South",
+              "start": { "x": 15, "y": 0 },
+              "end": { "x": 0, "y": 0 }
+            },
+            {
+              "name": "West",
+              "start": { "x": 0, "y": 0 },
+              "end": { "x": 0, "y": 10 }
+            },
+            {
+              "name": "Interior",
+              "start": { "x": 8, "y": 0 },
+              "end": { "x": 8, "y": 10 }
             }
-          ]
+          ],
+          "spaces": [
+            {
+              "name": "Reception",
+              "tags": ["public", "reception"],
+              "boundedBy": [
+                { "wall": "South" },
+                { "wall": "Interior" },
+                { "wall": "North" },
+                { "wall": "West" }
+              ],
+              "doors": [
+                {
+                  "name": "Main Entry",
+                  "wall": "South",
+                  "position": { "kind": "absolute", "value": { "value": 4, "unit": "m" } },
+                  "typeRef": "SingleDoor",
+                  "swing": "outward"
+                }
+              ],
+              "windows": [],
+              "furniture": []
+            },
+            {
+              "name": "Office",
+              "tags": ["private", "office"],
+              "boundedBy": [
+                { "wall": "South" },
+                { "wall": "East" },
+                { "wall": "North" },
+                { "wall": "Interior" }
+              ],
+              "doors": [
+                {
+                  "name": "Office Door",
+                  "wall": "Interior",
+                  "position": { "kind": "absolute", "value": { "value": 5, "unit": "m" } },
+                  "typeRef": "InteriorDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Reception",
+                    "to": "Office"
+                  }
+                }
+              ],
+              "windows": [],
+              "furniture": []
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [],
+          "furniture": [],
+          "slabs": []
         }
       ]
     }

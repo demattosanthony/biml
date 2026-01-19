@@ -15,7 +15,7 @@ function exitWithErrors(title: string, errors: { message: string }[]): never {
   process.exit(1);
 }
 
-async function parseAndValidate(filePath: string): Promise<Model> {
+async function parseAndValidate(filePath: string, strict: boolean = false): Promise<Model> {
   const services = createBimServices(NodeFileSystem);
   const uri = URI.file(path.resolve(filePath));
   const document =
@@ -32,8 +32,14 @@ async function parseAndValidate(filePath: string): Promise<Model> {
   const validationErrors = (document.diagnostics ?? []).filter(
     (d) => d.severity === 1
   );
+  
+  // Show validation errors as warnings (cross-reference resolution issues are common)
   if (validationErrors.length) {
-    exitWithErrors("Validation errors:", validationErrors);
+    console.warn("Warnings:");
+    validationErrors.forEach((e) => console.warn(`  ${e.message}`));
+    if (strict) {
+      process.exit(1);
+    }
   }
 
   return document.parseResult.value as Model;

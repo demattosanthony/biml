@@ -1,0 +1,76 @@
+# Standard Structural Elements Library
+# Column and beam types for structural design
+
+library "stdlib.structure" {
+  # ============================================================================
+  # Columns
+  # ============================================================================
+
+  family Column {
+    param width: Length = 400mm in 200mm..1000mm
+    param depth: Length = 400mm in 200mm..1000mm
+  }
+
+  # Square concrete column
+  type ConcreteColumnSquare extends Column {
+    width = 400mm
+    depth = 400mm
+  }
+
+  # Rectangular concrete column
+  type ConcreteColumnRect extends Column {
+    width = 400mm
+    depth = 600mm
+  }
+
+  # Large concrete column
+  type ConcreteColumnLarge extends Column {
+    width = 600mm
+    depth = 600mm
+  }
+
+  # Steel W-section column
+  type SteelColumnW extends Column {
+    width = 300mm
+    depth = 300mm
+  }
+
+  # Steel pipe column
+  type SteelColumnPipe extends Column {
+    width = 300mm
+    depth = 300mm
+  }
+
+  # ============================================================================
+  # Beams
+  # ============================================================================
+
+  family Beam {
+    param width: Length = 300mm in 150mm..600mm
+    param height: Length = 600mm in 300mm..1200mm
+  }
+
+  # Concrete beam
+  type ConcreteBeam extends Beam {
+    width = 300mm
+    height = 600mm
+  }
+
+  # Deep concrete beam
+  type ConcreteBeamDeep extends Beam {
+    width = 300mm
+    height = 900mm
+  }
+
+  # Steel W-section beam
+  type SteelBeamW extends Beam {
+    width = 200mm
+    height = 500mm
+  }
+
+  # Steel channel beam
+  type SteelBeamChannel extends Beam {
+    width = 150mm
+    height = 300mm
+  }
+}

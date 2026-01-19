@@ -1,6 +1,6 @@
-# biml
+# biml v2
 
-DSL for BIM model generation.
+DSL for BIM model generation with coordinate-based wall definitions.
 
 ## Quick Start
 
@@ -18,51 +18,84 @@ bun ./bin/cli.ts parse test/fixtures/simple.biml -o output.json
 ## Example .biml File
 
 ```biml
-# Define parametric door types
+# Define parametric types
 library "Doors" {
-  family Door {
-    parameter width: Length = 900mm
-    parameter height: Length = 2100mm
+  material Oak {
+    color: oak
   }
 
-  type SingleFlush extends Door { }
-  type DoubleDoor extends Door {
-    width = 1800mm
+  family Door {
+    param width: Length = 900mm
+    param height: Length = 2100mm
+  }
+
+  type SingleDoor extends Door {
+    material: Oak
   }
 }
 
-# Define building hierarchy
-project "Office Building" {
-  site "Main Site" {
-    building "Building A" {
-      level "Ground" {
-        elevation: 0m
-        height: 3.5m
+# Define building with coordinate-based walls
+building "Office Building" {
+  level "Ground" at 0m, height: 3.5m {
+    # Walls defined by coordinates
+    wall "North" from (0, 10) to (15, 10)
+    wall "East" from (15, 10) to (15, 0)
+    wall "South" from (15, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 10)
 
-        space "Lobby" {
-          position: [0, 0]
-          area: 100m²
-          door "D1": SingleFlush
-        }
+    # Space bounded by walls
+    space "Lobby" [public] {
+      bounded_by: ["South", "East", "North", "West"]
 
-        space "Hallway" {
-          position: [0, 1]
-          width: 2m
-          length: 15m
-        }
-      }
-
-      level "Level1" {
-        elevation: 3.5m
-        height: 3m
-
-        space "Office" {
-          position: [0, 0]
-          area: 25m²
-        }
+      # Door placed in wall
+      door "Main Entry": SingleDoor in "South" at 7.5m {
+        swing: outward
       }
     }
   }
+}
+```
+
+## Key Features
+
+### Coordinate-Based Walls
+
+Walls are defined by explicit start/end coordinates:
+
+```biml
+wall "Name" from (x1, y1) to (x2, y2)
+```
+
+### Explicit Space Boundaries
+
+Spaces reference walls that bound them:
+
+```biml
+space "Room" {
+  bounded_by: ["Wall1", "Wall2", "Wall3", "Wall4"]
+}
+```
+
+### Element Placement in Walls
+
+Doors and windows are placed in specific walls at positions:
+
+```biml
+door "D1": DoorType in "WallName" at 5m
+window "W1": WindowType in "WallName" at center
+```
+
+### Parametric Types
+
+```biml
+family Door {
+  param width: Length = 900mm in 600mm..1200mm
+  param height: Length = 2100mm
+}
+
+type SingleDoor extends Door { }
+type WideDoor extends Door {
+  width = 1200mm
 }
 ```
 
@@ -71,3 +104,13 @@ project "Office Building" {
 ```bash
 bun test
 ```
+
+## Standard Library
+
+The stdlib contains curated parametric types:
+
+- `stdlib/elements/doors.biml` - 20+ door types
+- `stdlib/elements/windows.biml` - 20+ window types
+- `stdlib/furniture/office.biml` - Desks, chairs, tables
+- `stdlib/structure/columns.biml` - Column types
+- `stdlib/materials/common.biml` - Material definitions

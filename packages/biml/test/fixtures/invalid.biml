@@ -1,13 +1,26 @@
-# Invalid BIML syntax for testing error handling
+# Invalid BIML v2 - for testing error handling
 
-project "Broken" {
-  site "Test Site" {
-    building "Bad Building" {
-      level "Ground" {
-        elevation: 0m
-        // Missing closing brace for level
-        space "Orphan" {
-          area: 20m²
-        }
+library "Test" {
+  family Door {
+    param width: Length = 900mm
+  }
+
+  type TestDoor extends Door { }
+}
+
+building "Test Building" {
+  level "Ground" at 0m, height: 3m {
+    wall "W1" from (0, 0) to (10, 0)
+
+    # Error: Reference to non-existent wall
+    door "D1": TestDoor in "NonExistentWall" at 5m
+
+    # Error: Reference to non-existent type
+    door "D2": NonExistentType in "W1" at 3m
+
+    space "Room" {
+      # Error: Reference to non-existent wall in bounded_by
+      bounded_by: ["W1", "NonExistentWall2"]
     }
+  }
 }

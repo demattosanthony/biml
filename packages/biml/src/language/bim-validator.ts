@@ -4,41 +4,46 @@ import type {
   Model,
   Library,
   Type,
-  SpaceDoor,
-  Space,
-  Level,
   Building,
-  Project,
+  Level,
+  Wall,
+  Space,
+  Door,
+  SpaceDoor,
+  Window,
+  SpaceWindow,
   DoorConnectsProperty,
+  BoundedByProperty,
 } from "../generated/ast.js";
 
 /**
- * BIML Semantic Validator
+ * BIML v2 Semantic Validator
  *
- * Validates the semantic correctness of BIML models beyond syntax:
- * - Type references resolve
- * - No duplicate names in scope
- * - Grid positions don't overlap
- * - Interior doors connect to valid spaces
- * - Required properties are present
+ * Validates semantic correctness of BIML models:
+ * - Type references resolve correctly
+ * - No duplicate names within scope
+ * - Wall references in bounded_by exist
+ * - Door/window wall references exist
+ * - Connects references valid spaces
  */
 
 export function registerValidationChecks(checks: ValidationChecks<BimLangAstType>) {
   // Type system validations
   checks.Type = [checkTypeBaseReference];
 
-  // Door validations
-  checks.SpaceDoor = [checkDoorTypeReference, checkDoorConnectsReference];
+  // Door/Window validations
+  checks.Door = [checkDoorWallReference, checkDoorTypeReference];
+  checks.SpaceDoor = [checkSpaceDoorWallReference, checkSpaceDoorTypeReference, checkDoorConnectsReference];
+  checks.Window = [checkWindowWallReference, checkWindowTypeReference];
+  checks.SpaceWindow = [checkSpaceWindowWallReference, checkSpaceWindowTypeReference];
+
+  // Space validations
+  checks.Space = [checkSpaceBoundedBy];
 
   // Duplicate name validations
-  checks.Library = [checkDuplicateFamilyNames, checkDuplicateTypeNames];
-  checks.Level = [checkDuplicateSpaceNames, checkOverlappingPositions];
+  checks.Library = [checkDuplicateFamilyNames, checkDuplicateTypeNames, checkDuplicateMaterialNames];
+  checks.Level = [checkDuplicateWallNames, checkDuplicateSpaceNames];
   checks.Building = [checkDuplicateLevelNames];
-  checks.Project = [checkDuplicateSiteNames];
-
-  // Required property validations
-  checks.Space = [checkSpaceHasDimensions, checkSpaceHasPosition];
-  checks.Level = [...(checks.Level || []), checkLevelHasHeight];
 }
 
 // ============================================================================
@@ -46,15 +51,13 @@ export function registerValidationChecks(checks: ValidationChecks<BimLangAstType
 // ============================================================================
 
 function checkTypeBaseReference(type: Type, accept: ValidationAcceptor): void {
-  // Check family reference
-  if (type.base && !type.base.ref) {
-    accept("error", `Family '${type.base.$refText}' not found.`, {
+  if (type.baseFamily && !type.baseFamily.ref) {
+    accept("error", `Family '${type.baseFamily.$refText}' not found.`, {
       node: type,
-      property: "base",
+      property: "baseFamily",
     });
   }
 
-  // Check type reference (for type-extends-type)
   if (type.baseType && !type.baseType.ref) {
     accept("error", `Type '${type.baseType.$refText}' not found.`, {
       node: type,
@@ -67,70 +70,132 @@ function checkTypeBaseReference(type: Type, accept: ValidationAcceptor): void {
 // Door Validations
 // ============================================================================
 
-function checkDoorTypeReference(door: SpaceDoor, accept: ValidationAcceptor): void {
-  if (!door.typeRef) {
-    // Check if inline dimensions are provided
-    const hasWidth = door.overrides.some((o) => o.$type === "DoorWidthProperty");
-    const hasHeight = door.overrides.some((o) => o.$type === "DoorHeightProperty");
-
-    if (!hasWidth || !hasHeight) {
-      accept(
-        "warning",
-        `Door '${cleanName(door.name)}' has no type reference and is missing ${!hasWidth ? "width" : ""} ${!hasWidth && !hasHeight ? "and " : ""} ${!hasHeight ? "height" : ""}. Default dimensions will be used.`,
-        { node: door, property: "name" }
-      );
-    }
-    return;
+function checkDoorWallReference(door: Door, accept: ValidationAcceptor): void {
+  if (!door.wall.ref) {
+    accept("error", `Wall '${door.wall.$refText}' not found on this level.`, {
+      node: door,
+      property: "wall",
+    });
   }
+}
 
-  // Validate type reference exists
-  const typeName = door.typeRef.typeName;
-  const model = getModelRoot(door);
-  if (!model) return;
+function checkDoorTypeReference(door: Door, accept: ValidationAcceptor): void {
+  if (door.typeRef && !door.typeRef.ref) {
+    accept("error", `Door type '${door.typeRef.$refText}' not found in any library.`, {
+      node: door,
+      property: "typeRef",
+    });
+  }
+}
 
-  const typeExists = model.libraries.some((lib) =>
-    lib.types.some((t) => t.name === typeName)
-  );
+function checkSpaceDoorWallReference(door: SpaceDoor, accept: ValidationAcceptor): void {
+  if (!door.wall.ref) {
+    accept("error", `Wall '${door.wall.$refText}' not found on this level.`, {
+      node: door,
+      property: "wall",
+    });
+  }
+}
 
-  if (!typeExists) {
-    accept("error", `Door type '${typeName}' not found in any library.`, {
-      node: door.typeRef,
-      property: "typeName",
+function checkSpaceDoorTypeReference(door: SpaceDoor, accept: ValidationAcceptor): void {
+  if (door.typeRef && !door.typeRef.ref) {
+    accept("error", `Door type '${door.typeRef.$refText}' not found in any library.`, {
+      node: door,
+      property: "typeRef",
     });
   }
 }
 
 function checkDoorConnectsReference(door: SpaceDoor, accept: ValidationAcceptor): void {
-  const connectsOverride = door.overrides.find(
-    (o) => o.$type === "DoorConnectsProperty"
+  if (!door.body) return;
+
+  const connectsProperty = door.body.properties.find(
+    (p) => p.$type === "DoorConnectsProperty"
   ) as DoorConnectsProperty | undefined;
 
-  if (!connectsOverride) return;
+  if (!connectsProperty) return;
 
-  const targetSpaceName = cleanName(connectsOverride.targetSpace);
-  const level = getLevelForDoor(door);
-  if (!level) return;
+  // Check 'from' reference
+  if (connectsProperty.from && !connectsProperty.from.ref) {
+    const refText = (connectsProperty.from as unknown as { $refText?: string }).$refText;
+    if (refText && refText !== "this" && refText !== "exterior") {
+      accept("error", `Space '${refText}' not found on this level.`, {
+        node: connectsProperty,
+        property: "from",
+      });
+    }
+  }
 
-  // Get the space this door is in
-  const currentSpace = door.$container;
-  const currentSpaceName = cleanName(currentSpace.name);
+  // Check 'to' reference
+  if (connectsProperty.to && !connectsProperty.to.ref) {
+    const refText = (connectsProperty.to as unknown as { $refText?: string }).$refText;
+    if (refText && refText !== "this" && refText !== "exterior") {
+      accept("error", `Space '${refText}' not found on this level.`, {
+        node: connectsProperty,
+        property: "to",
+      });
+    }
+  }
+}
 
-  // Check if target space exists and is different from current
-  const targetExists = level.spaces.some(
-    (s) => cleanName(s.name) === targetSpaceName
-  );
+// ============================================================================
+// Window Validations
+// ============================================================================
 
-  if (!targetExists) {
-    accept(
-      "error",
-      `Door connects to '${targetSpaceName}' but no space with that name exists on this level.`,
-      { node: connectsOverride, property: "targetSpace" }
-    );
-  } else if (targetSpaceName === currentSpaceName) {
-    accept("error", `Door cannot connect a space to itself.`, {
-      node: connectsOverride,
-      property: "targetSpace",
+function checkWindowWallReference(window: Window, accept: ValidationAcceptor): void {
+  if (!window.wall.ref) {
+    accept("error", `Wall '${window.wall.$refText}' not found on this level.`, {
+      node: window,
+      property: "wall",
     });
+  }
+}
+
+function checkWindowTypeReference(window: Window, accept: ValidationAcceptor): void {
+  if (window.typeRef && !window.typeRef.ref) {
+    accept("error", `Window type '${window.typeRef.$refText}' not found in any library.`, {
+      node: window,
+      property: "typeRef",
+    });
+  }
+}
+
+function checkSpaceWindowWallReference(window: SpaceWindow, accept: ValidationAcceptor): void {
+  if (!window.wall.ref) {
+    accept("error", `Wall '${window.wall.$refText}' not found on this level.`, {
+      node: window,
+      property: "wall",
+    });
+  }
+}
+
+function checkSpaceWindowTypeReference(window: SpaceWindow, accept: ValidationAcceptor): void {
+  if (window.typeRef && !window.typeRef.ref) {
+    accept("error", `Window type '${window.typeRef.$refText}' not found in any library.`, {
+      node: window,
+      property: "typeRef",
+    });
+  }
+}
+
+// ============================================================================
+// Space Validations
+// ============================================================================
+
+function checkSpaceBoundedBy(space: Space, accept: ValidationAcceptor): void {
+  const boundedByProp = space.properties.find(
+    (p) => p.$type === "BoundedByProperty"
+  ) as BoundedByProperty | undefined;
+
+  if (!boundedByProp) return;
+
+  for (const wallRef of boundedByProp.walls) {
+    if (!wallRef.wall.ref) {
+      accept("error", `Wall '${wallRef.wall.$refText}' not found on this level.`, {
+        node: wallRef,
+        property: "wall",
+      });
+    }
   }
 }
 
@@ -164,17 +229,50 @@ function checkDuplicateTypeNames(library: Library, accept: ValidationAcceptor): 
   }
 }
 
-function checkDuplicateSpaceNames(level: Level, accept: ValidationAcceptor): void {
+function checkDuplicateMaterialNames(library: Library, accept: ValidationAcceptor): void {
   const seen = new Set<string>();
-  for (const space of level.spaces) {
-    const name = cleanName(space.name);
-    if (seen.has(name)) {
-      accept("error", `Duplicate space name '${name}' on level '${cleanName(level.name)}'.`, {
-        node: space,
+  for (const material of library.materials) {
+    if (seen.has(material.name)) {
+      accept("error", `Duplicate material name '${material.name}'.`, {
+        node: material,
         property: "name",
       });
     }
-    seen.add(name);
+    seen.add(material.name);
+  }
+}
+
+function checkDuplicateWallNames(level: Level, accept: ValidationAcceptor): void {
+  const seen = new Set<string>();
+  for (const member of level.members) {
+    if (member.$type === "Wall") {
+      const wall = member as Wall;
+      const name = cleanName(wall.name);
+      if (seen.has(name)) {
+        accept("error", `Duplicate wall name '${name}' on level '${cleanName(level.name)}'.`, {
+          node: wall,
+          property: "name",
+        });
+      }
+      seen.add(name);
+    }
+  }
+}
+
+function checkDuplicateSpaceNames(level: Level, accept: ValidationAcceptor): void {
+  const seen = new Set<string>();
+  for (const member of level.members) {
+    if (member.$type === "Space") {
+      const space = member as Space;
+      const name = cleanName(space.name);
+      if (seen.has(name)) {
+        accept("error", `Duplicate space name '${name}' on level '${cleanName(level.name)}'.`, {
+          node: space,
+          property: "name",
+        });
+      }
+      seen.add(name);
+    }
   }
 }
 
@@ -192,97 +290,6 @@ function checkDuplicateLevelNames(building: Building, accept: ValidationAcceptor
   }
 }
 
-function checkDuplicateSiteNames(project: Project, accept: ValidationAcceptor): void {
-  const seen = new Set<string>();
-  for (const site of project.sites) {
-    const name = cleanName(site.name);
-    if (seen.has(name)) {
-      accept("error", `Duplicate site name '${name}'.`, {
-        node: site,
-        property: "name",
-      });
-    }
-    seen.add(name);
-  }
-}
-
-// ============================================================================
-// Position Validations
-// ============================================================================
-
-function checkOverlappingPositions(level: Level, accept: ValidationAcceptor): void {
-  const positions = new Map<string, Space>();
-
-  for (const space of level.spaces) {
-    const positionProp = space.properties.find((p) => p.$type === "PositionProperty");
-    if (!positionProp || positionProp.$type !== "PositionProperty") continue;
-
-    const key = `${positionProp.row},${positionProp.col}`;
-    const existing = positions.get(key);
-
-    if (existing) {
-      accept(
-        "warning",
-        `Space '${cleanName(space.name)}' overlaps with '${cleanName(existing.name)}' at position [${positionProp.row}, ${positionProp.col}].`,
-        { node: positionProp }
-      );
-    } else {
-      positions.set(key, space);
-    }
-  }
-}
-
-// ============================================================================
-// Required Property Validations
-// ============================================================================
-
-function checkSpaceHasDimensions(space: Space, accept: ValidationAcceptor): void {
-  const hasArea = space.properties.some((p) => p.$type === "AreaProperty");
-  const hasWidth = space.properties.some((p) => p.$type === "WidthProperty");
-  const hasLength = space.properties.some((p) => p.$type === "LengthProperty");
-
-  if (!hasArea && !(hasWidth && hasLength)) {
-    accept(
-      "warning",
-      `Space '${cleanName(space.name)}' has no dimensions specified. Provide 'area' or both 'width' and 'length'. Default size will be used.`,
-      { node: space, property: "name" }
-    );
-  }
-
-  // Check for incomplete width/length
-  if ((hasWidth && !hasLength) || (!hasWidth && hasLength)) {
-    accept(
-      "warning",
-      `Space '${cleanName(space.name)}' has ${hasWidth ? "width" : "length"} but not ${hasWidth ? "length" : "width"}. Both are required for explicit dimensions.`,
-      { node: space, property: "name" }
-    );
-  }
-}
-
-function checkSpaceHasPosition(space: Space, accept: ValidationAcceptor): void {
-  const hasPosition = space.properties.some((p) => p.$type === "PositionProperty");
-
-  if (!hasPosition) {
-    accept(
-      "warning",
-      `Space '${cleanName(space.name)}' has no position. It will be placed at [0, 0] which may overlap with other spaces.`,
-      { node: space, property: "name" }
-    );
-  }
-}
-
-function checkLevelHasHeight(level: Level, accept: ValidationAcceptor): void {
-  const hasHeight = level.properties.some((p) => p.$type === "HeightProperty");
-
-  if (!hasHeight) {
-    accept(
-      "info",
-      `Level '${cleanName(level.name)}' has no height specified. Default height of 3m will be used.`,
-      { node: level, property: "name" }
-    );
-  }
-}
-
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -292,19 +299,4 @@ function cleanName(name: string): string {
     return name.slice(1, -1);
   }
   return name;
-}
-
-function getModelRoot(node: unknown): Model | undefined {
-  let current = node as { $container?: unknown };
-  while (current.$container) {
-    current = current.$container as { $container?: unknown };
-  }
-  return current as Model | undefined;
-}
-
-function getLevelForDoor(door: SpaceDoor): Level | undefined {
-  // door -> Space -> Level
-  const space = door.$container;
-  if (!space) return undefined;
-  return space.$container as Level | undefined;
 }

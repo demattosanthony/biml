@@ -1,249 +1,249 @@
-# Comprehensive BIML Example (v0.6.0)
-# Demonstrates all language features for floors, rooms, and doors
+# Comprehensive BIML v2 Example
+# Multi-story office building with all features
 
-# =============================================================================
-# Type Library - Parametric Door Definitions with Materials
-# =============================================================================
-
-library "Standard Doors" {
-  # Material definitions for door finishes
-  material WoodOak {
+library "Materials" {
+  material Oak {
     color: oak
   }
 
-  material WoodWalnut {
+  material Walnut {
     color: walnut
   }
 
-  material WoodMahogany {
-    color: mahogany
+  material Steel {
+    color: steel
+  }
+
+  material Glass {
+    color: glass
+    transparency: 0.3
+  }
+
+  material Concrete {
+    color: concrete
+  }
+
+  material White {
+    color: white
+  }
+}
+
+library "Doors" {
+  material WoodOak {
+    color: oak
   }
 
   material SteelGray {
     color: steel
   }
 
-  material WhitePaint {
-    color: white
-  }
-
-  material GlassFrosted {
-    color: glass
-    transparency: 0.3
-  }
-
-  # Base door family with default parameters
   family Door {
-    parameter width: Length = 900mm
-    parameter height: Length = 2100mm
-    parameter thickness: Length = 45mm
-    parameter isFireRated: Boolean = false
+    param width: Length = 900mm
+    param height: Length = 2100mm
+    param thickness: Length = 45mm
   }
 
-  # Standard single door - oak finish
   type SingleDoor extends Door {
     material: WoodOak
   }
 
-  # Double door - walnut finish for premium look
   type DoubleDoor extends Door {
     width = 1800mm
-    material: WoodWalnut
+    material: WoodOak
   }
 
-  # Fire-rated door - steel finish (type inherits from type using ':')
   type FireDoor : SingleDoor {
     width = 1000mm
-    isFireRated = true
     material: SteelGray
   }
 
-  # Wide accessible door - white paint
   type AccessibleDoor extends Door {
-    width = 1200mm
-    material: WhitePaint
-  }
-
-  # Narrow utility door - steel
-  type UtilityDoor extends Door {
-    width = 760mm
-    height = 2000mm
-    material: SteelGray
-  }
-
-  # Executive door - mahogany for luxury
-  type ExecutiveDoor extends Door {
-    width = 1000mm
-    material: WoodMahogany
+    width = 1100mm
+    material: WoodOak
   }
 }
 
-# =============================================================================
-# Project Definition - Multi-Story Office Building
-# =============================================================================
+library "Windows" {
+  material GlassClear {
+    color: glass
+    transparency: 0.1
+  }
 
-project "Modern Office Building" {
-  site "Downtown Campus" {
-    building "Building A" {
+  family Window {
+    param width: Length = 1200mm
+    param height: Length = 1500mm
+    param sill_height: Length = 900mm
+  }
 
-      # Ground Floor - Lobby and Reception
-      level "Ground Floor" {
-        elevation: 0m
-        height: 4m
-        slab_thickness: 250mm
-        ceiling_thickness: 120mm
+  type FixedWindow extends Window {
+    material: GlassClear
+  }
 
-        # Main lobby - large square room
-        space "Main Lobby" {
-          position: [0, 0]
-          area: 100m²
+  type CasementWindow extends Window {
+    width = 900mm
+    material: GlassClear
+  }
+}
 
-          # Main entrance - double door with center offset
-          door "Main Entry": DoubleDoor {
-            wall: south
-            offset: center
-            swing: out
-          }
-        }
+library "Furniture" {
+  family Desk {
+    param width: Length = 1600mm
+    param depth: Length = 800mm
+    param height: Length = 720mm
+  }
 
-        # Reception - adjacent to lobby (east)
-        space "Reception" {
-          position: [0, 1]
-          area: 40m²
+  family Chair {
+    param width: Length = 600mm
+    param depth: Length = 600mm
+    param height: Length = 450mm
+  }
 
-          # Interior door connecting to lobby
-          door "Lobby Door": SingleDoor {
-            wall: west
-            connects: "Main Lobby"
-            swing: in-left
-          }
-        }
+  family ConferenceTable {
+    param width: Length = 3000mm
+    param depth: Length = 1200mm
+    param height: Length = 720mm
+  }
 
-        # Long corridor - using aspect ratio for non-square room
-        space "Main Corridor" {
-          position: [1, 0]
-          area: 50m²
-          aspect: 10:1
+  type StandardDesk extends Desk { }
+  type OfficeChair extends Chair { }
+  type LargeConferenceTable extends ConferenceTable { }
+}
 
-          # Fire exit at end of corridor
-          door "Fire Exit A": FireDoor {
-            wall: west
-            offset: 1m from south
-          }
-        }
+building "Modern Office Building" {
+  defaults {
+    wall_thickness: 200mm
+    floor_thickness: 200mm
+    ceiling_height: 2700mm
+    door_height: 2100mm
+    window_sill: 900mm
+  }
 
-        # Conference room
-        space "Conference Room A" {
-          position: [1, 1]
-          width: 6m
-          length: 8m
+  site "Downtown Campus" at (37.7749, -122.4194)
 
-          # Door from corridor with absolute offset
-          door "Conf A Entry": SingleDoor {
-            wall: west
-            offset: 2m from north
-            connects: "Main Corridor"
-          }
-        }
+  # Ground Floor
+  level "Ground Floor" at 0m, height: 4m {
+    # Perimeter walls
+    wall "North" from (0, 20) to (25, 20)
+    wall "East" from (25, 20) to (25, 0)
+    wall "South" from (25, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 20)
 
-        # Utility room
-        space "Electrical Room" {
-          position: [2, 0]
-          area: 15m²
+    # Interior walls
+    wall "Lobby-East" from (10, 0) to (10, 12)
+    wall "Lobby-North" from (0, 12) to (10, 12)
+    wall "Corridor-South" from (10, 12) to (25, 12)
 
-          door "Elec Door": UtilityDoor {
-            wall: north
-            offset: center
-          }
-        }
+    # Main Lobby
+    space "Lobby" [public, reception] {
+      bounded_by: ["South".part(0m, 10m), "Lobby-East", "Lobby-North", "West"]
+      floor: Concrete
+      ceiling: White
+
+      door "Main Entry": DoubleDoor in "South" at 5m {
+        swing: outward
       }
 
-      # First Floor - Office Space (auto-elevation from ground)
-      level "First Floor" {
-        height: 3.5m
-        slab_thickness: 200mm
-        ceiling_thickness: 120mm
+      place StandardDesk "Reception Desk" at (3, 8), facing north
+      place OfficeChair at (3, 7), facing north
+    }
 
-        # Open office area
-        space "Open Office" {
-          position: [0, 0]
-          area: 200m²
+    # Open Office Area
+    space "Open Office" [office] {
+      bounded_by: ["Lobby-East", "East", "Corridor-South", "South".part(10m, 25m)]
 
-          # Stairwell access
-          door "Stair Door 1": FireDoor {
-            wall: south
-            offset: 0.2
-          }
-        }
+      window "W1": FixedWindow in "South" at 15m
+      window "W2": FixedWindow in "South" at 20m
+      window "W3": FixedWindow in "East" at 5m
 
-        # Private offices along corridor
-        space "Office 101" {
-          position: [0, 1]
-          width: 4m
-          length: 5m
-
-          # Door from open office
-          door "Office 101 Door": SingleDoor {
-            wall: west
-            connects: "Open Office"
-            swing: in-right
-          }
-        }
-
-        space "Office 102" {
-          position: [0, 2]
-          width: 4m
-          length: 5m
-
-          door "Office 102 Door": SingleDoor {
-            wall: west
-            connects: "Open Office"
-            offset: center
-          }
-        }
-
-        # Meeting room with accessible door
-        space "Meeting Room 1" {
-          position: [1, 0]
-          area: 30m²
-
-          door "Meeting 1 Entry": AccessibleDoor {
-            wall: north
-            connects: "Open Office"
-            offset: 1.5m from west
-          }
-        }
+      door "Fire Exit": FireDoor in "East" at 10m {
+        swing: outward
       }
 
-      # Second Floor - Executive (auto-elevation continues)
-      level "Second Floor" {
-        height: 3.5m
-        ceiling_thickness: 120mm
+      # Workstations
+      place StandardDesk at (15, 3)
+      place OfficeChair at (15, 2), facing north
+      place StandardDesk at (20, 3)
+      place OfficeChair at (20, 2), facing north
+    }
 
-        # Executive suite
-        space "Executive Suite" {
-          position: [0, 0]
-          area: 50m²
+    # Conference Room
+    space "Conference Room" [meeting] {
+      bounded_by: ["Lobby-North".reversed, "North".part(0m, 10m), "West".part(12m, 20m)]
 
-          door "Exec Entry": ExecutiveDoor {
-            wall: south
-            offset: center
-            swing: double
-          }
-        }
+      window "W4": CasementWindow in "North" at 5m
+      window "W5": CasementWindow in "West" at 16m
 
-        # Board room
-        space "Board Room" {
-          position: [0, 1]
-          width: 8m
-          length: 10m
+      door "Conf Door": SingleDoor in "Lobby-North" at 5m {
+        swing: inward
+        connects: "Lobby" <-> "Conference Room"
+      }
 
-          door "Board Room Door": DoubleDoor {
-            wall: west
-            connects: "Executive Suite"
-            offset: center
-          }
-        }
+      place LargeConferenceTable at (5, 16)
+    }
+
+    # Back offices
+    space "Manager Office" [private, office] {
+      bounded_by: ["Corridor-South".part(10m, 17m), "North".part(10m, 17m)]
+
+      window "W6": CasementWindow in "North" at 13.5m
+
+      door "Manager Door": SingleDoor in "Corridor-South" at 13.5m {
+        swing: inward
+      }
+
+      place StandardDesk at (13.5, 16)
+      place OfficeChair at (13.5, 15), facing north
+    }
+
+    # Column in lobby
+    column "C1" at (5, 6) {
+      width: 400mm
+      depth: 400mm
+    }
+  }
+
+  # First Floor (relative elevation)
+  level "Level 1" at "Ground Floor".top, height: 3.5m {
+    # Perimeter walls aligned with ground floor
+    wall "North" from (0, 20) to (25, 20)
+    wall "East" from (25, 20) to (25, 0)
+    wall "South" from (25, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 20)
+
+    # Interior walls
+    wall "Corridor" from (0, 10) to (25, 10)
+
+    # Open plan office
+    space "Upper Office" [office] {
+      bounded_by: ["South", "East", "Corridor", "West"]
+
+      window "W7": FixedWindow in "South" at 6m
+      window "W8": FixedWindow in "South" at 12m
+      window "W9": FixedWindow in "South" at 18m
+
+      door "Stair Access": FireDoor in "West" at 5m {
+        swing: outward
+      }
+    }
+
+    # Meeting rooms along corridor
+    space "Meeting Room 1" [meeting] {
+      bounded_by: ["Corridor".part(0m, 8m), "North".part(0m, 8m), "West".part(10m, 20m)]
+
+      window "W10": CasementWindow in "North" at 4m
+
+      door "Meeting 1 Door": SingleDoor in "Corridor" at 4m {
+        swing: inward
+      }
+    }
+
+    space "Meeting Room 2" [meeting] {
+      bounded_by: ["Corridor".part(8m, 16m), "North".part(8m, 16m)]
+
+      window "W11": CasementWindow in "North" at 12m
+
+      door "Meeting 2 Door": AccessibleDoor in "Corridor" at 12m {
+        swing: inward
       }
     }
   }

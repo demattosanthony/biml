@@ -1,0 +1,190 @@
+# Standard Window Library
+# Common window types for architectural design
+
+library "stdlib.windows" {
+  # Materials for windows
+  material WindowGlass {
+    color: glass
+    transparency: 0.1
+  }
+
+  material WindowTinted {
+    color: rgb(0.4, 0.5, 0.6)
+    transparency: 0.2
+  }
+
+  material WindowFrosted {
+    color: glass
+    transparency: 0.4
+  }
+
+  material FrameAluminum {
+    color: silver
+  }
+
+  material FrameWhite {
+    color: white
+  }
+
+  material FrameBlack {
+    color: black
+  }
+
+  material FrameWood {
+    color: oak
+  }
+
+  # Base window family
+  family Window {
+    param width: Length = 1200mm in 300mm..3000mm
+    param height: Length = 1500mm in 300mm..3000mm
+    param sill_height: Length = 900mm in 0mm..2000mm
+  }
+
+  # ============================================================================
+  # Fixed Windows
+  # ============================================================================
+
+  # Standard fixed window (non-operable)
+  type FixedWindow extends Window {
+    material: WindowGlass
+  }
+
+  # Picture window (large fixed)
+  type PictureWindow extends Window {
+    width = 2400mm
+    height = 1800mm
+    material: WindowGlass
+  }
+
+  # Clerestory window (high placement)
+  type ClerestoryWindow extends Window {
+    width = 1800mm
+    height = 600mm
+    sill_height = 2100mm
+    material: WindowGlass
+  }
+
+  # ============================================================================
+  # Operable Windows
+  # ============================================================================
+
+  # Casement window (hinged, swings outward)
+  type CasementWindow extends Window {
+    width = 900mm
+    material: WindowGlass
+  }
+
+  # Double-hung window (two sashes slide vertically)
+  type DoubleHungWindow extends Window {
+    width = 900mm
+    height = 1500mm
+    material: WindowGlass
+  }
+
+  # Single-hung window (bottom sash slides)
+  type SingleHungWindow extends Window {
+    width = 900mm
+    height = 1500mm
+    material: WindowGlass
+  }
+
+  # Awning window (hinged at top, opens outward)
+  type AwningWindow extends Window {
+    width = 1200mm
+    height = 600mm
+    material: WindowGlass
+  }
+
+  # Hopper window (hinged at bottom, opens inward)
+  type HopperWindow extends Window {
+    width = 900mm
+    height = 450mm
+    sill_height = 1800mm
+    material: WindowGlass
+  }
+
+  # Sliding window (horizontal slider)
+  type SlidingWindow extends Window {
+    width = 1800mm
+    height = 1200mm
+    material: WindowGlass
+  }
+
+  # Tilt-turn window (European style)
+  type TiltTurnWindow extends Window {
+    width = 1000mm
+    height = 1500mm
+    material: WindowGlass
+  }
+
+  # ============================================================================
+  # Specialty Windows
+  # ============================================================================
+
+  # Bay window (projects outward)
+  type BayWindow extends Window {
+    width = 2400mm
+    height = 1500mm
+    material: WindowGlass
+  }
+
+  # Bow window (curved projection)
+  type BowWindow extends Window {
+    width = 3000mm
+    height = 1500mm
+    material: WindowGlass
+  }
+
+  # Skylight (roof window)
+  type Skylight extends Window {
+    width = 900mm
+    height = 1200mm
+    sill_height = 0mm
+    material: WindowGlass
+  }
+
+  # Roof window (operable skylight)
+  type RoofWindow extends Window {
+    width = 800mm
+    height = 1400mm
+    sill_height = 0mm
+    material: WindowGlass
+  }
+
+  # ============================================================================
+  # Commercial Windows
+  # ============================================================================
+
+  # Curtain wall panel
+  type CurtainWallPanel extends Window {
+    width = 1500mm
+    height = 3000mm
+    sill_height = 0mm
+    material: WindowGlass
+  }
+
+  # Storefront window
+  type StorefrontWindow extends Window {
+    width = 1800mm
+    height = 2400mm
+    sill_height = 600mm
+    material: WindowGlass
+  }
+
+  # Transom window (above doors)
+  type TransomWindow extends Window {
+    width = 900mm
+    height = 400mm
+    sill_height = 2100mm
+    material: WindowGlass
+  }
+
+  # Sidelight (beside doors)
+  type SidelightWindow extends Window {
+    width = 300mm
+    height = 2000mm
+    sill_height = 100mm
+    material: WindowGlass
+  }
+}
