@@ -5,7 +5,7 @@ import "stdlib/elements/doors.biml"
 library "Test" {
   type Door {
     param width: Length = 900mm
-    ifc_class: IfcDoor
+    export_class: Door
   }
 
   type TestDoor : Door { }

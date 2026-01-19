@@ -16,7 +16,7 @@ library "Doors" {
   type Door {
     param width: Length = 900mm
     param height: Length = 2100mm
-    ifc_class: IfcDoor
+    export_class: Door
   }
 
   type SingleDoor : Door {

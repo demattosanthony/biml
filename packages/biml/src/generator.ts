@@ -71,7 +71,7 @@ export interface TypeIR {
   parameters: ParameterIR[];   // Parameter definitions (param name: Type = default)
   overrides: Record<string, ExpressionIR>;  // Parameter overrides (name = value)
   material?: string;
-  ifcClass?: string;
+  exportClass?: string;        // Generic export class (Door, Window, etc.) - compilers map to specific formats
 }
 
 export interface LibraryIR {
@@ -185,10 +185,16 @@ export interface LevelIR {
 
 export interface BuildingDefaultsIR {
   wallThickness?: MeasurementIR;
+  wallHeight?: MeasurementIR;
   floorThickness?: MeasurementIR;
+  ceilingThickness?: MeasurementIR;
   ceilingHeight?: MeasurementIR;
+  doorWidth?: MeasurementIR;
   doorHeight?: MeasurementIR;
+  windowWidth?: MeasurementIR;
+  windowHeight?: MeasurementIR;
   windowSill?: MeasurementIR;
+  columnSize?: MeasurementIR;
 }
 
 export interface SiteIR {
@@ -400,9 +406,9 @@ function generateType(type: Type): TypeIR {
         }
         break;
       }
-      case "TypeIfcClass": {
-        const ifc = member as { className: string };
-        ir.ifcClass = ifc.className;
+      case "TypeExportClass": {
+        const exportClass = member as { className: string };
+        ir.exportClass = exportClass.className;
         break;
       }
     }
@@ -836,17 +842,35 @@ function generateBuilding(building: Building): BuildingIR {
         case "wall_thickness":
           ir.defaults.wallThickness = evaluateMeasurement(prop.value);
           break;
+        case "wall_height":
+          ir.defaults.wallHeight = evaluateMeasurement(prop.value);
+          break;
         case "floor_thickness":
           ir.defaults.floorThickness = evaluateMeasurement(prop.value);
+          break;
+        case "ceiling_thickness":
+          ir.defaults.ceilingThickness = evaluateMeasurement(prop.value);
           break;
         case "ceiling_height":
           ir.defaults.ceilingHeight = evaluateMeasurement(prop.value);
           break;
+        case "door_width":
+          ir.defaults.doorWidth = evaluateMeasurement(prop.value);
+          break;
         case "door_height":
           ir.defaults.doorHeight = evaluateMeasurement(prop.value);
           break;
+        case "window_width":
+          ir.defaults.windowWidth = evaluateMeasurement(prop.value);
+          break;
+        case "window_height":
+          ir.defaults.windowHeight = evaluateMeasurement(prop.value);
+          break;
         case "window_sill":
           ir.defaults.windowSill = evaluateMeasurement(prop.value);
+          break;
+        case "column_size":
+          ir.defaults.columnSize = evaluateMeasurement(prop.value);
           break;
       }
     }

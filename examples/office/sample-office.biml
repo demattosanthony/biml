@@ -78,7 +78,7 @@ library "ProjectFurniture" {
     param width: Length = 2000mm
     param depth: Length = 900mm
     param height: Length = 800mm
-    ifc_class: IfcFurniture
+    export_class: Furniture
   }
 
   type LoungeChair : Chair {

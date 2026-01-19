@@ -237,17 +237,17 @@ describe("BIML Generator", () => {
       expect(doorType.material).toBe("WoodOak");
     });
 
-    test("generates type with ifc_class", async () => {
+    test("generates type with export_class", async () => {
       const ir = await parseAndGenerate(`
         library "Doors" {
           type Door {
-            ifc_class: IfcDoor
+            export_class: Door
           }
         }
       `);
 
       const doorType = ir.libraries[0].types[0];
-      expect(doorType.ifcClass).toBe("IfcDoor");
+      expect(doorType.exportClass).toBe("Door");
     });
 
     test("generates type with all members", async () => {
@@ -257,7 +257,7 @@ describe("BIML Generator", () => {
           type Door {
             param width: Length = 900mm
             param height: Length = 2100mm
-            ifc_class: IfcDoor
+            export_class: Door
           }
           type SingleDoor : Door {
             width = 850mm

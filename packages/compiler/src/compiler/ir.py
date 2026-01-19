@@ -142,7 +142,7 @@ class TypeIR:
     parameters: list[ParameterIR] = field(default_factory=list)
     overrides: dict[str, ExpressionIR] = field(default_factory=dict)
     material: str | None = None
-    ifc_class: str | None = None
+    export_class: str | None = None  # Generic export class (Door, Window, etc.)
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -170,7 +170,7 @@ class TypeIR:
             parameters=parameters,
             overrides=overrides,
             material=data.get("material"),
-            ifc_class=data.get("ifcClass"),
+            export_class=data.get("exportClass"),
         )
 
     def get_parameter_default(self, name: str) -> ExpressionIR | None:
@@ -512,10 +512,16 @@ class LevelIR:
 @dataclass
 class BuildingDefaultsIR:
     wall_thickness: MeasurementIR | None = None
+    wall_height: MeasurementIR | None = None
     floor_thickness: MeasurementIR | None = None
+    ceiling_thickness: MeasurementIR | None = None
     ceiling_height: MeasurementIR | None = None
+    door_width: MeasurementIR | None = None
     door_height: MeasurementIR | None = None
+    window_width: MeasurementIR | None = None
+    window_height: MeasurementIR | None = None
     window_sill: MeasurementIR | None = None
+    column_size: MeasurementIR | None = None
 
     @classmethod
     def from_dict(cls, data: dict | None) -> Self | None:
@@ -523,10 +529,16 @@ class BuildingDefaultsIR:
             return None
         return cls(
             wall_thickness=MeasurementIR.from_dict(data.get("wallThickness")),
+            wall_height=MeasurementIR.from_dict(data.get("wallHeight")),
             floor_thickness=MeasurementIR.from_dict(data.get("floorThickness")),
+            ceiling_thickness=MeasurementIR.from_dict(data.get("ceilingThickness")),
             ceiling_height=MeasurementIR.from_dict(data.get("ceilingHeight")),
+            door_width=MeasurementIR.from_dict(data.get("doorWidth")),
             door_height=MeasurementIR.from_dict(data.get("doorHeight")),
+            window_width=MeasurementIR.from_dict(data.get("windowWidth")),
+            window_height=MeasurementIR.from_dict(data.get("windowHeight")),
             window_sill=MeasurementIR.from_dict(data.get("windowSill")),
+            column_size=MeasurementIR.from_dict(data.get("columnSize")),
         )
 
 
@@ -627,7 +639,7 @@ class JsonIR:
             parameters=merged_params,
             overrides=merged_overrides,
             material=type_ir.material or resolved_base.material,
-            ifc_class=type_ir.ifc_class or resolved_base.ifc_class,
+            export_class=type_ir.export_class or resolved_base.export_class,
         )
 
     @classmethod

@@ -59,7 +59,7 @@ Type:
     '}';
 
 TypeMember:
-    TypeParameter | TypeParameterOverride | TypeMaterial | TypeIfcClass;
+    TypeParameter | TypeParameterOverride | TypeMaterial | TypeExportClass;
 
 // Parameter definition (like what family used to have)
 TypeParameter:
@@ -83,9 +83,9 @@ TypeParameterOverride:
 TypeMaterial:
     'material' ':' materialRef=[Material:ID];
 
-// IFC class mapping
-TypeIfcClass:
-    'ifc_class' ':' className=IFC_CLASS;
+// Export class mapping (maps to output format: IFC, Modelica, EnergyPlus, etc.)
+TypeExportClass:
+    'export_class' ':' className=ID;
 
 // ============================================================================
 // BUILDING DEFINITION
@@ -107,7 +107,9 @@ DefaultProperty:
     name=DefaultPropertyName ':' value=Expression;
 
 DefaultPropertyName returns string:
-    'wall_thickness' | 'floor_thickness' | 'ceiling_height' | 'door_height' | 'window_sill';
+    'wall_thickness' | 'wall_height' | 'floor_thickness' | 'ceiling_thickness' |
+    'ceiling_height' | 'door_width' | 'door_height' | 'window_width' |
+    'window_height' | 'window_sill' | 'column_size';
 
 Site:
     'site' name=STRING ('at' location=Coordinate)?;
@@ -399,8 +401,6 @@ AreaUnit returns string:
 // TERMINALS
 // ============================================================================
 
-// IFC_CLASS must come before ID to match "IfcDoor", "IfcWindow", etc.
-terminal IFC_CLASS: /Ifc[A-Z][a-zA-Z]*/;
 terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
 terminal STRING: /"[^"]*"/;
 terminal NUMBER returns number: /-?[0-9]+(\.[0-9]+)?/;

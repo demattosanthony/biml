@@ -6,7 +6,7 @@ library "stdlib.furniture.office" {
     param width: Length = 1600mm
     param depth: Length = 800mm
     param height: Length = 720mm
-    ifc_class: IfcFurniture
+    export_class: Furniture
   }
 
   type StandardDesk : Desk { }
@@ -15,7 +15,7 @@ library "stdlib.furniture.office" {
     param width: Length = 600mm
     param depth: Length = 600mm
     param height: Length = 450mm
-    ifc_class: IfcFurniture
+    export_class: Furniture
   }
 
   type OfficeChair : Chair { }
@@ -24,7 +24,7 @@ library "stdlib.furniture.office" {
     param width: Length = 1200mm
     param depth: Length = 800mm
     param height: Length = 720mm
-    ifc_class: IfcFurniture
+    export_class: Furniture
   }
 
   type ConferenceTable : Table {
@@ -36,7 +36,7 @@ library "stdlib.furniture.office" {
     param width: Length = 800mm
     param depth: Length = 450mm
     param height: Length = 1800mm
-    ifc_class: IfcFurniture
+    export_class: Furniture
   }
 
   type FilingCabinet : Storage {

@@ -19,7 +19,7 @@ library "stdlib.doors" {
     param width: Length = 900mm
     param height: Length = 2100mm
     param thickness: Length = 45mm
-    ifc_class: IfcDoor
+    export_class: Door
   }
 
   type SingleDoor : Door {

@@ -11,7 +11,7 @@ library "stdlib.windows" {
     param width: Length = 1200mm
     param height: Length = 1500mm
     param sill_height: Length = 900mm
-    ifc_class: IfcWindow
+    export_class: Window
   }
 
   type FixedWindow : Window {

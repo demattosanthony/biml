@@ -41,16 +41,16 @@ bun install
 
 ```bash
 # Compile .biml to IFC (defaults to input name with .ifc)
-bun run bimlc packages/biml/test/fixtures/simple.biml
+bun run bimlc examples/office/sample-office.biml
 
 # Compile and choose output path
-bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc
+bun run bimlc examples/office/sample-office.biml -o output.ifc
 
 # Also output intermediate JSON IR (writes alongside .ifc as .json)
-bun run bimlc packages/biml/test/fixtures/simple.biml -o output.ifc --ir
+bun run bimlc examples/office/sample-office.biml -o output.ifc --ir
 
 # Parse to JSON IR only (defaults to stdout)
-bun run bimlc parse packages/biml/test/fixtures/simple.biml -o output.json
+bun run bimlc parse examples/office/sample-office.biml -o output.json
 ```
 
 ## Example

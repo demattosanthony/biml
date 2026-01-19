@@ -34,7 +34,39 @@ O = [0.0, 0.0, 0.0]
 X = [1.0, 0.0, 0.0]
 Z = [0.0, 0.0, 1.0]
 
-# Defaults
+# Export class to IFC class mapping
+# Generic export classes are mapped to IFC-specific classes
+EXPORT_CLASS_TO_IFC = {
+    "Door": "IfcDoor",
+    "Window": "IfcWindow",
+    "Furniture": "IfcFurnishingElement",
+    "Column": "IfcColumn",
+    "Wall": "IfcWall",
+    "Slab": "IfcSlab",
+    "Beam": "IfcBeam",
+    "Roof": "IfcRoof",
+    "Stair": "IfcStair",
+    "Railing": "IfcRailing",
+    "Covering": "IfcCovering",
+    "Space": "IfcSpace",
+}
+
+
+def get_ifc_class(export_class: str | None) -> str | None:
+    """Map a generic export class to an IFC class."""
+    if export_class is None:
+        return None
+    # Check mapping table first
+    if export_class in EXPORT_CLASS_TO_IFC:
+        return EXPORT_CLASS_TO_IFC[export_class]
+    # If already an IFC class name (for backward compatibility), use as-is
+    if export_class.startswith("Ifc"):
+        return export_class
+    # Otherwise, try prefixing with Ifc
+    return f"Ifc{export_class}"
+
+
+# Defaults (fallback values if not specified in building defaults or IR)
 DEFAULT_WALL_THICKNESS = 0.2
 DEFAULT_WALL_HEIGHT = 3.0
 DEFAULT_FLOOR_THICKNESS = 0.2
@@ -262,7 +294,8 @@ def _create_typed_objects(
 
     for lib in ir.libraries:
         for type_def in lib.types:
-            if type_def.ifc_class == "IfcDoor":
+            ifc_class = get_ifc_class(type_def.export_class)
+            if ifc_class == "IfcDoor":
                 door_type = ifcopenshell.api.run(
                     "root.create_entity",
                     ifc,
@@ -271,7 +304,7 @@ def _create_typed_objects(
                     predefined_type="DOOR",
                 )
                 door_types[type_def.name] = door_type
-            elif type_def.ifc_class == "IfcWindow":
+            elif ifc_class == "IfcWindow":
                 window_type = ifcopenshell.api.run(
                     "root.create_entity",
                     ifc,
