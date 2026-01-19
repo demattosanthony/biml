@@ -1,5 +1,6 @@
 """IFC generation for BIML using IfcOpenShell."""
 
+import datetime
 import math
 import ifcopenshell
 import ifcopenshell.api
@@ -83,6 +84,27 @@ DEFAULT_DOOR_COLOR = ColorIR(red=0.55, green=0.35, blue=0.20)
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
+
+def _create_ifc_file(version: str = "IFC4") -> ifcopenshell.file:
+    """Create a blank IFC file with header data.
+
+    This is a replacement for ifcopenshell.api.run("project.create_file")
+    that avoids the deprecated datetime.utcnow() call.
+    """
+    ifc = ifcopenshell.file(schema=version)
+    ifc.header.file_name.name = "/dev/null"
+    ifc.header.file_name.time_stamp = (
+        datetime.datetime.now(datetime.timezone.utc)
+        .astimezone()
+        .replace(microsecond=0)
+        .isoformat()
+    )
+    ifc.header.file_name.preprocessor_version = f"IfcOpenShell {ifcopenshell.version}"
+    ifc.header.file_name.originating_system = f"IfcOpenShell {ifcopenshell.version}"
+    ifc.header.file_name.authorization = "Nobody"
+    ifc.header.file_description.description = ("ViewDefinition[DesignTransferView]",)
+    return ifc
 
 
 def _to_floats(coords: list | tuple) -> list[float]:
@@ -1232,7 +1254,7 @@ def compile_to_ifc(ir: JsonIR) -> ifcopenshell.file:
 
     building_ir = ir.buildings[0]
 
-    ifc = ifcopenshell.api.run("project.create_file", version="IFC4")
+    ifc = _create_ifc_file(version="IFC4")
 
     project = ifcopenshell.api.run(
         "root.create_entity", ifc, ifc_class="IfcProject", name=building_ir.name
