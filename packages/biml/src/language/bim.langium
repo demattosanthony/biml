@@ -1,55 +1,27 @@
 grammar Bim
 
-// Entry point: hierarchical syntax with libraries and projects
+// ============================================================================
+// ENTRY POINT
+// ============================================================================
+// A model consists of imports, type definitions (libraries), and buildings
+
 entry Model:
-    (libraries+=Library | projects+=Project)*;
+    (libraries+=Library | buildings+=Building)*;
 
 // ============================================================================
-// LIBRARY & TYPE SYSTEM
+// TYPE LIBRARY
 // ============================================================================
+// Libraries contain materials and types (no families - types handle everything)
 
 Library:
     'library' name=STRING '{'
-        (families+=Family | types+=Type | materials+=Material)*
+        (materials+=Material | types+=Type)*
     '}';
 
-Family:
-    'family' name=ID '{'
-        parameters+=FamilyParameter*
-    '}';
+// ----------------------------------------------------------------------------
+// Materials
+// ----------------------------------------------------------------------------
 
-FamilyParameter:
-    'parameter' name=ParameterName ':' paramType=ParameterType ('=' defaultValue=Expression)?;
-
-ParameterType returns string:
-    'Length' | 'Area' | 'Number' | 'Boolean' | 'String';
-
-// Types extend families. Use ':' for type inheritance (type-from-type)
-// Example: type SingleDoor extends Door { }
-// Example: type FireDoor : SingleDoor { }  (inherits from SingleDoor type)
-Type:
-    'type' name=ID (('extends' base=[Family:ID]) | (':' baseType=[Type:ID]))? '{'
-        overrides+=ParameterOverride*
-        (materialAssignment=TypeMaterialAssignment)?
-    '}';
-
-ParameterOverride:
-    name=ParameterName '=' value=Expression;
-
-// Material assignment on types: material: MaterialName
-TypeMaterialAssignment:
-    'material' ':' materialRef=[Material:ID];
-
-// Allow keywords to be used as parameter names
-ParameterName returns string:
-    ID | 'width' | 'height' | 'area' | 'length' | 'offset' | 'wall' | 'position' | 'elevation' | 'floor' | 'swing' | 'connects' | 'aspect' | 'color' | 'transparency' | 'material';
-
-// ============================================================================
-// MATERIALS
-// ============================================================================
-
-// Material definition with color and optional properties
-// Example: material Wood { color: rgb(0.6, 0.4, 0.2) }
 Material:
     'material' name=ID '{'
         properties+=MaterialProperty*
@@ -58,9 +30,6 @@ Material:
 MaterialProperty:
     MaterialColorProperty | MaterialTransparencyProperty;
 
-// Color using rgb() or hex
-// rgb(0.6, 0.4, 0.2) - values 0-1
-// #8B4513 - hex color
 MaterialColorProperty:
     'color' ':' (
         {infer RgbColor} 'rgb' '(' red=NUMBER ',' green=NUMBER ',' blue=NUMBER ')' |
@@ -68,199 +37,373 @@ MaterialColorProperty:
         {infer NamedColor} name=ColorName
     );
 
-// Transparency: 0 = opaque, 1 = fully transparent
 MaterialTransparencyProperty:
     'transparency' ':' value=NUMBER;
 
-// Common color names for convenience
 ColorName returns string:
     'white' | 'black' | 'red' | 'green' | 'blue' | 'grey' | 'gray' |
     'brown' | 'wood' | 'steel' | 'glass' | 'oak' | 'walnut' | 'mahogany' |
-    'silver' | 'gold' | 'bronze' | 'copper';
+    'silver' | 'gold' | 'bronze' | 'copper' | 'concrete' | 'brick';
 
-// ============================================================================
-// EXPRESSIONS (Arithmetic + Literals)
-// ============================================================================
+// ----------------------------------------------------------------------------
+// Types (unified: can define parameters AND/OR extend other types)
+// ----------------------------------------------------------------------------
+// Examples:
+//   type Door { param width: Length = 900mm }           - base type with params
+//   type SingleDoor : Door { material: Oak }            - extends Door
+//   type FireDoor : SingleDoor { width = 1000mm }       - extends SingleDoor
 
-Expression:
-    AdditiveExpression;
-
-AdditiveExpression infers Expression:
-    MultiplicativeExpression ({infer BinaryExpression.left=current} op=('+' | '-') right=MultiplicativeExpression)*;
-
-MultiplicativeExpression infers Expression:
-    PrimaryExpression ({infer BinaryExpression.left=current} op=('*' | '/') right=PrimaryExpression)*;
-
-PrimaryExpression infers Expression:
-    '(' Expression ')' |
-    {infer MeasurementLiteral} value=NUMBER unit=LengthUnit |
-    {infer NumberLiteral} value=NUMBER |
-    {infer BooleanLiteral} value=BooleanValue |
-    {infer StringLiteral} value=STRING |
-    {infer ParameterRef} ref=[FamilyParameter:ParameterName];
-
-BooleanValue returns string:
-    'true' | 'false';
-
-// ============================================================================
-// PROJECT HIERARCHY
-// ============================================================================
-
-Project:
-    'project' name=STRING '{'
-        sites+=Site*
+Type:
+    'type' name=ID (':' baseType=[Type:ID])? '{'
+        members+=TypeMember*
     '}';
 
-Site:
-    'site' name=STRING '{'
-        buildings+=Building*
-    '}';
+TypeMember:
+    TypeParameter | TypeParameterOverride | TypeMaterial | TypeIfcClass;
+
+// Parameter definition (like what family used to have)
+TypeParameter:
+    'param' name=ParameterName ':' paramType=ParamTypeName ('=' defaultValue=Expression)?;
+
+// Allow keywords to be used as parameter names
+ParameterName returns string:
+    ID | 'width' | 'height' | 'depth' | 'thickness' | 'radius' | 'area' | 'length' |
+    'sill' | 'offset' | 'position' | 'elevation' | 'floor' | 'ceiling' | 'material' |
+    'color' | 'transparency' | 'profile' | 'boundary' | 'type' | 'name' | 'sill_height';
+
+ParamTypeName returns string:
+    'Length' | 'Area' | 'Number' | 'Boolean' | 'String' | ID;
+
+
+// Parameter override (setting a value for an inherited parameter)
+TypeParameterOverride:
+    name=ParameterName '=' value=Expression;
+
+// Material assignment
+TypeMaterial:
+    'material' ':' materialRef=[Material:ID];
+
+// IFC class mapping
+TypeIfcClass:
+    'ifc_class' ':' className=IFC_CLASS;
+
+// ============================================================================
+// BUILDING DEFINITION
+// ============================================================================
 
 Building:
     'building' name=STRING '{'
+        (defaults=BuildingDefaults)?
+        (site=Site)?
         levels+=Level*
     '}';
 
-Level:
-    'level' name=STRING '{'
-        properties+=LevelProperty*
-        spaces+=Space*
+BuildingDefaults:
+    'defaults' '{'
+        properties+=DefaultProperty*
     '}';
 
-LevelProperty:
-    ElevationProperty | HeightProperty | SlabThicknessProperty | CeilingThicknessProperty;
+DefaultProperty:
+    name=DefaultPropertyName ':' value=Expression;
+
+DefaultPropertyName returns string:
+    'wall_thickness' | 'floor_thickness' | 'ceiling_height' | 'door_height' | 'window_sill';
+
+Site:
+    'site' name=STRING ('at' location=Coordinate)?;
+
+// ============================================================================
+// LEVELS
+// ============================================================================
+
+Level:
+    'level' name=STRING 'at' elevation=LevelElevation (',' 'height' ':' height=Expression)? '{'
+        members+=LevelMember*
+    '}';
+
+LevelElevation:
+    {infer AbsoluteElevation} value=Expression |
+    {infer RelativeElevation} ref=[Level:STRING] '.top';
+
+LevelMember:
+    Wall | Space | Column | Door | Window | Furniture | Slab;
+
+// ============================================================================
+// WALLS
+// ============================================================================
+
+Wall:
+    'wall' name=STRING
+    'from' start=Point2D 'to' end=Point2D
+    properties=WallProperties?;
+
+WallProperties:
+    (',' | '{') properties+=WallPropertyItem* '}'?;
+
+WallPropertyItem:
+    WallThicknessProperty | WallHeightProperty | WallMaterialProperty;
+
+WallThicknessProperty:
+    'thickness' ':' value=Expression;
+
+WallHeightProperty:
+    'height' ':' value=Expression;
+
+WallMaterialProperty:
+    'material' ':' materialRef=[Material:ID];
+
+// ============================================================================
+// SPACES
+// ============================================================================
 
 Space:
-    'space' name=STRING '{'
+    'space' name=STRING tags=SpaceTags? '{'
         properties+=SpaceProperty*
         elements+=SpaceElement*
     '}';
 
+SpaceTags:
+    '[' tags+=SpaceTag (',' tags+=SpaceTag)* ']';
+
+SpaceTag returns string:
+    'public' | 'private' | 'circulation' | 'service' | 'technical' |
+    'reception' | 'office' | 'meeting' | 'storage' | 'restroom' |
+    'kitchen' | 'dining' | 'residential' | 'retail' | 'parking' |
+    ID;
+
 SpaceProperty:
-    AreaProperty | WidthProperty | LengthProperty | PositionProperty | AspectProperty;
+    BoundedByProperty | AreaProperty | FloorProperty | CeilingProperty | HeightProperty;
 
-SpaceElement:
-    SpaceDoor;
+BoundedByProperty:
+    'bounded_by' ':' '[' walls+=WallReference (',' walls+=WallReference)* ']';
 
-// Door can have optional type reference, and optional body with overrides
-// Supports: door "D1": TypeName { ... } OR door "D1" { ... } (inline)
-SpaceDoor:
-    'door' name=STRING (':' typeRef=TypeReference)? ('{'
-        overrides+=SpaceDoorOverride*
-    '}')?;
-
-SpaceDoorOverride:
-    DoorWidthProperty | DoorHeightProperty | DoorWallProperty | DoorOffsetProperty |
-    DoorSwingProperty | DoorConnectsProperty | DoorMaterialProperty;
-
-TypeReference:
-    typeName=ID;
-
-// ============================================================================
-// LEVEL PROPERTY RULES
-// ============================================================================
-
-ElevationProperty:
-    'elevation' ':' value=Measurement;
-
-HeightProperty:
-    'height' ':' value=Measurement;
-
-SlabThicknessProperty:
-    'slab_thickness' ':' value=Measurement;
-
-CeilingThicknessProperty:
-    'ceiling_thickness' ':' value=Measurement;
-
-// ============================================================================
-// SPACE PROPERTY RULES
-// ============================================================================
-
-// Grid position [row, col]
-PositionProperty:
-    'position' ':' '[' row=NUMBER ',' col=NUMBER ']';
+WallReference:
+    wall=[Wall:STRING];
 
 AreaProperty:
-    'area' ':' value=AreaMeasurement;
+    'area' ':' value=Expression;
 
-WidthProperty:
-    'width' ':' value=Measurement;
+FloorProperty:
+    'floor' ':' material=[Material:ID];
 
-LengthProperty:
-    'length' ':' value=Measurement;
+CeilingProperty:
+    'ceiling' ':' material=[Material:ID];
 
-// Aspect ratio for non-square rooms: aspect: 2:1 means width is 2x length
-AspectProperty:
-    'aspect' ':' widthRatio=NUMBER ':' lengthRatio=NUMBER;
+HeightProperty:
+    'height' ':' value=Expression;
+
+SpaceElement:
+    Door | Window | Furniture;
 
 // ============================================================================
-// DOOR PROPERTY RULES
+// DOORS
 // ============================================================================
+
+Door:
+    'door' name=STRING (':' typeRef=[Type:ID])? 
+    'in' wall=[Wall:STRING] 'at' position=DoorPosition
+    body=DoorBody?;
+
+
+DoorPosition:
+    {infer AbsolutePosition} value=Expression |
+    {infer CenterPosition} 'center';
+
+DoorBody:
+    '{'
+        properties+=DoorProperty*
+    '}';
+
+DoorProperty:
+    DoorWidthProperty | DoorHeightProperty | DoorSwingProperty | 
+    DoorConnectsProperty | DoorMaterialProperty;
 
 DoorWidthProperty:
-    'width' ':' value=Measurement;
+    'width' ':' value=Expression;
 
 DoorHeightProperty:
-    'height' ':' value=Measurement;
+    'height' ':' value=Expression;
 
-DoorWallProperty:
-    'wall' ':' direction=WallDirection;
-
-// Enhanced offset: supports multiple formats
-// - offset: 0.5 (normalized 0-1)
-// - offset: center
-// - offset: 2m from west (absolute from anchor)
-DoorOffsetProperty:
-    'offset' ':' (
-        {infer DoorOffsetNormalized} value=NUMBER |
-        {infer DoorOffsetCenter} 'center' |
-        {infer DoorOffsetAbsolute} distance=Measurement 'from' anchor=OffsetAnchor
-    );
-
-OffsetAnchor returns string:
-    'left' | 'right' | 'start' | 'end' | 'north' | 'south' | 'east' | 'west';
-
-// Door swing direction: swing: in | out | in-left | in-right | out-left | out-right
 DoorSwingProperty:
     'swing' ':' direction=SwingDirection;
 
 SwingDirection returns string:
-    'in' | 'out' | 'in-left' | 'in-right' | 'out-left' | 'out-right' | 'double';
+    'inward' | 'outward' | 'left' | 'right' | 'double' | 'sliding' | 'pivot';
 
-// Interior door connection: connects: "RoomName"
 DoorConnectsProperty:
-    'connects' ':' targetSpace=STRING;
+    'connects' ':' from=ConnectsTarget '<->' to=ConnectsTarget;
 
-// Material override on individual doors: material: MaterialName
+ConnectsTarget returns string:
+    STRING | 'this' | 'exterior';
+
 DoorMaterialProperty:
     'material' ':' materialRef=[Material:ID];
 
-WallDirection returns string:
+// ============================================================================
+// WINDOWS
+// ============================================================================
+
+Window:
+    'window' name=STRING (':' typeRef=[Type:ID])?
+    'in' wall=[Wall:STRING] 'at' position=DoorPosition
+    body=WindowBody?;
+
+
+WindowBody:
+    '{'
+        properties+=WindowProperty*
+    '}';
+
+WindowProperty:
+    WindowWidthProperty | WindowHeightProperty | WindowSillProperty | WindowMaterialProperty;
+
+WindowWidthProperty:
+    'width' ':' value=Expression;
+
+WindowHeightProperty:
+    'height' ':' value=Expression;
+
+WindowSillProperty:
+    'sill' ':' value=Expression;
+
+WindowMaterialProperty:
+    'material' ':' materialRef=[Material:ID];
+
+// ============================================================================
+// COLUMNS
+// ============================================================================
+
+Column:
+    'column' name=STRING (':' typeRef=[Type:ID])?
+    'at' position=Point2D
+    body=ColumnBody?;
+
+ColumnBody:
+    '{'
+        properties+=ColumnProperty*
+    '}';
+
+ColumnProperty:
+    ColumnWidthProperty | ColumnDepthProperty | ColumnHeightProperty;
+
+ColumnWidthProperty:
+    'width' ':' value=Expression;
+
+ColumnDepthProperty:
+    'depth' ':' value=Expression;
+
+ColumnHeightProperty:
+    'height' ':' value=Expression;
+
+// ============================================================================
+// FURNITURE
+// ============================================================================
+
+Furniture:
+    'place' typeRef=[Type:ID] (name=STRING)? 'at' position=Point2D
+    body=FurnitureBody?;
+
+
+FurnitureBody:
+    ('{' properties+=FurnitureProperty* '}') |
+    (',' inlineProps+=FurnitureInlineProperty)+;
+
+FurnitureInlineProperty:
+    FurnitureFacingProperty;
+
+FurnitureProperty:
+    FurnitureFacingProperty | FurnitureSizeProperty;
+
+FurnitureFacingProperty:
+    'facing' direction=FacingDirection;
+
+FacingDirection returns string:
     'north' | 'south' | 'east' | 'west';
 
+FurnitureSizeProperty:
+    'size' ':' '(' width=Expression ',' depth=Expression ')';
+
 // ============================================================================
-// MEASUREMENTS
+// SLABS
 // ============================================================================
 
-Measurement:
-    value=NUMBER unit=LengthUnit;
+Slab:
+    'slab' name=STRING '{'
+        properties+=SlabProperty*
+    '}';
 
-AreaMeasurement:
-    value=NUMBER unit=AreaUnit;
+SlabProperty:
+    SlabBoundaryProperty | SlabThicknessProperty | SlabMaterialProperty | SlabTypeProperty;
+
+SlabBoundaryProperty:
+    'boundary' ':' '[' points+=Point2D (',' points+=Point2D)* ']';
+
+SlabThicknessProperty:
+    'thickness' ':' value=Expression;
+
+SlabMaterialProperty:
+    'material' ':' materialRef=[Material:ID];
+
+SlabTypeProperty:
+    'type' ':' slabType=SlabType;
+
+SlabType returns string:
+    'floor' | 'roof' | 'landing';
+
+// ============================================================================
+// EXPRESSIONS
+// ============================================================================
+
+Expression:
+    MeasurementLiteral | NumberLiteral | BooleanLiteral | StringLiteral;
+
+MeasurementLiteral:
+    value=NUMBER unit=Unit;
+
+NumberLiteral:
+    value=NUMBER;
+
+BooleanLiteral:
+    value=BooleanValue;
+
+BooleanValue returns string:
+    'true' | 'false';
+
+StringLiteral:
+    value=STRING;
+
+// ============================================================================
+// COORDINATES
+// ============================================================================
+
+Point2D:
+    '(' x=Expression ',' y=Expression ')';
+
+Coordinate:
+    '(' latitude=NUMBER ',' longitude=NUMBER ')';
+
+// ============================================================================
+// UNITS
+// ============================================================================
+
+Unit returns string:
+    LengthUnit | AreaUnit;
 
 LengthUnit returns string:
     'm' | 'cm' | 'mm' | 'ft' | 'in';
 
 AreaUnit returns string:
-    'm²' | 'ft²';
+    'm²' | 'ft²' | 'sqm' | 'sqft';
 
 // ============================================================================
 // TERMINALS
 // ============================================================================
 
+// IFC_CLASS must come before ID to match "IfcDoor", "IfcWindow", etc.
+terminal IFC_CLASS: /Ifc[A-Z][a-zA-Z]*/;
 terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
 terminal STRING: /"[^"]*"/;
-terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+terminal NUMBER returns number: /-?[0-9]+(\.[0-9]+)?/;
 terminal HEX_COLOR: /#[0-9A-Fa-f]{6}/;
 
 hidden terminal WS: /\s+/;

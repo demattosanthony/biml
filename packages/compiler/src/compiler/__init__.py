@@ -1,17 +1,21 @@
-"""BIM Compiler - JSON IR to IFC transformation."""
+"""BIML Compiler - JSON IR to IFC transformation."""
 
 from .ir import (
     JsonIR,
     MeasurementIR,
     LibraryIR,
-    FamilyIR,
+    ParameterIR,
     TypeIR,
-    ProjectIR,
-    SiteIR,
+    MaterialIR,
     BuildingIR,
     LevelIR,
+    WallIR,
     SpaceIR,
-    SpaceDoorIR,
+    DoorIR,
+    WindowIR,
+    ColumnIR,
+    FurnitureIR,
+    SlabIR,
 )
 from .ifc import compile_to_ifc
 
@@ -19,13 +23,17 @@ __all__ = [
     "JsonIR",
     "MeasurementIR",
     "LibraryIR",
-    "FamilyIR",
+    "ParameterIR",
     "TypeIR",
-    "ProjectIR",
-    "SiteIR",
+    "MaterialIR",
     "BuildingIR",
     "LevelIR",
+    "WallIR",
     "SpaceIR",
-    "SpaceDoorIR",
+    "DoorIR",
+    "WindowIR",
+    "ColumnIR",
+    "FurnitureIR",
+    "SlabIR",
     "compile_to_ifc",
 ]

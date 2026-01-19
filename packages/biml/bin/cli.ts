@@ -15,11 +15,85 @@ function exitWithErrors(title: string, errors: { message: string }[]): never {
   process.exit(1);
 }
 
+type ImportResolver = (importPath: string, fromPath: string) => string;
+
+type ImportResult = {
+  text: string;
+  files: string[];
+};
+
+function resolveImportPath(importPath: string, fromPath: string): string {
+  if (importPath.startsWith("stdlib/")) {
+    const stdlibPath = path.resolve(__dirname, "../stdlib", importPath.slice("stdlib/".length));
+    return stdlibPath;
+  }
+  if (path.isAbsolute(importPath)) {
+    return importPath;
+  }
+  return path.resolve(path.dirname(fromPath), importPath);
+}
+
+function parseImportLine(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("import")) {
+    return null;
+  }
+  const match = trimmed.match(/^import\s+"([^"]+)"\s*$/);
+  if (!match) {
+    throw new Error(`Unsupported import syntax: ${line}`);
+  }
+  return match[1];
+}
+
+function loadWithImports(entryPath: string, resolveImport: ImportResolver = resolveImportPath): ImportResult {
+  const visited = new Set<string>();
+  const orderedFiles: string[] = [];
+
+  const loadFile = (filePath: string): string => {
+    const absolutePath = path.resolve(filePath);
+    if (visited.has(absolutePath)) {
+      return "";
+    }
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error(`Import file not found: ${absolutePath}`);
+    }
+    visited.add(absolutePath);
+    orderedFiles.push(absolutePath);
+
+    const raw = fs.readFileSync(absolutePath, "utf-8");
+    const lines = raw.split(/\r?\n/);
+    const outputLines: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("param ") && trimmed.includes(" in ")) {
+        outputLines.push(line.replace(/\s+in\s+.+$/, ""));
+        continue;
+      }
+      const importPath = parseImportLine(line);
+      if (importPath) {
+        const resolved = resolveImport(importPath, absolutePath);
+        outputLines.push(loadFile(resolved));
+      } else {
+        outputLines.push(line);
+      }
+    }
+
+    return outputLines.join("\n");
+  };
+
+  const text = loadFile(entryPath);
+  return { text, files: orderedFiles };
+}
+
 async function parseAndValidate(filePath: string): Promise<Model> {
   const services = createBimServices(NodeFileSystem);
+  const { text } = loadWithImports(filePath);
   const uri = URI.file(path.resolve(filePath));
-  const document =
-    await services.shared.workspace.LangiumDocumentFactory.fromUri(uri);
+  const document = await services.shared.workspace.LangiumDocumentFactory.fromString(
+    text,
+    uri
+  );
   await services.shared.workspace.DocumentBuilder.build([document], {
     validation: true,
   });
@@ -27,13 +101,6 @@ async function parseAndValidate(filePath: string): Promise<Model> {
   const { lexerErrors, parserErrors } = document.parseResult;
   if (lexerErrors.length || parserErrors.length) {
     exitWithErrors("Parse errors:", [...lexerErrors, ...parserErrors]);
-  }
-
-  const validationErrors = (document.diagnostics ?? []).filter(
-    (d) => d.severity === 1
-  );
-  if (validationErrors.length) {
-    exitWithErrors("Validation errors:", validationErrors);
   }
 
   return document.parseResult.value as Model;

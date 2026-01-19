@@ -7,6 +7,7 @@
     "test": "bun run test:biml && bun run test:compiler",
     "test:biml": "cd packages/biml && bun test",
     "test:compiler": "cd packages/compiler && uv sync --extra dev && uv run pytest",
-    "build": "cd packages/biml && bun run build"
+    "build": "cd packages/biml && bun run build",
+    "typecheck": "bun run --filter=biml typecheck"
   }
 }

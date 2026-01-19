@@ -1,0 +1,33 @@
+# Standard Window Library
+# Common window types for architectural design
+
+library "stdlib.windows" {
+  material WindowGlass {
+    color: glass
+    transparency: 0.1
+  }
+
+  type Window {
+    param width: Length = 1200mm
+    param height: Length = 1500mm
+    param sill_height: Length = 900mm
+    ifc_class: IfcWindow
+  }
+
+  type FixedWindow : Window {
+    material: WindowGlass
+  }
+
+  type PictureWindow : Window {
+    width = 2400mm
+    height = 1800mm
+    material: WindowGlass
+  }
+
+  type ClerestoryWindow : Window {
+    width = 1800mm
+    height = 600mm
+    sill_height = 2100mm
+    material: WindowGlass
+  }
+}

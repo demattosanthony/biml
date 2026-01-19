@@ -1,0 +1,2045 @@
+{
+  "version": "1.0.0",
+  "libraries": [
+    {
+      "name": "stdlib.materials",
+      "materials": [
+        {
+          "name": "Oak",
+          "color": {
+            "red": 0.76,
+            "green": 0.6,
+            "blue": 0.42
+          }
+        },
+        {
+          "name": "Steel",
+          "color": {
+            "red": 0.7,
+            "green": 0.72,
+            "blue": 0.75
+          }
+        },
+        {
+          "name": "Concrete",
+          "color": {
+            "red": 0.75,
+            "green": 0.75,
+            "blue": 0.73
+          }
+        },
+        {
+          "name": "WhitePaint",
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1
+          }
+        },
+        {
+          "name": "ClearGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.1
+        }
+      ],
+      "types": []
+    },
+    {
+      "name": "stdlib.doors",
+      "materials": [
+        {
+          "name": "DoorOak",
+          "color": {
+            "red": 0.76,
+            "green": 0.6,
+            "blue": 0.42
+          }
+        },
+        {
+          "name": "DoorSteel",
+          "color": {
+            "red": 0.7,
+            "green": 0.72,
+            "blue": 0.75
+          }
+        },
+        {
+          "name": "DoorGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.2
+        }
+      ],
+      "types": [
+        {
+          "name": "Door",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 900,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 2100,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "thickness",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 45,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcDoor"
+        },
+        {
+          "name": "SingleDoor",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Door",
+          "material": "DoorOak"
+        },
+        {
+          "name": "DoubleDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorOak"
+        },
+        {
+          "name": "FireDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            },
+            "thickness": {
+              "kind": "measurement",
+              "value": 54,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorSteel"
+        },
+        {
+          "name": "SlidingDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorGlass"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.windows",
+      "materials": [
+        {
+          "name": "WindowGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.1
+        }
+      ],
+      "types": [
+        {
+          "name": "Window",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1500,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "sill_height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 900,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcWindow"
+        },
+        {
+          "name": "FixedWindow",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Window",
+          "material": "WindowGlass"
+        },
+        {
+          "name": "PictureWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Window",
+          "material": "WindowGlass"
+        },
+        {
+          "name": "ClerestoryWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 2100,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Window",
+          "material": "WindowGlass"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.furniture.office",
+      "materials": [],
+      "types": [
+        {
+          "name": "Desk",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 720,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "StandardDesk",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Desk"
+        },
+        {
+          "name": "Chair",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 450,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "OfficeChair",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Chair"
+        },
+        {
+          "name": "Table",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 720,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "ConferenceTable",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Table"
+        },
+        {
+          "name": "Storage",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 450,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1800,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "FilingCabinet",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 450,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1400,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Storage"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.structure",
+      "materials": [],
+      "types": [
+        {
+          "name": "Column",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 400,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcColumn"
+        },
+        {
+          "name": "ConcreteColumn",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Column"
+        }
+      ]
+    },
+    {
+      "name": "ProjectMaterials",
+      "materials": [
+        {
+          "name": "WalnutWood",
+          "color": {
+            "red": 0.4,
+            "green": 0.26,
+            "blue": 0.13
+          }
+        },
+        {
+          "name": "FrostedGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.4
+        },
+        {
+          "name": "BrushedSteel",
+          "color": {
+            "red": 0.7,
+            "green": 0.72,
+            "blue": 0.75
+          }
+        },
+        {
+          "name": "WhitePaint",
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1
+          }
+        }
+      ],
+      "types": []
+    },
+    {
+      "name": "ProjectDoors",
+      "materials": [
+        {
+          "name": "ExecutiveOak",
+          "color": {
+            "red": 0.5,
+            "green": 0.22,
+            "blue": 0.17
+          }
+        }
+      ],
+      "types": [
+        {
+          "name": "ExecutiveDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            }
+          },
+          "material": "ExecutiveOak"
+        },
+        {
+          "name": "GlassPartitionDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 900,
+              "unit": "mm"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ProjectWindows",
+      "materials": [],
+      "types": [
+        {
+          "name": "FloorToCeilingWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1500,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2700,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 0,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "CornerWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ProjectFurniture",
+      "materials": [],
+      "types": [
+        {
+          "name": "ExecutiveDesk",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "RoundTable",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "Sofa",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 2000,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 900,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "LoungeChair",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "Bookshelf",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 350,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "name": "Tech Startup HQ",
+      "levels": [
+        {
+          "name": "Ground Floor",
+          "elevation": {
+            "value": 0,
+            "unit": "m"
+          },
+          "walls": [
+            {
+              "name": "North",
+              "start": {
+                "x": 0,
+                "y": 15
+              },
+              "end": {
+                "x": 20,
+                "y": 15
+              }
+            },
+            {
+              "name": "East",
+              "start": {
+                "x": 20,
+                "y": 15
+              },
+              "end": {
+                "x": 20,
+                "y": 0
+              }
+            },
+            {
+              "name": "South",
+              "start": {
+                "x": 20,
+                "y": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0
+              }
+            },
+            {
+              "name": "West",
+              "start": {
+                "x": 0,
+                "y": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 15
+              }
+            },
+            {
+              "name": "Reception-Divider",
+              "start": {
+                "x": 0,
+                "y": 10
+              },
+              "end": {
+                "x": 6,
+                "y": 10
+              }
+            },
+            {
+              "name": "Office-North",
+              "start": {
+                "x": 6,
+                "y": 10
+              },
+              "end": {
+                "x": 20,
+                "y": 10
+              }
+            },
+            {
+              "name": "Meeting-West",
+              "start": {
+                "x": 6,
+                "y": 10
+              },
+              "end": {
+                "x": 6,
+                "y": 15
+              }
+            },
+            {
+              "name": "Kitchen-Wall",
+              "start": {
+                "x": 14,
+                "y": 10
+              },
+              "end": {
+                "x": 14,
+                "y": 15
+              }
+            }
+          ],
+          "spaces": [
+            {
+              "name": "Reception",
+              "tags": [
+                "public",
+                "reception"
+              ],
+              "doors": [
+                {
+                  "name": "Main Entrance",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "DoubleDoor",
+                  "swing": "outward"
+                }
+              ],
+              "windows": [],
+              "furniture": [
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 3,
+                    "y": 7
+                  },
+                  "name": "Reception Desk",
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 3,
+                    "y": 8
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "Sofa",
+                  "position": {
+                    "x": 1.5,
+                    "y": 2
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 4,
+                    "y": 2
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "South"
+                },
+                {
+                  "wall": "Reception-Divider"
+                },
+                {
+                  "wall": "Meeting-West"
+                },
+                {
+                  "wall": "West"
+                }
+              ]
+            },
+            {
+              "name": "Open Office",
+              "tags": [
+                "office"
+              ],
+              "doors": [
+                {
+                  "name": "Office Entry",
+                  "wall": "Reception-Divider",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 4,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GlassPartitionDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Reception",
+                    "to": "Open Office"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W1",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 10,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                },
+                {
+                  "name": "W2",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 14,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                },
+                {
+                  "name": "W3",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                },
+                {
+                  "name": "W4",
+                  "wall": "East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "PictureWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 8,
+                    "y": 3
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 8,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 11,
+                    "y": 3
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 11,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 14,
+                    "y": 3
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 14,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 17,
+                    "y": 3
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 17,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 8,
+                    "y": 7
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 8,
+                    "y": 8
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 11,
+                    "y": 7
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 11,
+                    "y": 8
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 14,
+                    "y": 7
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 14,
+                    "y": 8
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 17,
+                    "y": 7
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 17,
+                    "y": 8
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "FilingCabinet",
+                  "position": {
+                    "x": 19,
+                    "y": 5
+                  }
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Reception-Divider"
+                },
+                {
+                  "wall": "Office-North"
+                },
+                {
+                  "wall": "East"
+                },
+                {
+                  "wall": "South"
+                }
+              ]
+            },
+            {
+              "name": "Meeting Room A",
+              "tags": [
+                "meeting"
+              ],
+              "doors": [
+                {
+                  "name": "Meeting Door",
+                  "wall": "Meeting-West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 2,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "SingleDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Reception",
+                    "to": "Meeting Room A"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W5",
+                  "wall": "North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 8,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ConferenceTable",
+                  "position": {
+                    "x": 10,
+                    "y": 12.5
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 8,
+                    "y": 12.5
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 12,
+                    "y": 12.5
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 10,
+                    "y": 11
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 10,
+                    "y": 14
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Meeting-West"
+                },
+                {
+                  "wall": "North"
+                },
+                {
+                  "wall": "Kitchen-Wall"
+                },
+                {
+                  "wall": "Office-North"
+                }
+              ]
+            },
+            {
+              "name": "Kitchen",
+              "tags": [
+                "service",
+                "kitchen"
+              ],
+              "doors": [
+                {
+                  "name": "Kitchen Entry",
+                  "wall": "Kitchen-Wall",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 2,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "SingleDoor",
+                  "swing": "double"
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W6",
+                  "wall": "North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 17,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ClerestoryWindow"
+                },
+                {
+                  "name": "W7",
+                  "wall": "East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 12,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [],
+              "boundedBy": [
+                {
+                  "wall": "Kitchen-Wall"
+                },
+                {
+                  "wall": "North"
+                },
+                {
+                  "wall": "East"
+                },
+                {
+                  "wall": "Office-North"
+                }
+              ]
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [
+            {
+              "name": "C1",
+              "position": {
+                "x": 5,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "C2",
+              "position": {
+                "x": 10,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "C3",
+              "position": {
+                "x": 15,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            }
+          ],
+          "furniture": [],
+          "slabs": [],
+          "height": {
+            "value": 4,
+            "unit": "m"
+          }
+        },
+        {
+          "name": "First Floor",
+          "elevation": {
+            "ref": "Ground Floor"
+          },
+          "walls": [
+            {
+              "name": "North",
+              "start": {
+                "x": 0,
+                "y": 15
+              },
+              "end": {
+                "x": 20,
+                "y": 15
+              }
+            },
+            {
+              "name": "East",
+              "start": {
+                "x": 20,
+                "y": 15
+              },
+              "end": {
+                "x": 20,
+                "y": 0
+              }
+            },
+            {
+              "name": "South",
+              "start": {
+                "x": 20,
+                "y": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 0
+              }
+            },
+            {
+              "name": "West",
+              "start": {
+                "x": 0,
+                "y": 0
+              },
+              "end": {
+                "x": 0,
+                "y": 15
+              }
+            },
+            {
+              "name": "Corridor",
+              "start": {
+                "x": 0,
+                "y": 7.5
+              },
+              "end": {
+                "x": 20,
+                "y": 7.5
+              }
+            },
+            {
+              "name": "Office1-East",
+              "start": {
+                "x": 5,
+                "y": 7.5
+              },
+              "end": {
+                "x": 5,
+                "y": 15
+              }
+            },
+            {
+              "name": "Office2-East",
+              "start": {
+                "x": 10,
+                "y": 7.5
+              },
+              "end": {
+                "x": 10,
+                "y": 15
+              }
+            },
+            {
+              "name": "Conf-West",
+              "start": {
+                "x": 14,
+                "y": 7.5
+              },
+              "end": {
+                "x": 14,
+                "y": 15
+              }
+            }
+          ],
+          "spaces": [
+            {
+              "name": "CEO Office",
+              "tags": [
+                "private",
+                "office"
+              ],
+              "doors": [
+                {
+                  "name": "CEO Door",
+                  "wall": "Corridor",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 2.5,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExecutiveDoor",
+                  "swing": "inward"
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W8",
+                  "wall": "West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 7,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FloorToCeilingWindow"
+                },
+                {
+                  "name": "W9",
+                  "wall": "North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 2,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "CornerWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ExecutiveDesk",
+                  "position": {
+                    "x": 2.5,
+                    "y": 11
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 2.5,
+                    "y": 12
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 1.5,
+                    "y": 9
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "Bookshelf",
+                  "position": {
+                    "x": 4.5,
+                    "y": 14
+                  }
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "West"
+                },
+                {
+                  "wall": "North"
+                },
+                {
+                  "wall": "Office1-East"
+                },
+                {
+                  "wall": "Corridor"
+                }
+              ]
+            },
+            {
+              "name": "CTO Office",
+              "tags": [
+                "private",
+                "office"
+              ],
+              "doors": [
+                {
+                  "name": "CTO Door",
+                  "wall": "Corridor",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 7.5,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExecutiveDoor",
+                  "swing": "inward"
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W10",
+                  "wall": "North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 7,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ExecutiveDesk",
+                  "position": {
+                    "x": 7.5,
+                    "y": 11
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 7.5,
+                    "y": 12
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "FilingCabinet",
+                  "position": {
+                    "x": 9.5,
+                    "y": 14
+                  }
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Office1-East"
+                },
+                {
+                  "wall": "North"
+                },
+                {
+                  "wall": "Office2-East"
+                },
+                {
+                  "wall": "Corridor"
+                }
+              ]
+            },
+            {
+              "name": "Board Room",
+              "tags": [
+                "meeting"
+              ],
+              "doors": [
+                {
+                  "name": "Board Room Door",
+                  "wall": "Conf-West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "DoubleDoor",
+                  "swing": "inward"
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W11",
+                  "wall": "North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 15,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "PictureWindow"
+                },
+                {
+                  "name": "W12",
+                  "wall": "East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 12,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "PictureWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ConferenceTable",
+                  "position": {
+                    "x": 15,
+                    "y": 11
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 13,
+                    "y": 11
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 17,
+                    "y": 11
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 14,
+                    "y": 9.5
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 9.5
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 14,
+                    "y": 12.5
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 12.5
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Office2-East"
+                },
+                {
+                  "wall": "North"
+                },
+                {
+                  "wall": "East"
+                },
+                {
+                  "wall": "Conf-West"
+                }
+              ]
+            },
+            {
+              "name": "Lounge",
+              "tags": [
+                "public",
+                "circulation"
+              ],
+              "doors": [
+                {
+                  "name": "Lounge Entry",
+                  "wall": "Corridor",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 12,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GlassPartitionDoor",
+                  "swing": "double"
+                },
+                {
+                  "name": "Fire Exit",
+                  "wall": "West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 5,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FireDoor",
+                  "swing": "outward"
+                }
+              ],
+              "windows": [
+                {
+                  "name": "W13",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 5,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                },
+                {
+                  "name": "W14",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 10,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "Sofa",
+                  "position": {
+                    "x": 3,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "Sofa",
+                  "position": {
+                    "x": 8,
+                    "y": 2
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "RoundTable",
+                  "position": {
+                    "x": 5.5,
+                    "y": 5
+                  }
+                },
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 4,
+                    "y": 5
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 7,
+                    "y": 5
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "West"
+                },
+                {
+                  "wall": "Corridor"
+                },
+                {
+                  "wall": "Conf-West"
+                },
+                {
+                  "wall": "South"
+                }
+              ]
+            },
+            {
+              "name": "Hot Desks",
+              "tags": [
+                "office"
+              ],
+              "doors": [],
+              "windows": [
+                {
+                  "name": "W15",
+                  "wall": "South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 16,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                },
+                {
+                  "name": "W16",
+                  "wall": "East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 16,
+                    "y": 2
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 1
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 18,
+                    "y": 2
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 18,
+                    "y": 1
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 16,
+                    "y": 5
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 6
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 18,
+                    "y": 5
+                  }
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 18,
+                    "y": 6
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Conf-West"
+                },
+                {
+                  "wall": "Corridor"
+                },
+                {
+                  "wall": "East"
+                },
+                {
+                  "wall": "South"
+                }
+              ]
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [
+            {
+              "name": "C4",
+              "position": {
+                "x": 5,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "C5",
+              "position": {
+                "x": 10,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "C6",
+              "position": {
+                "x": 15,
+                "y": 5
+              },
+              "width": {
+                "value": 400,
+                "unit": "mm"
+              },
+              "depth": {
+                "value": 400,
+                "unit": "mm"
+              }
+            }
+          ],
+          "furniture": [],
+          "slabs": [],
+          "height": {
+            "value": 3.5,
+            "unit": "m"
+          }
+        }
+      ],
+      "defaults": {
+        "wallThickness": {
+          "value": 150,
+          "unit": "mm"
+        },
+        "floorThickness": {
+          "value": 200,
+          "unit": "mm"
+        },
+        "ceilingHeight": {
+          "value": 2800,
+          "unit": "mm"
+        },
+        "doorHeight": {
+          "value": 2100,
+          "unit": "mm"
+        },
+        "windowSill": {
+          "value": 900,
+          "unit": "mm"
+        }
+      },
+      "site": {
+        "name": "Innovation District",
+        "location": {
+          "latitude": 37.7849,
+          "longitude": -122.4094
+        }
+      }
+    }
+  ]
+}

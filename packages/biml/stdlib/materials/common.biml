@@ -1,0 +1,25 @@
+# Standard Material Library
+# Common materials for architectural elements
+
+library "stdlib.materials" {
+  material Oak {
+    color: oak
+  }
+
+  material Steel {
+    color: steel
+  }
+
+  material Concrete {
+    color: concrete
+  }
+
+  material WhitePaint {
+    color: white
+  }
+
+  material ClearGlass {
+    color: glass
+    transparency: 0.1
+  }
+}

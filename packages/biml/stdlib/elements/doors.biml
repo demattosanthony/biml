@@ -1,0 +1,44 @@
+# Standard Door Library
+# Common door types for architectural design
+
+library "stdlib.doors" {
+  material DoorOak {
+    color: oak
+  }
+
+  material DoorSteel {
+    color: steel
+  }
+
+  material DoorGlass {
+    color: glass
+    transparency: 0.2
+  }
+
+  type Door {
+    param width: Length = 900mm
+    param height: Length = 2100mm
+    param thickness: Length = 45mm
+    ifc_class: IfcDoor
+  }
+
+  type SingleDoor : Door {
+    material: DoorOak
+  }
+
+  type DoubleDoor : Door {
+    width = 1800mm
+    material: DoorOak
+  }
+
+  type FireDoor : Door {
+    width = 1000mm
+    thickness = 54mm
+    material: DoorSteel
+  }
+
+  type SlidingDoor : Door {
+    width = 1800mm
+    material: DoorGlass
+  }
+}

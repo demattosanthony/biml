@@ -1,0 +1,13 @@
+# BIML Standard Library
+#
+# Import by file path:
+#   import "stdlib/elements/doors.biml"
+#   import "stdlib/elements/windows.biml"
+#   import "stdlib/furniture/office.biml"
+#   import "stdlib/structure/columns.biml"
+#   import "stdlib/materials/common.biml"
+#
+# Example:
+#   type Door { param width: Length = 900mm }
+#   type SingleDoor : Door { material: DoorOak }
+#   type FireDoor : Door { width = 1000mm }

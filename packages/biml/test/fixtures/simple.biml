@@ -1,75 +1,64 @@
-# Simple BIML Example (v0.6.0)
-# A basic office building with two adjacent rooms, doors, and materials
+# Simple BIML Example
+# A basic office with two rooms and connecting door
+
+import "stdlib/elements/doors.biml"
+import "stdlib/materials/common.biml"
 
 library "Doors" {
-  # Define materials for door finishes
   material WarmOak {
     color: oak
   }
 
-  material DarkWalnut {
-    color: walnut
-  }
-
-  material WhitePainted {
+  material WhitePaint {
     color: white
   }
 
-  # Door family and types
-  family Door {
-    parameter width: Length = 900mm
-    parameter height: Length = 2100mm
+  type Door {
+    param width: Length = 900mm
+    param height: Length = 2100mm
+    ifc_class: IfcDoor
   }
 
-  type StandardDoor extends Door {
+  type SingleDoor : Door {
     material: WarmOak
   }
 
-  type InteriorDoor extends Door {
+  type InteriorDoor : Door {
     width = 800mm
-    material: WhitePainted
-  }
-
-  type WalnutDoor extends Door {
-    material: DarkWalnut
+    material: WhitePaint
   }
 }
 
-project "Simple Office" {
-  site "Main Site" {
-    building "Office Building" {
-      level "Ground" {
-        elevation: 0m
-        height: 3.5m
+building "Simple Office" {
+  defaults {
+    wall_thickness: 200mm
+    ceiling_height: 2700mm
+  }
 
-        space "Reception" {
-          position: [0, 0]
-          area: 50m²
+  level "Ground" at 0m, height: 3.5m {
+    # Define walls with coordinates
+    wall "North" from (0, 10) to (15, 10)
+    wall "East" from (15, 10) to (15, 0)
+    wall "South" from (15, 0) to (0, 0)
+    wall "West" from (0, 0) to (0, 10)
+    wall "Interior" from (8, 0) to (8, 10)
 
-          # Exterior door with oak finish (inherited from type)
-          door "Main Entry": StandardDoor {
-            wall: south
-            offset: center
-          }
-        }
+    # Reception space on the left
+    space "Reception" [public, reception] {
+      bounded_by: ["South", "Interior", "North", "West"]
 
-        space "Hallway" {
-          position: [0, 1]
-          width: 2m
-          length: 10m
+      door "Main Entry": SingleDoor in "South" at 4m {
+        swing: outward
+      }
+    }
 
-          # Interior door with white finish (inherited from type)
-          door "D1": InteriorDoor {
-            wall: west
-            connects: "Reception"
-          }
+    # Office space on the right
+    space "Office" [private, office] {
+      bounded_by: ["South", "East", "North", "Interior"]
 
-          # Door with walnut finish via type
-          door "D2": WalnutDoor {
-            wall: east
-            offset: 3m from north
-          }
-        }
+      door "Office Door": InteriorDoor in "Interior" at 5m {
+        swing: inward
+        connects: "Reception" <-> "Office"
       }
     }
   }

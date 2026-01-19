@@ -1,0 +1,3226 @@
+{
+  "version": "1.0.0",
+  "libraries": [
+    {
+      "name": "stdlib.doors",
+      "materials": [
+        {
+          "name": "DoorOak",
+          "color": {
+            "red": 0.76,
+            "green": 0.6,
+            "blue": 0.42
+          }
+        },
+        {
+          "name": "DoorSteel",
+          "color": {
+            "red": 0.7,
+            "green": 0.72,
+            "blue": 0.75
+          }
+        },
+        {
+          "name": "DoorGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.2
+        }
+      ],
+      "types": [
+        {
+          "name": "Door",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 900,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 2100,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "thickness",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 45,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcDoor"
+        },
+        {
+          "name": "SingleDoor",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Door",
+          "material": "DoorOak"
+        },
+        {
+          "name": "DoubleDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorOak"
+        },
+        {
+          "name": "FireDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            },
+            "thickness": {
+              "kind": "measurement",
+              "value": 54,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorSteel"
+        },
+        {
+          "name": "SlidingDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Door",
+          "material": "DoorGlass"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.windows",
+      "materials": [
+        {
+          "name": "WindowGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.1
+        }
+      ],
+      "types": [
+        {
+          "name": "Window",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1500,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "sill_height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 900,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcWindow"
+        },
+        {
+          "name": "FixedWindow",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Window",
+          "material": "WindowGlass"
+        },
+        {
+          "name": "PictureWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Window",
+          "material": "WindowGlass"
+        },
+        {
+          "name": "ClerestoryWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 2100,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Window",
+          "material": "WindowGlass"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.furniture.office",
+      "materials": [],
+      "types": [
+        {
+          "name": "Desk",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 720,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "StandardDesk",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Desk"
+        },
+        {
+          "name": "Chair",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 600,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 450,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "OfficeChair",
+          "parameters": [],
+          "overrides": {},
+          "baseType": "Chair"
+        },
+        {
+          "name": "Table",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 720,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "ConferenceTable",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Table"
+        },
+        {
+          "name": "Storage",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 800,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 450,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "height",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 1800,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcFurniture"
+        },
+        {
+          "name": "FilingCabinet",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 450,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1400,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Storage"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.structure",
+      "materials": [],
+      "types": [
+        {
+          "name": "Column",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "depth",
+              "type": "Length",
+              "defaultValue": {
+                "kind": "measurement",
+                "value": 400,
+                "unit": "mm"
+              }
+            }
+          ],
+          "overrides": {},
+          "ifcClass": "IfcColumn"
+        },
+        {
+          "name": "ConcreteColumn",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            }
+          },
+          "baseType": "Column"
+        }
+      ]
+    },
+    {
+      "name": "stdlib.materials",
+      "materials": [
+        {
+          "name": "Oak",
+          "color": {
+            "red": 0.76,
+            "green": 0.6,
+            "blue": 0.42
+          }
+        },
+        {
+          "name": "Steel",
+          "color": {
+            "red": 0.7,
+            "green": 0.72,
+            "blue": 0.75
+          }
+        },
+        {
+          "name": "Concrete",
+          "color": {
+            "red": 0.75,
+            "green": 0.75,
+            "blue": 0.73
+          }
+        },
+        {
+          "name": "WhitePaint",
+          "color": {
+            "red": 1,
+            "green": 1,
+            "blue": 1
+          }
+        },
+        {
+          "name": "ClearGlass",
+          "color": {
+            "red": 0.8,
+            "green": 0.9,
+            "blue": 1
+          },
+          "transparency": 0.1
+        }
+      ],
+      "types": []
+    },
+    {
+      "name": "gallery.materials",
+      "materials": [
+        {
+          "name": "GalleryWhite",
+          "color": {
+            "red": 0.9803921568627451,
+            "green": 0.9803921568627451,
+            "blue": 0.9803921568627451
+          }
+        },
+        {
+          "name": "MuseumGrey",
+          "color": {
+            "red": 0.9098039215686274,
+            "green": 0.9098039215686274,
+            "blue": 0.9098039215686274
+          }
+        },
+        {
+          "name": "CharcoalAccent",
+          "color": {
+            "red": 0.17647058823529413,
+            "green": 0.17647058823529413,
+            "blue": 0.17647058823529413
+          }
+        },
+        {
+          "name": "PolishedConcrete",
+          "color": {
+            "red": 0.6039215686274509,
+            "green": 0.6039215686274509,
+            "blue": 0.6039215686274509
+          }
+        },
+        {
+          "name": "WhiteOakFlooring",
+          "color": {
+            "red": 0.8313725490196079,
+            "green": 0.7686274509803922,
+            "blue": 0.6588235294117647
+          }
+        },
+        {
+          "name": "TerrazzoFloor",
+          "color": {
+            "red": 0.788235294117647,
+            "green": 0.7254901960784313,
+            "blue": 0.6039215686274509
+          }
+        },
+        {
+          "name": "ExposedConcrete",
+          "color": {
+            "red": 0.5490196078431373,
+            "green": 0.5490196078431373,
+            "blue": 0.5490196078431373
+          }
+        },
+        {
+          "name": "BlackSteel",
+          "color": {
+            "red": 0.10196078431372549,
+            "green": 0.10196078431372549,
+            "blue": 0.10196078431372549
+          }
+        },
+        {
+          "name": "CurtenSteel",
+          "color": {
+            "red": 0.5450980392156862,
+            "green": 0.27058823529411763,
+            "blue": 0.07450980392156863
+          }
+        },
+        {
+          "name": "BronzeAccent",
+          "color": {
+            "red": 0.8,
+            "green": 0.5,
+            "blue": 0.2
+          }
+        },
+        {
+          "name": "StructuralGlass",
+          "color": {
+            "red": 0.8784313725490196,
+            "green": 0.9411764705882353,
+            "blue": 1
+          },
+          "transparency": 0.15
+        },
+        {
+          "name": "FrostedGlass",
+          "color": {
+            "red": 0.9607843137254902,
+            "green": 0.9607843137254902,
+            "blue": 0.9607843137254902
+          },
+          "transparency": 0.4
+        },
+        {
+          "name": "TintedGlass",
+          "color": {
+            "red": 0.7215686274509804,
+            "green": 0.8313725490196079,
+            "blue": 0.9098039215686274
+          },
+          "transparency": 0.25
+        }
+      ],
+      "types": []
+    },
+    {
+      "name": "gallery.doors",
+      "materials": [
+        {
+          "name": "GlassDoor",
+          "color": {
+            "red": 0.8784313725490196,
+            "green": 0.9411764705882353,
+            "blue": 1
+          },
+          "transparency": 0.2
+        },
+        {
+          "name": "SteelDoor",
+          "color": {
+            "red": 0.10196078431372549,
+            "green": 0.10196078431372549,
+            "blue": 0.10196078431372549
+          }
+        },
+        {
+          "name": "OakDoor",
+          "color": {
+            "red": 0.76,
+            "green": 0.6,
+            "blue": 0.42
+          }
+        }
+      ],
+      "types": [
+        {
+          "name": "GrandEntryDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 3500,
+              "unit": "mm"
+            }
+          },
+          "material": "GlassDoor"
+        },
+        {
+          "name": "GalleryDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2700,
+              "unit": "mm"
+            }
+          },
+          "material": "GlassDoor"
+        },
+        {
+          "name": "ServiceDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2100,
+              "unit": "mm"
+            }
+          },
+          "material": "SteelDoor"
+        },
+        {
+          "name": "EmergencyExit",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2200,
+              "unit": "mm"
+            }
+          },
+          "material": "SteelDoor"
+        },
+        {
+          "name": "RetailDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1600,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            }
+          },
+          "material": "GlassDoor"
+        },
+        {
+          "name": "OfficeDoor",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 900,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2100,
+              "unit": "mm"
+            }
+          },
+          "material": "OakDoor"
+        }
+      ]
+    },
+    {
+      "name": "gallery.windows",
+      "materials": [
+        {
+          "name": "GalleryGlass",
+          "color": {
+            "red": 0.8784313725490196,
+            "green": 0.9411764705882353,
+            "blue": 1
+          },
+          "transparency": 0.1
+        },
+        {
+          "name": "SkyGlass",
+          "color": {
+            "red": 0.8313725490196079,
+            "green": 0.9098039215686274,
+            "blue": 0.9607843137254902
+          },
+          "transparency": 0.05
+        }
+      ],
+      "types": [
+        {
+          "name": "GalleryWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 3500,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 0,
+              "unit": "mm"
+            }
+          },
+          "material": "GalleryGlass"
+        },
+        {
+          "name": "GalleryClerestory",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            }
+          },
+          "material": "SkyGlass"
+        },
+        {
+          "name": "ExhibitionWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2100,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            }
+          },
+          "material": "GalleryGlass"
+        },
+        {
+          "name": "CafeWindow",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2400,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 300,
+              "unit": "mm"
+            }
+          },
+          "material": "GalleryGlass"
+        },
+        {
+          "name": "Skylight",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 2000,
+              "unit": "mm"
+            },
+            "sill_height": {
+              "kind": "measurement",
+              "value": 0,
+              "unit": "mm"
+            }
+          },
+          "material": "SkyGlass"
+        }
+      ]
+    },
+    {
+      "name": "gallery.furniture",
+      "materials": [],
+      "types": [
+        {
+          "name": "ReceptionDesk",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 3000,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 1000,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1100,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "GalleryBench",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1800,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 500,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 450,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "CafeTable",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 750,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "CafeChair",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 500,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 500,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 450,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "LoungeChair",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 800,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "LoungeSofa",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 2200,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 900,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 400,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "DisplayPedestal",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            }
+          }
+        },
+        {
+          "name": "ShopDisplay",
+          "parameters": [],
+          "overrides": {
+            "width": {
+              "kind": "measurement",
+              "value": 1200,
+              "unit": "mm"
+            },
+            "depth": {
+              "kind": "measurement",
+              "value": 600,
+              "unit": "mm"
+            },
+            "height": {
+              "kind": "measurement",
+              "value": 900,
+              "unit": "mm"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "name": "Lumina Contemporary Art Gallery",
+      "levels": [
+        {
+          "name": "Ground Floor",
+          "elevation": {
+            "value": 0,
+            "unit": "m"
+          },
+          "walls": [
+            {
+              "name": "South Facade",
+              "start": {
+                "x": 0,
+                "y": 0
+              },
+              "end": {
+                "x": 50,
+                "y": 0
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "East Facade",
+              "start": {
+                "x": 50,
+                "y": 0
+              },
+              "end": {
+                "x": 50,
+                "y": 35
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "North Facade",
+              "start": {
+                "x": 50,
+                "y": 35
+              },
+              "end": {
+                "x": 0,
+                "y": 35
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "West Facade",
+              "start": {
+                "x": 0,
+                "y": 35
+              },
+              "end": {
+                "x": 0,
+                "y": 0
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Entry North",
+              "start": {
+                "x": 0,
+                "y": 10
+              },
+              "end": {
+                "x": 18,
+                "y": 10
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Shop East",
+              "start": {
+                "x": 12,
+                "y": 0
+              },
+              "end": {
+                "x": 12,
+                "y": 10
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Gallery East",
+              "start": {
+                "x": 30,
+                "y": 0
+              },
+              "end": {
+                "x": 30,
+                "y": 22
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Court West",
+              "start": {
+                "x": 30,
+                "y": 10
+              },
+              "end": {
+                "x": 30,
+                "y": 35
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Cafe North",
+              "start": {
+                "x": 0,
+                "y": 22
+              },
+              "end": {
+                "x": 12,
+                "y": 22
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Cafe East",
+              "start": {
+                "x": 12,
+                "y": 10
+              },
+              "end": {
+                "x": 12,
+                "y": 22
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Service South",
+              "start": {
+                "x": 12,
+                "y": 22
+              },
+              "end": {
+                "x": 30,
+                "y": 22
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Staff South",
+              "start": {
+                "x": 0,
+                "y": 28
+              },
+              "end": {
+                "x": 14,
+                "y": 28
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Staff East",
+              "start": {
+                "x": 14,
+                "y": 22
+              },
+              "end": {
+                "x": 14,
+                "y": 28
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Restroom Divider",
+              "start": {
+                "x": 7,
+                "y": 22
+              },
+              "end": {
+                "x": 7,
+                "y": 28
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            }
+          ],
+          "spaces": [
+            {
+              "name": "Entry Lobby",
+              "tags": [
+                "public",
+                "reception"
+              ],
+              "doors": [
+                {
+                  "name": "Main Entrance",
+                  "wall": "South Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 6,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GrandEntryDoor",
+                  "swing": "pivot",
+                  "connects": {
+                    "from": "Entry Lobby",
+                    "to": "exterior"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Entry Window West",
+                  "wall": "West Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                },
+                {
+                  "name": "Entry Window South",
+                  "wall": "South Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 2,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExhibitionWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ReceptionDesk",
+                  "position": {
+                    "x": 3,
+                    "y": 6
+                  },
+                  "name": "Information Desk",
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 9,
+                    "y": 3
+                  },
+                  "facing": "north"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "South Facade"
+                },
+                {
+                  "wall": "Entry North"
+                },
+                {
+                  "wall": "Shop East"
+                },
+                {
+                  "wall": "West Facade"
+                }
+              ],
+              "area": {
+                "value": 120,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Museum Shop",
+              "tags": [
+                "public",
+                "retail"
+              ],
+              "doors": [
+                {
+                  "name": "Shop Entry",
+                  "wall": "Entry North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 14,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "RetailDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Entry Lobby",
+                    "to": "Museum Shop"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Shop Window 1",
+                  "wall": "South Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 16,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExhibitionWindow"
+                },
+                {
+                  "name": "Shop Window 2",
+                  "wall": "South Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 22,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExhibitionWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ShopDisplay",
+                  "position": {
+                    "x": 15,
+                    "y": 3
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "ShopDisplay",
+                  "position": {
+                    "x": 20,
+                    "y": 3
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "ShopDisplay",
+                  "position": {
+                    "x": 25,
+                    "y": 3
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "ShopDisplay",
+                  "position": {
+                    "x": 15,
+                    "y": 7
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "ShopDisplay",
+                  "position": {
+                    "x": 20,
+                    "y": 7
+                  },
+                  "facing": "east"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "South Facade"
+                },
+                {
+                  "wall": "Shop East"
+                },
+                {
+                  "wall": "Entry North"
+                },
+                {
+                  "wall": "Gallery East"
+                }
+              ],
+              "area": {
+                "value": 180,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Main Gallery Hall",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [
+                {
+                  "name": "Gallery Entry",
+                  "wall": "Entry North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 5,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryDoor",
+                  "swing": "sliding",
+                  "connects": {
+                    "from": "Entry Lobby",
+                    "to": "Main Gallery Hall"
+                  }
+                },
+                {
+                  "name": "Sculpture Court Access",
+                  "wall": "Gallery East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 16,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryDoor",
+                  "swing": "sliding",
+                  "connects": {
+                    "from": "Main Gallery Hall",
+                    "to": "Sculpture Court"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Gallery Clerestory 1",
+                  "wall": "Entry North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 8,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryClerestory"
+                },
+                {
+                  "name": "Gallery Clerestory 2",
+                  "wall": "Service South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 20,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryClerestory"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 18,
+                    "y": 12
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 18,
+                    "y": 18
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 24,
+                    "y": 15
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 15,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 15,
+                    "y": 18
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 27,
+                    "y": 12
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 27,
+                    "y": 18
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Entry North"
+                },
+                {
+                  "wall": "Gallery East"
+                },
+                {
+                  "wall": "Service South"
+                },
+                {
+                  "wall": "Cafe East"
+                }
+              ],
+              "area": {
+                "value": 216,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Sculpture Court",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [
+                {
+                  "name": "Emergency Exit East",
+                  "wall": "East Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 30,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "EmergencyExit",
+                  "swing": "outward",
+                  "connects": {
+                    "from": "Sculpture Court",
+                    "to": "exterior"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Court Window East 1",
+                  "wall": "East Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 12,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                },
+                {
+                  "name": "Court Window East 2",
+                  "wall": "East Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                },
+                {
+                  "name": "Court Window East 3",
+                  "wall": "East Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 24,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                },
+                {
+                  "name": "Court Window North 1",
+                  "wall": "North Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 40,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                },
+                {
+                  "name": "Court Window North 2",
+                  "wall": "North Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 46,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 40,
+                    "y": 20
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 40,
+                    "y": 28
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 35,
+                    "y": 18
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 35,
+                    "y": 25
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 45,
+                    "y": 18
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 45,
+                    "y": 25
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Court West"
+                },
+                {
+                  "wall": "East Facade"
+                },
+                {
+                  "wall": "North Facade"
+                },
+                {
+                  "wall": "Service South"
+                }
+              ],
+              "area": {
+                "value": 325,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Café Lumina",
+              "tags": [
+                "public",
+                "dining"
+              ],
+              "doors": [
+                {
+                  "name": "Cafe Entrance",
+                  "wall": "Entry North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "RetailDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Entry Lobby",
+                    "to": "Café Lumina"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Cafe Window 1",
+                  "wall": "West Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 14,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "CafeWindow"
+                },
+                {
+                  "name": "Cafe Window 2",
+                  "wall": "West Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "CafeWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "CafeTable",
+                  "position": {
+                    "x": 3,
+                    "y": 13
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 2.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 3.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeTable",
+                  "position": {
+                    "x": 6,
+                    "y": 13
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 5.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 6.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeTable",
+                  "position": {
+                    "x": 9,
+                    "y": 13
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 8.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 9.5,
+                    "y": 12
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "CafeTable",
+                  "position": {
+                    "x": 3,
+                    "y": 18
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 2.5,
+                    "y": 19
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 3.5,
+                    "y": 19
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "CafeTable",
+                  "position": {
+                    "x": 6,
+                    "y": 18
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 5.5,
+                    "y": 19
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "CafeChair",
+                  "position": {
+                    "x": 6.5,
+                    "y": 19
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "LoungeSofa",
+                  "position": {
+                    "x": 9,
+                    "y": 19
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Cafe North"
+                },
+                {
+                  "wall": "Cafe East"
+                },
+                {
+                  "wall": "Entry North"
+                },
+                {
+                  "wall": "West Facade"
+                }
+              ],
+              "area": {
+                "value": 144,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Restrooms",
+              "tags": [
+                "public",
+                "restroom"
+              ],
+              "doors": [
+                {
+                  "name": "Restroom Entry",
+                  "wall": "Cafe North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ServiceDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Café Lumina",
+                    "to": "Restrooms"
+                  }
+                }
+              ],
+              "windows": [],
+              "furniture": [],
+              "boundedBy": [
+                {
+                  "wall": "Staff South"
+                },
+                {
+                  "wall": "Restroom Divider"
+                },
+                {
+                  "wall": "Cafe North"
+                },
+                {
+                  "wall": "West Facade"
+                }
+              ],
+              "area": {
+                "value": 42,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Service Corridor",
+              "tags": [
+                "private",
+                "circulation"
+              ],
+              "doors": [
+                {
+                  "name": "Cafe Service",
+                  "wall": "Cafe East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ServiceDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Café Lumina",
+                    "to": "Service Corridor"
+                  }
+                },
+                {
+                  "name": "Gallery Service",
+                  "wall": "Service South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 16,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ServiceDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Main Gallery Hall",
+                    "to": "Service Corridor"
+                  }
+                }
+              ],
+              "windows": [],
+              "furniture": [],
+              "boundedBy": [
+                {
+                  "wall": "Staff South"
+                },
+                {
+                  "wall": "Service South"
+                },
+                {
+                  "wall": "Restroom Divider"
+                },
+                {
+                  "wall": "Staff East"
+                }
+              ],
+              "area": {
+                "value": 42,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Staff Area",
+              "tags": [
+                "private",
+                "office"
+              ],
+              "doors": [
+                {
+                  "name": "Staff Entry",
+                  "wall": "Staff South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 7,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ServiceDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Service Corridor",
+                    "to": "Staff Area"
+                  }
+                },
+                {
+                  "name": "Staff Exit",
+                  "wall": "North Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 4,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "EmergencyExit",
+                  "swing": "outward",
+                  "connects": {
+                    "from": "Staff Area",
+                    "to": "exterior"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Staff Window",
+                  "wall": "West Facade",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 30,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 4,
+                    "y": 32
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 4,
+                    "y": 31
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "StandardDesk",
+                  "position": {
+                    "x": 10,
+                    "y": 32
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 10,
+                    "y": 31
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "FilingCabinet",
+                  "position": {
+                    "x": 2,
+                    "y": 30
+                  },
+                  "facing": "east"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "North Facade"
+                },
+                {
+                  "wall": "Staff East"
+                },
+                {
+                  "wall": "Staff South"
+                },
+                {
+                  "wall": "West Facade"
+                }
+              ],
+              "area": {
+                "value": 98,
+                "unit": "m²"
+              }
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [
+            {
+              "name": "C1",
+              "position": {
+                "x": 35,
+                "y": 15
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C2",
+              "position": {
+                "x": 35,
+                "y": 25
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C3",
+              "position": {
+                "x": 45,
+                "y": 15
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C4",
+              "position": {
+                "x": 45,
+                "y": 25
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C5",
+              "position": {
+                "x": 9,
+                "y": 5
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C6",
+              "position": {
+                "x": 21,
+                "y": 5
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C7",
+              "position": {
+                "x": 21,
+                "y": 15
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "C8",
+              "position": {
+                "x": 6,
+                "y": 16
+              },
+              "typeRef": "ConcreteColumn"
+            }
+          ],
+          "furniture": [],
+          "slabs": [],
+          "height": {
+            "value": 5,
+            "unit": "m"
+          }
+        },
+        {
+          "name": "First Floor",
+          "elevation": {
+            "ref": "Ground Floor"
+          },
+          "walls": [
+            {
+              "name": "Upper South",
+              "start": {
+                "x": 0,
+                "y": 0
+              },
+              "end": {
+                "x": 30,
+                "y": 0
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Upper East Inner",
+              "start": {
+                "x": 30,
+                "y": 0
+              },
+              "end": {
+                "x": 30,
+                "y": 22
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Upper North",
+              "start": {
+                "x": 30,
+                "y": 22
+              },
+              "end": {
+                "x": 0,
+                "y": 22
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Upper West",
+              "start": {
+                "x": 0,
+                "y": 22
+              },
+              "end": {
+                "x": 0,
+                "y": 0
+              },
+              "thickness": {
+                "value": 400,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Upper Lobby South",
+              "start": {
+                "x": 0,
+                "y": 7
+              },
+              "end": {
+                "x": 12,
+                "y": 7
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Upper Lobby East",
+              "start": {
+                "x": 12,
+                "y": 0
+              },
+              "end": {
+                "x": 12,
+                "y": 7
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Contemporary West",
+              "start": {
+                "x": 12,
+                "y": 7
+              },
+              "end": {
+                "x": 12,
+                "y": 22
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Photo Gallery South",
+              "start": {
+                "x": 12,
+                "y": 15
+              },
+              "end": {
+                "x": 30,
+                "y": 15
+              },
+              "thickness": {
+                "value": 200,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Education East",
+              "start": {
+                "x": 24,
+                "y": 0
+              },
+              "end": {
+                "x": 24,
+                "y": 8
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            },
+            {
+              "name": "Education North",
+              "start": {
+                "x": 12,
+                "y": 8
+              },
+              "end": {
+                "x": 24,
+                "y": 8
+              },
+              "thickness": {
+                "value": 150,
+                "unit": "mm"
+              }
+            }
+          ],
+          "spaces": [
+            {
+              "name": "Upper Lobby",
+              "tags": [
+                "public",
+                "circulation"
+              ],
+              "doors": [],
+              "windows": [
+                {
+                  "name": "Upper Lobby Window",
+                  "wall": "Upper West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 3,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ExhibitionWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 3,
+                    "y": 3
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "LoungeChair",
+                  "position": {
+                    "x": 3,
+                    "y": 5
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "LoungeSofa",
+                  "position": {
+                    "x": 8,
+                    "y": 4
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Upper South"
+                },
+                {
+                  "wall": "Upper Lobby East"
+                },
+                {
+                  "wall": "Upper Lobby South"
+                },
+                {
+                  "wall": "Upper West"
+                }
+              ],
+              "area": {
+                "value": 84,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Contemporary Gallery",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [
+                {
+                  "name": "Contemporary Entry",
+                  "wall": "Upper Lobby South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 6,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryDoor",
+                  "swing": "sliding",
+                  "connects": {
+                    "from": "Upper Lobby",
+                    "to": "Contemporary Gallery"
+                  }
+                },
+                {
+                  "name": "To Photography",
+                  "wall": "Photo Gallery South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 6,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryDoor",
+                  "swing": "sliding",
+                  "connects": {
+                    "from": "Contemporary Gallery",
+                    "to": "Photography Gallery"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Contemporary Clerestory 1",
+                  "wall": "Upper West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 10,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryClerestory"
+                },
+                {
+                  "name": "Contemporary Clerestory 2",
+                  "wall": "Upper West",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 16,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryClerestory"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 6,
+                    "y": 10
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 6,
+                    "y": 13
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 3,
+                    "y": 9
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 3,
+                    "y": 14
+                  },
+                  "facing": "east"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 9,
+                    "y": 9
+                  },
+                  "facing": "west"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 9,
+                    "y": 14
+                  },
+                  "facing": "west"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Upper Lobby South"
+                },
+                {
+                  "wall": "Contemporary West"
+                },
+                {
+                  "wall": "Photo Gallery South"
+                },
+                {
+                  "wall": "Education North"
+                }
+              ],
+              "area": {
+                "value": 126,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Photography Gallery",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [],
+              "windows": [
+                {
+                  "name": "Photo Gallery Clerestory",
+                  "wall": "Upper North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 20,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "GalleryClerestory"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 20,
+                    "y": 18
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 20,
+                    "y": 20
+                  },
+                  "facing": "north"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Photo Gallery South"
+                },
+                {
+                  "wall": "Upper East Inner"
+                },
+                {
+                  "wall": "Upper North"
+                },
+                {
+                  "wall": "Contemporary West"
+                }
+              ],
+              "area": {
+                "value": 126,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Education Workshop",
+              "tags": [
+                "private",
+                "meeting"
+              ],
+              "doors": [
+                {
+                  "name": "Workshop Entry",
+                  "wall": "Upper Lobby East",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 4,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "OfficeDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Upper Lobby",
+                    "to": "Education Workshop"
+                  }
+                }
+              ],
+              "windows": [
+                {
+                  "name": "Workshop Window",
+                  "wall": "Upper South",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "FixedWindow"
+                }
+              ],
+              "furniture": [
+                {
+                  "typeRef": "ConferenceTable",
+                  "position": {
+                    "x": 18,
+                    "y": 4
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 3
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 17,
+                    "y": 3
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 19,
+                    "y": 3
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 20,
+                    "y": 3
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 16,
+                    "y": 5
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 17,
+                    "y": 5
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 19,
+                    "y": 5
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "OfficeChair",
+                  "position": {
+                    "x": 20,
+                    "y": 5
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Upper Lobby East"
+                },
+                {
+                  "wall": "Education East"
+                },
+                {
+                  "wall": "Education North"
+                },
+                {
+                  "wall": "Upper Lobby South"
+                }
+              ],
+              "area": {
+                "value": 84,
+                "unit": "m²"
+              }
+            },
+            {
+              "name": "Multimedia Room",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [
+                {
+                  "name": "Media Room Entry",
+                  "wall": "Education North",
+                  "position": {
+                    "kind": "absolute",
+                    "value": {
+                      "value": 18,
+                      "unit": "m"
+                    }
+                  },
+                  "typeRef": "ServiceDoor",
+                  "swing": "inward",
+                  "connects": {
+                    "from": "Education Workshop",
+                    "to": "Multimedia Room"
+                  }
+                }
+              ],
+              "windows": [],
+              "furniture": [
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 27,
+                    "y": 10
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 27,
+                    "y": 13
+                  },
+                  "facing": "south"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Education North"
+                },
+                {
+                  "wall": "Upper East Inner"
+                },
+                {
+                  "wall": "Photo Gallery South"
+                },
+                {
+                  "wall": "Education East"
+                }
+              ],
+              "area": {
+                "value": 42,
+                "unit": "m²"
+              }
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [
+            {
+              "name": "UC1",
+              "position": {
+                "x": 6,
+                "y": 3
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "UC2",
+              "position": {
+                "x": 6,
+                "y": 11
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "UC3",
+              "position": {
+                "x": 6,
+                "y": 18
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "UC4",
+              "position": {
+                "x": 18,
+                "y": 3
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "UC5",
+              "position": {
+                "x": 18,
+                "y": 11
+              },
+              "typeRef": "ConcreteColumn"
+            },
+            {
+              "name": "UC6",
+              "position": {
+                "x": 18,
+                "y": 18
+              },
+              "typeRef": "ConcreteColumn"
+            }
+          ],
+          "furniture": [],
+          "slabs": [
+            {
+              "name": "First Floor Slab",
+              "boundary": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 30,
+                  "y": 0
+                },
+                {
+                  "x": 30,
+                  "y": 22
+                },
+                {
+                  "x": 0,
+                  "y": 22
+                }
+              ],
+              "thickness": {
+                "value": 250,
+                "unit": "mm"
+              },
+              "type": "floor"
+            }
+          ],
+          "height": {
+            "value": 4.5,
+            "unit": "m"
+          }
+        },
+        {
+          "name": "Rooftop Terrace",
+          "elevation": {
+            "ref": "First Floor"
+          },
+          "walls": [
+            {
+              "name": "Roof South Parapet",
+              "start": {
+                "x": 0,
+                "y": 0
+              },
+              "end": {
+                "x": 30,
+                "y": 0
+              },
+              "thickness": {
+                "value": 300,
+                "unit": "mm"
+              },
+              "height": {
+                "value": 1.2,
+                "unit": "m"
+              }
+            },
+            {
+              "name": "Roof East Parapet",
+              "start": {
+                "x": 30,
+                "y": 0
+              },
+              "end": {
+                "x": 30,
+                "y": 22
+              },
+              "thickness": {
+                "value": 300,
+                "unit": "mm"
+              },
+              "height": {
+                "value": 1.2,
+                "unit": "m"
+              }
+            },
+            {
+              "name": "Roof North Parapet",
+              "start": {
+                "x": 30,
+                "y": 22
+              },
+              "end": {
+                "x": 0,
+                "y": 22
+              },
+              "thickness": {
+                "value": 300,
+                "unit": "mm"
+              },
+              "height": {
+                "value": 1.2,
+                "unit": "m"
+              }
+            },
+            {
+              "name": "Roof West Parapet",
+              "start": {
+                "x": 0,
+                "y": 22
+              },
+              "end": {
+                "x": 0,
+                "y": 0
+              },
+              "thickness": {
+                "value": 300,
+                "unit": "mm"
+              },
+              "height": {
+                "value": 1.2,
+                "unit": "m"
+              }
+            }
+          ],
+          "spaces": [
+            {
+              "name": "Sculpture Terrace",
+              "tags": [
+                "public",
+                "exhibition"
+              ],
+              "doors": [],
+              "windows": [],
+              "furniture": [
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 8,
+                    "y": 6
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 15,
+                    "y": 6
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 22,
+                    "y": 6
+                  },
+                  "facing": "south"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 8,
+                    "y": 16
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 15,
+                    "y": 16
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "DisplayPedestal",
+                  "position": {
+                    "x": 22,
+                    "y": 16
+                  },
+                  "facing": "north"
+                },
+                {
+                  "typeRef": "GalleryBench",
+                  "position": {
+                    "x": 15,
+                    "y": 11
+                  },
+                  "facing": "east"
+                }
+              ],
+              "boundedBy": [
+                {
+                  "wall": "Roof South Parapet"
+                },
+                {
+                  "wall": "Roof East Parapet"
+                },
+                {
+                  "wall": "Roof North Parapet"
+                },
+                {
+                  "wall": "Roof West Parapet"
+                }
+              ],
+              "area": {
+                "value": 660,
+                "unit": "m²"
+              }
+            }
+          ],
+          "doors": [],
+          "windows": [],
+          "columns": [],
+          "furniture": [],
+          "slabs": [
+            {
+              "name": "Roof Slab",
+              "boundary": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 30,
+                  "y": 0
+                },
+                {
+                  "x": 30,
+                  "y": 22
+                },
+                {
+                  "x": 0,
+                  "y": 22
+                }
+              ],
+              "thickness": {
+                "value": 300,
+                "unit": "mm"
+              },
+              "type": "roof"
+            }
+          ],
+          "height": {
+            "value": 1.5,
+            "unit": "m"
+          }
+        }
+      ],
+      "defaults": {
+        "wallThickness": {
+          "value": 300,
+          "unit": "mm"
+        },
+        "floorThickness": {
+          "value": 250,
+          "unit": "mm"
+        },
+        "ceilingHeight": {
+          "value": 3500,
+          "unit": "mm"
+        },
+        "doorHeight": {
+          "value": 2400,
+          "unit": "mm"
+        },
+        "windowSill": {
+          "value": 600,
+          "unit": "mm"
+        }
+      },
+      "site": {
+        "name": "San Francisco Arts District",
+        "location": {
+          "latitude": 37.7749,
+          "longitude": -122.4194
+        }
+      }
+    }
+  ]
+}

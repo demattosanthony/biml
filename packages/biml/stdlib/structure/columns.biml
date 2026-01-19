@@ -1,0 +1,15 @@
+# Standard Structural Elements Library
+# Column and beam types for structural design
+
+library "stdlib.structure" {
+  type Column {
+    param width: Length = 400mm
+    param depth: Length = 400mm
+    ifc_class: IfcColumn
+  }
+
+  type ConcreteColumn : Column {
+    width = 400mm
+    depth = 400mm
+  }
+}
